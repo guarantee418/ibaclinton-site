@@ -1,0 +1,6 @@
+.DS_Store
+*.wpress
+*.sql
+*.sql.gz
+.env
+node_modules/
