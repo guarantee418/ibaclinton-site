@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{title}}</title>
+<meta name="description" content="{{description}}">
+<link rel="icon" href="{{root}}img/icon.png">
+<link rel="apple-touch-icon" href="{{root}}img/icon.png">
+<link rel="stylesheet" href="{{root}}styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="top"><div class="wrap">
+  <a href="{{root}}stepping-stones-preschool/">Preschool</a><a href="https://secure.gradelink.com/gradelink">Gradelink</a><a href="{{root}}tour/">Book a Tour</a>
+</div></div>
+
+<header class="site"><div class="wrap">
+  <a href="{{root}}"><img class="logo" src="{{root}}img/logo.png" alt="Independent Baptist Academy home" width="568" height="120"></a>
+  <button class="menu-btn" aria-expanded="false" aria-controls="nav" onclick="var n=document.getElementById('nav');var o=n.classList.toggle('open');this.setAttribute('aria-expanded',o)">Menu</button>
+  <nav id="nav" aria-label="Main"><ul>{{nav}}</ul></nav>
+</div></header>
+
+<main id="main">
+{{banner}}
+{{content}}
+{{cta}}
+</main>
+
+<footer class="site"><div class="wrap">
+  <div>
+    <img src="{{root}}img/logo-white.png" alt="" width="480" height="360" class="flogo">
+    <p><a href="https://maps.app.goo.gl/dgcb4vTr49T3JmRL7">9255 Piscataway Rd<br>Clinton, MD 20735</a><br>
+    <a href="tel:3018561616">(301) 856-1616</a><br>
+    <a href="mailto:iba@ibcministries.org">iba@ibcministries.org</a></p>
+  </div>
+  <div><h4>Resources</h4><ul>
+    <li><a href="https://ibcministries.org">Independent Baptist Church</a></li>
+    <li><a href="{{root}}stepping-stones-preschool/">Stepping Stones Preschool</a></li>
+    <li><a href="{{root}}summer-enrichment-program/">Summer Programs</a></li>
+    <li><a href="https://secure.gradelink.com/gradelink">Gradelink</a></li>
+    <li><a href="https://secure.anedot.com/ibc/academy-donations">Give</a></li></ul></div>
+  <div><h4>Connect</h4><ul>
+    <li><a href="{{root}}tour/">Book a Tour</a></li>
+    <li><a href="{{root}}request-info/">Request Info</a></li>
+    <li><a href="https://www.facebook.com/Independent-Baptist-Academy-of-Clinton-MD-1811035429120537/">Facebook</a></li></ul></div>
+  <div class="fine">© 2026 Independent Baptist Academy in Clinton, Maryland · <a href="{{root}}privacy-policy/">Privacy Policy</a></div>
+</div></footer>
+</body>
+</html>
