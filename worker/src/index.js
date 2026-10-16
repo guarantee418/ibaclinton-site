@@ -13,7 +13,8 @@
 //                   "teacher_emails", fills blank teacher emails); {"action":"homerooms","week":"YYYY-MM-DD",
 //                   "test_to":"someone@..."} sends that week's homeroom emails to test_to only;
 //                   {"action":"delete_test_booking","id":"ABCDE"} removes one conference booking whose
-//                   student is "TEST..." (Actions -> "Delete a test conference booking")
+//                   student is "TEST..."; {"action":"delete_test_order","id":"ABCDE"} removes a lunch order
+//                   whose rows are all "TEST..." (Actions -> "Delete a TEST booking or lunch order")
 //   cron            Mondays 7:00 AM Eastern: homeroom lunch lists to teachers (src/homerooms.js)
 //
 // Microsoft 365 access is delegated: the Worker acts only as the mailbox in MAILBOX
@@ -121,6 +122,14 @@ async function admin(request, env) {
     const r = await deleteTestBooking(workbook(token, env), id);
     return json({ ok: r.deleted, id, ...r }, r.deleted ? 200 : 400, {});
   }
+  if (body.action === "delete_test_order") { // removes a lunch order whose rows are all "TEST..."
+    const id = String(body.id || "").trim().toUpperCase();
+    if (!/^[A-Z0-9]{5}$/.test(id)) return json({ ok: false, error: "id (the 5-letter order number) is required" }, 400, {});
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    const r = await deleteTestOrder(workbook(token, env), env.TABLE || "Orders", id);
+    return json({ ok: r.deleted > 0, id, ...r }, r.deleted > 0 ? 200 : 400, {});
+  }
   if (body.action === "homerooms") {
     const week = String(body.week || ""), to = String(body.test_to || "").trim();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(week) || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
@@ -129,6 +138,27 @@ async function admin(request, env) {
     return json(await homeroomRun(env, week, to), 200, {});
   }
   return json({ ok: false, error: "Unknown action" }, 400, {});
+}
+
+// Removes every row of one lunch order, by order number, only if each of its rows has a Student or
+// Parent starting with "TEST" (admin upkeep). Bottom row first, so the row numbers stay right.
+export async function deleteTestOrder(call, table, id) {
+  const r = await call("GET", `/tables/${encodeURIComponent(table)}/range?$select=text`);
+  if (!r.ok) return { deleted: 0, error: `table ${r.status}` };
+  const [head, ...rows] = (await r.json()).text || [];
+  const col = Object.fromEntries((head || []).map((h, i) => [String(h).trim(), i]));
+  const hits = rows.map((row, i) => [row, i]).filter(([row]) => String(row[col["Order #"]] || "").trim() === id);
+  if (!hits.length) return { deleted: 0, error: "no order with that number" };
+  const test = (v) => /^TEST/i.test(String(v || "").trim());
+  if (!hits.every(([row]) => test(row[col.Student]) || test(row[col.Parent]))) return { deleted: 0, error: "not a TEST order" };
+  let deleted = 0;
+  for (const [, i] of hits.reverse()) {
+    let d = await call("DELETE", `/tables/${encodeURIComponent(table)}/rows/itemAt(index=${i})`);
+    if (!d.ok) d = await call("DELETE", `/tables/${encodeURIComponent(table)}/rows/${i}`);
+    if (!d.ok) return { deleted, error: `delete ${d.status}` };
+    deleted++;
+  }
+  return { deleted };
 }
 
 // ------------------------------------------------------------------ orders

@@ -1,12 +1,18 @@
-name: Delete a test conference booking
+name: Delete a TEST booking or lunch order
 
-# Manual only. Removes ONE row from the Conferences tab of the office workbook, by its booking
-# number, and only if its Student starts with "TEST". Real bookings can't be removed this way.
+# Manual only. Removes a TEST row from the office workbook by its number: a conference booking
+# (Conferences tab, only if its Student starts with "TEST") or a whole lunch order (Orders tab, only if
+# each of its rows has a Student or Parent starting with "TEST"). Real bookings and orders can't be removed.
 on:
   workflow_dispatch:
     inputs:
+      kind:
+        description: "What to delete"
+        type: choice
+        options: [conference booking, lunch order]
+        default: conference booking
       id:
-        description: "Booking number of the TEST booking (5 letters/digits, e.g. MBG7S)"
+        description: "Its number (5 letters/digits, e.g. MBG7S)"
         required: true
 
 permissions:
@@ -17,11 +23,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       LUNCH_SETUP_KEY: ${{ secrets.LUNCH_SETUP_KEY }}
+      KIND: ${{ inputs.kind }}
       ID: ${{ inputs.id }}
     steps:
       - name: Delete
         run: |
-          body=$(jq -nc --arg id "$ID" '{action:"delete_test_booking",id:$id}')
+          action=delete_test_booking; [ "$KIND" = "lunch order" ] && action=delete_test_order
+          body=$(jq -nc --arg a "$action" --arg id "$ID" '{action:$a,id:$id}')
           curl -fsS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" \
             -H "X-Setup-Key: $LUNCH_SETUP_KEY" -H "Content-Type: application/json" -d "$body"
           echo
