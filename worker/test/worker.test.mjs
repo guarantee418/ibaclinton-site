@@ -382,3 +382,18 @@ test("fillTeacherEmails fills only blank emails, by grade code or label", async 
   assert.equal(n, 2);
   assert.deepEqual(written.values, [["Email"], ["dove@school.test"], ["kept@school.test"], ["g@school.test"]]);
 });
+
+test("deleteTestBooking removes only a TEST row, by booking number", async () => {
+  const { deleteTestBooking } = await import("../src/conferences.js");
+  const deleted = [];
+  const call = async (method, path) => {
+    if (method === "GET") return new Response(JSON.stringify({ text: [CHEAD,
+      ["", "11/16/2026", "9:00 AM", "Mr. Damm", "Real Kid", "P", "a@b.c", "", "", "REAL1"],
+      ["", "11/16/2026", "12:40 PM", "TEST Teacher", "TEST Student", "TEST", "g@x", "", "", "MBG7S"]] }));
+    deleted.push(path); return new Response(null, { status: 204 });
+  };
+  assert.deepEqual(await deleteTestBooking(call, "REAL1"), { deleted: false, error: "not a TEST booking" });
+  assert.deepEqual(await deleteTestBooking(call, "NOPE1"), { deleted: false, error: "no booking with that number" });
+  assert.deepEqual(await deleteTestBooking(call, "MBG7S"), { deleted: true });
+  assert.deepEqual(deleted, ["/tables/Bookings/rows/itemAt(index=1)"]);
+});

@@ -11,14 +11,16 @@
 //   POST /admin     upkeep, needs header X-Setup-Key: {"action":"setup"} adds the Teachers and
 //                   Homerooms tabs (and the Conferences tab) to the workbook if missing (and, with
 //                   "teacher_emails", fills blank teacher emails); {"action":"homerooms","week":"YYYY-MM-DD",
-//                   "test_to":"someone@..."} sends that week's homeroom emails to test_to only
+//                   "test_to":"someone@..."} sends that week's homeroom emails to test_to only;
+//                   {"action":"delete_test_booking","id":"ABCDE"} removes one conference booking whose
+//                   student is "TEST..." (Actions -> "Delete a test conference booking")
 //   cron            Mondays 7:00 AM Eastern: homeroom lunch lists to teachers (src/homerooms.js)
 //
 // Microsoft 365 access is delegated: the Worker acts only as the mailbox in MAILBOX
 // (send mail as that user, edit that user's OneDrive files). It never sees a password;
 // it keeps Microsoft's refresh token in KV. See worker/README.md for setup.
 
-import { TABLE as CONF_TABLE, bookingRow, conflict, ensureConferenceTab, parentMail, readBookings, takenSlots, teacherEmail,
+import { TABLE as CONF_TABLE, bookingRow, conflict, deleteTestBooking, ensureConferenceTab, parentMail, readBookings, takenSlots, teacherEmail,
   teacherMail, validateBooking } from "./conferences.js";
 import { checkHomerooms, ensureTabs, fillTeacherEmails, weekCounts, homeroomMails, mondayToSend, readTeachers, readWeek } from "./homerooms.js";
 
@@ -110,6 +112,14 @@ async function admin(request, env) {
       } catch (err) { hops.push({ url: next, error: String(err && err.message || err) }); next = ""; }
     }
     return json({ ok: true, hops }, 200, {});
+  }
+  if (body.action === "delete_test_booking") { // removes one conference booking whose student is "TEST..."
+    const id = String(body.id || "").trim().toUpperCase();
+    if (!/^[A-Z0-9]{5}$/.test(id)) return json({ ok: false, error: "id (the 5-letter booking number) is required" }, 400, {});
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    const r = await deleteTestBooking(workbook(token, env), id);
+    return json({ ok: r.deleted, id, ...r }, r.deleted ? 200 : 400, {});
   }
   if (body.action === "homerooms") {
     const week = String(body.week || ""), to = String(body.test_to || "").trim();
