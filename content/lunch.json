@@ -1,29 +1,22 @@
 {
-  "week_of": "",
+  "week_of": "Test",
   "menu": [
     {
       "day": "Monday",
-      "meal": ""
+      "meal": "Test meal"
     },
     {
-      "day": "Tuesday",
-      "meal": ""
+      "day": "Tuesday"
     },
     {
-      "day": "Wednesday",
-      "meal": ""
+      "day": "Wednesday"
     },
     {
-      "day": "Thursday",
-      "meal": ""
+      "day": "Thursday"
     },
     {
-      "day": "Friday",
-      "meal": ""
+      "day": "Friday"
     }
   ],
-  "price": "Lunches are $8.00 ($5.00 for preschool).",
-  "order_form_url": "",
-  "order_by": "",
-  "note": ""
+  "price": "Lunches are $8.00 ($5.00 for preschool)."
 }
