@@ -27,6 +27,8 @@ REPLY_TO = "ibs@ibcministries.org"
 SIGNATURE = "Mrs. Napierala\nIndependent Baptist Academy"  # \n = new line
 WORKBOOK_PATH = "Hot Lunch Orders.xlsx"
 TABLE = "Orders"
+# The published parent-teacher conference schedule, also read from GitHub (same reason).
+CONF_URL = "https://raw.githubusercontent.com/guarantee418/ibaclinton-site/main/site/conferences/schedule.json"
 HOMEROOM_CC = "ibs@ibcministries.org"  # Cc on the Monday homeroom lunch lists
 # Filled in by the workflow from GitHub secrets (not secret, but kept out of this public repo):
 TENANT_ID = ""

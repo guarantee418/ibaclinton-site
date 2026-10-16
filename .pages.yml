@@ -76,6 +76,71 @@ content:
           regex: "^(https://.*)?$"
           message: "Paste the full link, starting with https://"
 
+  - name: conferences
+    label: Parent-Teacher Conferences
+    type: file
+    path: content/conferences.json
+    format: json
+    fields:
+      - name: date
+        label: Conference day
+        type: date
+        default: ""
+        description: Leave blank to close sign-ups. The page is ibaclinton.com/conferences/
+        options:
+          format: yyyy-MM-dd
+      - name: start
+        label: First conference starts
+        type: string
+        description: For example 9:00 AM
+      - name: end
+        label: Conferences end by
+        type: string
+        description: For example 1:00 PM. The last conference ends at or before this time.
+      - name: minutes
+        label: Minutes per conference
+        type: number
+        options:
+          min: 5
+      - name: break_minutes
+        label: Break between conferences (minutes)
+        type: number
+        options:
+          min: 0
+      - name: booking_deadline
+        label: Sign-up deadline (only if different)
+        type: date
+        default: ""
+        description: Leave blank for the usual deadline, 3:00 PM on the school day before. Fill in only for a different date or time (Eastern).
+        options:
+          time: true
+          format: yyyy-MM-dd'T'HH:mm
+      - name: note
+        label: Note
+        type: text
+        description: Optional extra line for parents, for example where to check in.
+      - name: teachers
+        label: Teachers
+        description: Each teacher gets their own sign-up panel. Type teacher names the same way as on the Teachers tab of the office workbook, so each teacher gets an email for each booking.
+        type: object
+        list:
+          collapsible:
+            collapsed: true
+            summary: "{name}: {subject}"
+        fields:
+          - name: name
+            label: Teacher
+            type: string
+            required: true
+          - name: subject
+            label: Class or subject
+            type: string
+            description: For example 3rd Grade, or Art
+          - name: members
+            label: Teachers in this panel (only for a shared panel)
+            type: string
+            description: For a panel where several teachers meet each family together, list them with commas, for example Mr. Napierala, Mr. Damm, Mr. Greene. Each gets the booking email. Leave blank for one teacher.
+
   - name: parents
     label: Parent Portal page
     type: file

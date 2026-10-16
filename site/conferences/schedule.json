@@ -1,0 +1,146 @@
+{
+  "date": "2026-11-16",
+  "date_label": "Monday, November 16, 2026",
+  "minutes": 15,
+  "deadline": "2026-11-13T20:00:00+00:00",
+  "deadline_label": "Friday, November 13 at 3:00 PM",
+  "note": "",
+  "slots": [
+    {
+      "id": "0900",
+      "label": "9:00 AM",
+      "end": "9:15 AM"
+    },
+    {
+      "id": "0920",
+      "label": "9:20 AM",
+      "end": "9:35 AM"
+    },
+    {
+      "id": "0940",
+      "label": "9:40 AM",
+      "end": "9:55 AM"
+    },
+    {
+      "id": "1000",
+      "label": "10:00 AM",
+      "end": "10:15 AM"
+    },
+    {
+      "id": "1020",
+      "label": "10:20 AM",
+      "end": "10:35 AM"
+    },
+    {
+      "id": "1040",
+      "label": "10:40 AM",
+      "end": "10:55 AM"
+    },
+    {
+      "id": "1100",
+      "label": "11:00 AM",
+      "end": "11:15 AM"
+    },
+    {
+      "id": "1120",
+      "label": "11:20 AM",
+      "end": "11:35 AM"
+    },
+    {
+      "id": "1140",
+      "label": "11:40 AM",
+      "end": "11:55 AM"
+    },
+    {
+      "id": "1200",
+      "label": "12:00 PM",
+      "end": "12:15 PM"
+    },
+    {
+      "id": "1220",
+      "label": "12:20 PM",
+      "end": "12:35 PM"
+    },
+    {
+      "id": "1240",
+      "label": "12:40 PM",
+      "end": "12:55 PM"
+    }
+  ],
+  "teachers": [
+    {
+      "id": "miss-dove",
+      "name": "Miss Dove",
+      "subject": "Preschool (K3)",
+      "members": [
+        "Miss Dove"
+      ]
+    },
+    {
+      "id": "mrs-febo",
+      "name": "Mrs. Febo",
+      "subject": "Preschool (K4)",
+      "members": [
+        "Mrs. Febo"
+      ]
+    },
+    {
+      "id": "ms-schmidley",
+      "name": "Ms. Schmidley",
+      "subject": "Kindergarten (K5)",
+      "members": [
+        "Ms. Schmidley"
+      ]
+    },
+    {
+      "id": "miss-ryans",
+      "name": "Miss Ryans",
+      "subject": "1st Grade",
+      "members": [
+        "Miss Ryans"
+      ]
+    },
+    {
+      "id": "ms-raymond",
+      "name": "Ms. Raymond",
+      "subject": "2nd Grade",
+      "members": [
+        "Ms. Raymond"
+      ]
+    },
+    {
+      "id": "mrs-lundberg",
+      "name": "Mrs. Lundberg",
+      "subject": "3rd Grade",
+      "members": [
+        "Mrs. Lundberg"
+      ]
+    },
+    {
+      "id": "mrs-kirby",
+      "name": "Mrs. Kirby",
+      "subject": "4th Grade",
+      "members": [
+        "Mrs. Kirby"
+      ]
+    },
+    {
+      "id": "mrs-baumgartner",
+      "name": "Mrs. Baumgartner",
+      "subject": "5th & 6th Grade",
+      "members": [
+        "Mrs. Baumgartner"
+      ]
+    },
+    {
+      "id": "high-school-teachers",
+      "name": "High School Teachers",
+      "subject": "7th\u201312th Grade: Mr. Napierala, Mr. Damm and Mr. Greene together",
+      "members": [
+        "Mr. Napierala",
+        "Mr. Damm",
+        "Mr. Greene"
+      ]
+    }
+  ]
+}

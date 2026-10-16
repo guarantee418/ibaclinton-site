@@ -152,3 +152,22 @@ form.info label.lunch-day{flex-direction:row;align-items:flex-start;gap:.5rem;fo
 .lunch-day input{margin-top:.25rem}.lunch-day:has(input:checked){border-color:var(--gold);background:#fff7e0}
 .lunch-remove{grid-column:1/-1;justify-self:start;background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font:inherit;padding:0}
 .lunch-total{font-size:1.15rem;margin:0}.lunch-fine{color:var(--muted);font-size:.9rem}
+/* Parent-teacher conferences (conferences.py, conferences.js) */
+.conf-when{font:700 1.35rem var(--serif);color:var(--navy);margin-bottom:.3rem}
+.conf-teachers{list-style:none;padding:0;margin:.6rem 0 1.6rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.7rem}
+.conf-teacher{display:flex;flex-direction:column;gap:.15rem;padding:.9rem 1rem;border:1px solid var(--line);border-radius:4px;background:#fff;text-decoration:none;color:var(--navy)}
+.conf-teacher:hover,.conf-teacher:focus-visible{border-color:var(--gold);background:var(--cream)}
+.conf-teacher span{color:var(--muted);font-size:.9rem}
+.conf-teachers[hidden],#conf-pick[hidden]{display:none}
+.conf-subject{color:var(--muted);margin-top:-.4rem}.conf-count{font-weight:600}
+.conf-slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:.6rem;margin:.6rem 0 1.4rem;max-width:44em}
+.conf-slot{display:flex;flex-direction:column;align-items:center;gap:.1rem;padding:.75rem .5rem;border:1px solid var(--line);border-radius:4px;background:#fff;font:600 1rem var(--sans);color:var(--navy);cursor:pointer;font-variant-numeric:tabular-nums}
+.conf-slot small{font-weight:400;font-size:.8rem;color:var(--muted)}
+.conf-slot:hover:not(:disabled){border-color:var(--gold)}
+.conf-slot[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:var(--navy-d)}
+.conf-slot[aria-pressed="true"] small{color:var(--navy-d)}
+.conf-slot:disabled{background:#f1efe9;color:#9a9fa9;cursor:not-allowed;text-decoration:line-through}
+.conf-slot:disabled small{text-decoration:none}
+.conf-form h3{margin:0;font-size:1.3rem;color:var(--navy)}
+#conf-status:empty{display:none}
+form.info textarea{resize:vertical}

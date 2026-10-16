@@ -222,6 +222,142 @@ test("POST /admin needs the setup key", async () => {
   assert.equal((await worker.fetch(req("setup"), env)).status, 503); // right key, not connected
 });
 
+// ------------------------------------------------------------------ parent-teacher conferences
+import { conflict, normTime, takenSlots, teacherEmail, validateBooking, bookingRow, parentMail, ensureConferenceTab } from "../src/conferences.js";
+
+const SCHED = {
+  date: "2026-11-16", date_label: "Monday, November 16, 2026", minutes: 25,
+  deadline: "2026-11-13T20:00:00+00:00", deadline_label: "Friday, November 13 at 3:00 PM", note: "",
+  slots: [{ id: "0900", label: "9:00 AM", end: "9:25 AM" }, { id: "0930", label: "9:30 AM", end: "9:55 AM" },
+    { id: "1230", label: "12:30 PM", end: "12:55 PM" }],
+  teachers: [{ id: "mr-damm", name: "Mr. Damm", subject: "9th & 10th Grade", members: ["Mr. Damm"] },
+    { id: "miss-ryans", name: "Miss Ryans", subject: "1st Grade", members: ["Miss Ryans"] },
+    { id: "high-school-teachers", name: "High School Teachers", subject: "7th–12th Grade", members: ["Mr. Napierala", "Mr. Damm", "Mr. Greene"] }],
+};
+const CONF_URL = "https://site.test/conferences/schedule.json";
+const BOOK = { teacher: "mr-damm", slot: "0930", date: "2026-11-16", parent_first: "Pat", parent_last: "Smith",
+  email: "Pat@Example.com", phone: "301-555-0100", student: "Sam Smith", notes: "Reading" };
+const CHEAD = ["Booked", "Date", "Time", "Teacher", "Student", "Parent", "Email", "Phone", "Notes", "Booking #"];
+const crow = (date, time, teacher, email = "x@y.z") => ["", date, time, teacher, "S", "P", email, "", "", "A"];
+
+test("conference bookings are checked against the schedule", () => {
+  const ok = validateBooking(BOOK, SCHED, BEFORE);
+  assert.equal(ok.error, undefined);
+  assert.equal(ok.booking.email, "pat@example.com");
+  assert.equal(ok.booking.slot.label, "9:30 AM");
+  assert.match(validateBooking(BOOK, SCHED, Date.parse("2026-11-13T20:00:01Z")).error, /closed/);
+  assert.match(validateBooking({ ...BOOK, teacher: "nobody" }, SCHED, BEFORE).error, /teacher/);
+  assert.match(validateBooking({ ...BOOK, slot: "0915" }, SCHED, BEFORE).error, /time/);
+  assert.match(validateBooking({ ...BOOK, date: "2026-11-17" }, SCHED, BEFORE).error, /schedule changed/);
+  assert.match(validateBooking({ ...BOOK, student: " " }, SCHED, BEFORE).error, /student/);
+  assert.match(validateBooking({ ...BOOK, email: "nope" }, SCHED, BEFORE).error, /email/);
+  assert.match(validateBooking(BOOK, { ...SCHED, teachers: [] }, BEFORE).error, /aren't open/);
+});
+
+test("taken times come from the workbook, however the office typed them", () => {
+  const rows = [
+    { date: "2026-11-16", time: normTime("9:30:00 AM"), teacher: "mr damm", email: "a@b.c" },
+    { date: "", time: normTime("12:30"), teacher: "mr damm", email: "" },        // typed 24-hour, no date
+    { date: "2026-11-16", time: normTime("9:00 am"), teacher: "miss ryans", email: "" },
+    { date: "2026-04-01", time: "9:00 AM", teacher: "mr damm", email: "" },     // another conference day
+    { date: "2026-11-16", time: "9:00 AM", teacher: "mrs nobody", email: "" },
+  ];
+  assert.deepEqual(takenSlots(SCHED, rows), { "mr-damm": ["0930", "1230"], "miss-ryans": ["0900"] });
+  const b = validateBooking(BOOK, SCHED, BEFORE).booking;
+  assert.equal(conflict(b, SCHED, rows).code, "taken");
+  const other = validateBooking({ ...BOOK, slot: "0900", email: "a@b.c" }, SCHED, BEFORE).booking;
+  assert.equal(conflict(other, SCHED, rows).code, "already");
+  assert.equal(conflict(validateBooking({ ...BOOK, slot: "0900" }, SCHED, BEFORE).booking, SCHED, rows), null);
+});
+
+test("conference row and emails: formula-safe, escaped, teacher found by name", () => {
+  const b = validateBooking({ ...BOOK, student: "=HYPERLINK()", parent_first: "<b>" }, SCHED, BEFORE).booking;
+  const row = bookingRow(b, SCHED, "ABCDE", "11/1/2026 9:00 AM");
+  assert.deepEqual(row.slice(1, 5), ["11/16/2026", "9:30 AM", "Mr. Damm", "'=HYPERLINK()"]);
+  assert.equal(row.length, CHEAD.length);
+  const html = parentMail(b, SCHED, "ABCDE", ENV0).message.body.content;
+  assert.ok(html.includes("&lt;b&gt;") && !html.includes("<b><b>"));
+  assert.ok(html.includes("9:30 AM to 9:55 AM") && html.includes("Monday, November 16, 2026"));
+  assert.equal(teacherEmail([{ grade: "9th Grade", teacher: "Mr Damm", email: "damm@school.test" }], "Mr. Damm"), "damm@school.test");
+  assert.equal(teacherEmail([{ grade: "1st Grade", teacher: "Miss Ryans", email: "" }], "Miss Ryans"), "");
+});
+
+function fakeConferences({ rows = [], table = true } = {}) {
+  const calls = [];
+  globalThis.fetch = async (url, init = {}) => {
+    url = String(url); calls.push({ url, init });
+    const ok = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
+    if (url.startsWith(CONF_URL)) return ok(SCHED);
+    if (url.includes("/oauth2/v2.0/token")) return ok({ access_token: "at", refresh_token: "rt1", expires_in: 3600 });
+    if (url.includes("/workbook/tables/Bookings/range")) return table ? ok({ text: [CHEAD, ...rows] }) : ok({ error: "ItemNotFound" }, 404);
+    if (url.includes("/workbook/tables/Bookings/rows/add")) return ok({}, 201);
+    if (url.includes("/workbook/worksheets?")) return ok({ value: [{ name: "Orders" }] });
+    if (url.includes("/workbook/worksheets/Teachers/usedRange")) {
+      return ok({ values: [["Grade", "Teacher", "Email"], ["9th Grade", "Mr. Damm", "damm@school.test"],
+        ["7th Grade", "Mr. Napierala", "nap@school.test"], ["11th Grade", "Mr. Greene", ""]] });
+    }
+    if (url.includes("/tables/add")) return ok({ id: "{T1}" });
+    if (url.includes("/workbook/")) return ok({});
+    if (url.endsWith("/me/sendMail")) return new Response(null, { status: 202 });
+    return ok({ error: "unexpected " + url }, 500);
+  };
+  return calls;
+}
+const CENV = () => ({ ...ENV0, CONF_URL, LUNCH_KV: kv({ ms_refresh: "rt1" }) });
+const cpost = (body) => new Request("https://lunch.test/conference", {
+  method: "POST", body: JSON.stringify(body),
+  headers: { "Content-Type": "application/json", Origin: "https://guarantee418.github.io", "CF-Connecting-IP": "5.6.7.8" },
+});
+
+test("POST /conference end to end: saves the row, emails the parent and the teacher", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: BEFORE });
+  const calls = fakeConferences({ rows: [crow("11/16/2026", "9:00 AM", "Mr. Damm")] });
+  const res = await worker.fetch(cpost(BOOK), CENV());
+  const data = await res.json();
+  assert.equal(res.status, 200, JSON.stringify(data));
+  assert.equal(data.time, "9:30 AM"); assert.equal(data.email_sent, true);
+  const add = calls.find((c) => c.url.includes("/tables/Bookings/rows/add"));
+  assert.equal(JSON.parse(add.init.body).values[0][3], "Mr. Damm");
+  const mails = calls.filter((c) => c.url.endsWith("/me/sendMail")).map((c) => JSON.parse(c.init.body).message.toRecipients[0].emailAddress.address);
+  assert.deepEqual(mails, ["pat@example.com", "damm@school.test"]);
+});
+
+test("POST /conference: a taken time is refused, and a second tap at once is held off", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: BEFORE });
+  fakeConferences({ rows: [crow("11/16/2026", "9:30 AM", "Mr. Damm")] });
+  const taken = await worker.fetch(cpost(BOOK), CENV());
+  assert.equal(taken.status, 409);
+  assert.equal((await taken.json()).code, "taken");
+  fakeConferences();
+  const env = CENV();
+  assert.equal((await worker.fetch(cpost({ ...BOOK, slot: "0900" }), env)).status, 200);
+  const again = await worker.fetch(cpost({ ...BOOK, slot: "0900", email: "other@example.com" }), env);
+  assert.equal(again.status, 409); // the workbook fake doesn't change; the lock catches it
+});
+
+test("GET /conferences lists taken times and adds the tab when the workbook has none", async () => {
+  fakeConferences({ rows: [crow("11/16/2026", "12:30 PM", "Miss Ryans"), crow("", "", "")] });
+  const res = await worker.fetch(new Request("https://lunch.test/conferences", { headers: { Origin: "https://guarantee418.github.io" } }), CENV());
+  assert.deepEqual((await res.json()).taken, { "miss-ryans": ["1230"] });
+  const calls = fakeConferences({ table: false });
+  const empty = await (await worker.fetch(new Request("https://lunch.test/conferences", { headers: { Origin: "https://guarantee418.github.io" } }), CENV())).json();
+  assert.deepEqual(empty.taken, {});
+  assert.ok(calls.some((c) => c.url.includes("/worksheets/add")));
+  assert.ok(calls.some((c) => c.url.includes("/tables/add")));
+  assert.ok(calls.some((c) => c.url.includes("/tables/%7BT1%7D") && JSON.parse(c.init.body).name === "Bookings"));
+  assert.equal((await worker.fetch(new Request("https://lunch.test/conferences", { headers: { Origin: "https://evil.example" } }), CENV())).status, 403);
+});
+
+test("POST /conference for a shared panel emails each of its teachers that has an email", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: BEFORE });
+  const calls = fakeConferences();
+  const res = await worker.fetch(cpost({ ...BOOK, teacher: "high-school-teachers" }), CENV());
+  assert.equal(res.status, 200);
+  const mails = calls.filter((c) => c.url.endsWith("/me/sendMail")).map((c) => JSON.parse(c.init.body).message);
+  assert.deepEqual(mails.map((m) => m.toRecipients[0].emailAddress.address), ["pat@example.com", "nap@school.test", "damm@school.test"]);
+  assert.ok(mails[1].body.content.startsWith("<p>Mr. Napierala,</p>") && mails[1].body.content.includes("Mr. Napierala, Mr. Damm, Mr. Greene"));
+});
+
 test("staff lunches use the staff price; a menu without one refuses staff", () => {
   const menu = { ...MENU, prices: { ...MENU.prices, staff: 4 },
     grades: [...MENU.grades, { value: "STAFF", label: "Staff", preschool: false, staff: true }] };
