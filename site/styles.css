@@ -115,6 +115,10 @@ section.tight{padding-top:clamp(2rem,4vw,3rem)}
 .price{list-style:none;padding:0;margin:1rem 0}.price li{display:flex;justify-content:space-between;gap:1rem;padding:.6rem 0;border-bottom:1px solid var(--line)}
 .price b{color:var(--navy)}
 .notice{background:#fff7e0;border:1px solid #ecd18c;border-radius:3px;padding:.9rem 1.1rem}
+#form-status:empty,form.info[hidden]{display:none}
+.notice.ok{background:#e9f6ec;border-color:#9fd1aa}
+.notice.err{background:#fdecea;border-color:#efa9a1}
+form.info button:disabled{opacity:.6;cursor:wait}
 form.info{max-width:44em;display:grid;gap:1.2rem}
 form.info fieldset{border:1px solid var(--line);border-radius:4px;padding:1.2rem 1.4rem;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 form.info legend{font:700 1.15rem var(--serif);color:var(--navy);padding:0 .4rem}

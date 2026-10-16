@@ -12,11 +12,27 @@ import pathlib, re
 
 # Formspree form ID for the Request Info form (the part after formspree.io/f/).
 # Leave empty until the form exists; the page then shows a "call or email us" notice.
-FORMSPREE_ID = ""
+FORMSPREE_ID = "xaeqabaz"  # Formspree account: ggreene@ibcministries.org
+
+# The site's own domain. Leave empty while the site is only a preview at
+# guarantee418.github.io/ibaclinton-site/. Set to "ibaclinton.com" on go-live day and rebuild:
+# that writes site/CNAME, switches 404.html's links to "/", turns on Google Analytics and
+# lets search engines index the pages (the preview asks them not to).
+DOMAIN = ""
+
+# Google tag from the WordPress site (added there by Site Kit). Reusing it keeps the
+# Analytics history in one place. Only added to pages when DOMAIN is set.
+GA_ID = "GT-PJ5L2Z5R"
+
+# Address used in sitemap.xml and robots.txt; search engines only read those on the real domain.
+SITE_URL = "https://ibaclinton.com/"
 
 # Where the site is served from. Used only by 404.html, which GitHub Pages shows at any
-# path, so its links can't be relative. Change to "/" when ibaclinton.com points here.
-BASE_PATH = "/ibaclinton-site/"
+# path, so its links can't be relative.
+BASE_PATH = "/" if DOMAIN else "/ibaclinton-site/"
+
+GTAG = f"""<script async src="https://www.googletagmanager.com/gtag/js?id={GA_ID}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments);}}gtag("js",new Date());gtag("config","{GA_ID}");</script>"""
 
 ROOT = pathlib.Path(__file__).parent
 SRC, OUT = ROOT / "src", ROOT / "site"
@@ -52,7 +68,13 @@ def render(path, text, layout):
             '<p class="notice">This form is being set up. For now, please call '
             '<a href="tel:3018561616">(301) 856-1616</a> or email '
             '<a href="mailto:iba@ibcministries.org">iba@ibcministries.org</a>.</p>')
-    html = (layout.replace("{{title}}", title).replace("{{description}}", meta["description"])
+    tracking = ("This website uses Google Analytics to count visits and see which pages are used. "
+        "Google Analytics sets cookies to do this; it does not tell us who you are. "
+        "The site does not use advertising cookies."
+        if DOMAIN and GA_ID else "This website does not use advertising or tracking cookies of its own.")
+    body = body.replace("{{tracking}}", tracking)
+    head_extra = GTAG if DOMAIN and GA_ID else '<meta name="robots" content="noindex">'
+    html = (layout.replace("{{title}}", title).replace("{{head}}", head_extra).replace("{{description}}", meta["description"])
             .replace("{{nav}}", nav).replace("{{banner}}", banner)
             .replace("{{content}}", body.strip()).replace("{{cta}}", cta))
     html = html.replace("{{root}}", root)
@@ -62,8 +84,22 @@ def render(path, text, layout):
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html)
     print("wrote", out.relative_to(ROOT))
+    return None if rel.name == "404" else out.relative_to(OUT).parent.as_posix()
+
+def write(name, text):
+    (OUT / name).write_text(text)
+    print("wrote", (OUT / name).relative_to(ROOT))
 
 if __name__ == "__main__":
     layout = (SRC / "layout.html").read_text()
-    for p in sorted((SRC / "pages").rglob("*.html")):
-        render(p, p.read_text(), layout)
+    paths = [render(p, p.read_text(), layout) for p in sorted((SRC / "pages").rglob("*.html"))]
+    urls = [SITE_URL + ("" if d == "." else d + "/") for d in paths if d]
+    write("sitemap.xml", '<?xml version="1.0" encoding="UTF-8"?>\n'
+          '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+          + "".join(f"<url><loc>{u}</loc></url>\n" for u in urls) + "</urlset>\n")
+    write("robots.txt", f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}sitemap.xml\n")
+    cname = OUT / "CNAME"
+    if DOMAIN:
+        write("CNAME", DOMAIN + "\n")
+    elif cname.exists():
+        cname.unlink()
