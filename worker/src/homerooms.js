@@ -116,6 +116,40 @@ export async function weekCounts(call) {
   return out;
 }
 
+// Fill in blank emails on the Teachers tab from "K3=a@b.org,K4=...,1=...,12=..." (grade code or label).
+// Emails already typed in the tab are never changed. Returns how many rows were filled.
+export async function fillTeacherEmails(call, list) {
+  const want = {};
+  for (const part of String(list || "").split(/[,;\n]+/)) {
+    const [k, v] = part.split("=").map((x) => (x || "").trim());
+    if (k && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) want[gradeLabel(k)] = v;
+  }
+  const r = await call("GET", `/worksheets/${TEACHERS_SHEET}/range(address='A1:C40')?$select=values`);
+  if (!r.ok) throw new Error(`teachers ${r.status}`);
+  const rows = (await r.json()).values || [];
+  let filled = 0;
+  const col = rows.map((row, i) => {
+    const have = row[2] == null ? "" : String(row[2]).trim();
+    const email = want[String(row[0] || "").trim()];
+    if (i > 0 && !have && email) { filled++; return [email]; }
+    return [row[2] == null ? "" : row[2]];
+  });
+  if (filled) {
+    const w = await call("PATCH", `/worksheets/${TEACHERS_SHEET}/range(address='C1:C${col.length}')`, { values: col });
+    if (!w.ok) throw new Error(`teachers write ${w.status}`);
+  }
+  return filled;
+}
+
+function gradeLabel(k) {
+  const u = k.toUpperCase();
+  if (u === "K3" || u === "K4") return `Preschool (${u})`;
+  if (u === "K5" || u === "K") return "Kindergarten (K5)";
+  const n = Number(k);
+  if (Number.isInteger(n) && n >= 1 && n <= 12) return `${n}${n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th"} Grade`;
+  return k;
+}
+
 export async function readTeachers(call) {
   const r = await call("GET", `/worksheets/${TEACHERS_SHEET}/usedRange?$select=values`);
   if (!r.ok) throw new Error(`teachers ${r.status}`);

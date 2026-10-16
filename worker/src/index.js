@@ -6,7 +6,8 @@
 //   GET  /connect   one-time Microsoft sign-in by the office mailbox (needs ?key=SETUP_KEY)
 //   GET  /callback  Microsoft sends the sign-in back here
 //   POST /admin     upkeep, needs header X-Setup-Key: {"action":"setup"} adds the Teachers and
-//                   Homerooms tabs to the workbook if missing; {"action":"homerooms","week":"YYYY-MM-DD",
+//                   Homerooms tabs to the workbook if missing (and, with "teacher_emails", fills blank
+//                   teacher emails); {"action":"homerooms","week":"YYYY-MM-DD",
 //                   "test_to":"someone@..."} sends that week's homeroom emails to test_to only
 //   cron            Mondays 7:00 AM Eastern: homeroom lunch lists to teachers (src/homerooms.js)
 //
@@ -14,7 +15,7 @@
 // (send mail as that user, edit that user's OneDrive files). It never sees a password;
 // it keeps Microsoft's refresh token in KV. See worker/README.md for setup.
 
-import { checkHomerooms, ensureTabs, weekCounts, homeroomMails, mondayToSend, readTeachers, readWeek } from "./homerooms.js";
+import { checkHomerooms, ensureTabs, fillTeacherEmails, weekCounts, homeroomMails, mondayToSend, readTeachers, readWeek } from "./homerooms.js";
 
 const SCOPES = "offline_access User.Read Mail.Send Files.ReadWrite";
 const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri"];
@@ -81,7 +82,8 @@ async function admin(request, env) {
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
     const call = workbook(token, env);
     const added = await ensureTabs(call);
-    return json({ ok: true, tabs_added: added, homerooms_tab: await checkHomerooms(call) }, 200, {});
+    const filled = body.teacher_emails ? await fillTeacherEmails(call, body.teacher_emails) : 0;
+    return json({ ok: true, tabs_added: added, teacher_emails_filled: filled, homerooms_tab: await checkHomerooms(call) }, 200, {});
   }
   if (body.action === "weeks") { // how many order rows per week (no names), for checking the workbook
     const token = await accessToken(env);
