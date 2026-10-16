@@ -88,6 +88,19 @@ async function admin(request, env) {
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
     return json({ ok: true, weeks: await weekCounts(workbook(token, env)) }, 200, {});
   }
+  if (body.action === "menu") { // how fetching the menu goes, hop by hop (no secrets)
+    const hops = [];
+    let next = env.MENU_URL;
+    for (let i = 0; i < 5 && next; i++) {
+      try {
+        const r = await fetch(next, { redirect: "manual" });
+        const loc = r.headers.get("Location");
+        hops.push({ url: next, status: r.status, type: r.headers.get("Content-Type"), location: loc });
+        next = loc ? new URL(loc, next).toString() : "";
+      } catch (err) { hops.push({ url: next, error: String(err && err.message || err) }); next = ""; }
+    }
+    return json({ ok: true, hops }, 200, {});
+  }
   if (body.action === "homerooms") {
     const week = String(body.week || ""), to = String(body.test_to || "").trim();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(week) || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
