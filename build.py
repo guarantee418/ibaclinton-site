@@ -12,7 +12,7 @@ import pathlib, re
 
 # Formspree form ID for the Request Info form (the part after formspree.io/f/).
 # Leave empty until the form exists; the page then shows a "call or email us" notice.
-FORMSPREE_ID = ""
+FORMSPREE_ID = "xaeqabaz"  # Formspree account: ggreene@ibcministries.org
 
 # The site's own domain. Leave empty while the site is only a preview at
 # guarantee418.github.io/ibaclinton-site/. Set to "ibaclinton.com" on go-live day and rebuild:
