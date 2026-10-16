@@ -67,7 +67,8 @@ def lunch_block(data, root):
     menu = [(esc(d.get("day")), esc(d.get("meal"))) for d in data.get("menu") or [] if str(d.get("meal") or "").strip()]
     if not menu:
         return ('<p>A lunch menu form is sent out via email/text one week in advance for students to select '
-                'the days they would like to eat hot lunch.</p>' + contact +
+                'the days they would like to eat hot lunch.</p>'
+                + (f"<p>{esc(data.get('price'))}</p>" if esc(data.get("price")) else "") + contact +
                 f'<img src="{root}img/hot-lunch-menu.jpg" alt="Sample weekly hot lunch menu with a different meal '
                 'for each day, such as chicken parmesan, soft tacos, hot dogs, chili and burgers" loading="lazy" '
                 'width="1000" height="562" style="border-radius:4px;margin-top:.8rem">')
