@@ -6,7 +6,7 @@ in the editor), adds one row per student to the **Orders** table of the office w
 emails the parent a confirmation. Lunch charges are still entered in Gradelink by hand from
 the workbook (the office handles call-in changes and exceptions first).
 
-- **Mailbox:** `ibs@ibaministries.onmicrosoft.com` (Mrs. Napierala's office account). Confirmations
+- **Mailbox:** `ibs@ibaclinton.com` (Mrs. Napierala's office account). Confirmations
   are sent from it, replies go to `ibs@ibcministries.org`, and a copy stays in its Sent Items.
 - **Workbook:** `Hot Lunch Orders.xlsx` in the root of that account's OneDrive. Made by
   `make_workbook.py`; the Orders table's columns must stay in order.
@@ -17,7 +17,7 @@ the workbook (the office handles call-in changes and exceptions first).
 
 ## One-time setup (Garrett, as Microsoft 365 admin)
 
-1. **Workbook.** Sign in to OneDrive as `ibs@ibaministries.onmicrosoft.com` and upload
+1. **Workbook.** Sign in to OneDrive as `ibs@ibaclinton.com` and upload
    `Hot Lunch Orders.xlsx` to the main folder (not a subfolder). Share it with whoever needs it
    (Garrett, Mrs. Mora, kitchen). The account needs a license with Exchange Online and OneDrive.
 2. **Cloudflare (free).** Create an account at dash.cloudflare.com and pick a workers.dev
@@ -38,7 +38,7 @@ the workbook (the office handles call-in changes and exceptions first).
    `MS_CLIENT_SECRET`, and `LUNCH_SETUP_KEY` (any long random phrase; it protects the sign-in link).
 5. **Deploy:** Actions → "Deploy hot lunch order service" → Run workflow (on `main`). The run
    summary shows the service address; `/health` should answer `"connected":false`.
-6. **Connect the mailbox:** whoever signs in as `ibs@ibaministries.onmicrosoft.com` opens
+6. **Connect the mailbox:** whoever signs in as `ibs@ibaclinton.com` opens
    `https://ibaclinton-lunch.<subdomain>.workers.dev/connect?key=<LUNCH_SETUP_KEY>` and signs in.
    The page says "Connected" (it refuses any other account). `/health` then says `"connected":true`.
 7. **Turn it on:** set `LUNCH_API` in `build.py` to the service address, rebuild, and publish.
