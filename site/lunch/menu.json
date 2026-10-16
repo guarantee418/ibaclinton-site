@@ -1,14 +1,29 @@
 {
-  "week_start": "",
-  "week_label": "",
-  "deadline": "",
-  "deadline_label": "",
+  "week_start": "2026-10-19",
+  "week_label": "October 19 \u2013 21",
+  "deadline": "2026-10-19T00:00:00+00:00",
+  "deadline_label": "Sunday, October 18 at 8:00 PM",
   "prices": {
     "regular": 8.0,
     "preschool": 5.0
   },
-  "note": "",
-  "days": [],
+  "note": "TEST MENU \u2013 please ignore. Online ordering is being tested.",
+  "days": [
+    {
+      "key": "mon",
+      "day": "Monday",
+      "meal": "TEST \u2013 Chicken parmesan",
+      "date": "2026-10-19",
+      "date_label": "Oct 19"
+    },
+    {
+      "key": "wed",
+      "day": "Wednesday",
+      "meal": "TEST \u2013 Hot dogs",
+      "date": "2026-10-21",
+      "date_label": "Oct 21"
+    }
+  ],
   "grades": [
     {
       "value": "K3",

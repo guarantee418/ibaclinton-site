@@ -25,7 +25,7 @@ DOMAIN = ""
 # Address of the hot lunch order service (worker/, a Cloudflare Worker), for example
 # "https://ibaclinton-lunch.<account>.workers.dev". Empty = no online ordering: the page shows
 # the menu and, if the office pasted one, the Microsoft Forms link instead.
-LUNCH_API = ""
+LUNCH_API = "https://ibaclinton-lunch.guarantee418.workers.dev"
 
 # Google tag from the WordPress site (added there by Site Kit). Reusing it keeps the
 # Analytics history in one place. Only added to pages when DOMAIN is set.

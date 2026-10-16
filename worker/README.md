@@ -51,4 +51,4 @@ the workbook (the office handles call-in changes and exceptions first).
 - If the account's password is reset or its sessions are revoked, orders fail with "Online ordering
   isn't connected yet": repeat step 6.
 - When the site moves to ibaclinton.com, change `MENU_URL` in `wrangler.toml` and redeploy.
-- Tests: `node --test worker/test/` (no network; Microsoft is faked).
+- Tests: `node --test worker/test/worker.test.mjs` (no network; Microsoft is faked).

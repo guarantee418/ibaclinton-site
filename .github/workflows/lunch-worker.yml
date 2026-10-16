@@ -33,7 +33,7 @@ jobs:
         with:
           node-version: 22
       - name: Test
-        run: node --test test/
+        run: node --test test/worker.test.mjs
       - name: Find or create the KV namespace
         run: |
           id=$($WRANGLER kv namespace list | node -e '
