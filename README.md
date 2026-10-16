@@ -35,7 +35,7 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
   writes them to the office's Excel workbook and emails the parent a confirmation.
 - With `LUNCH_API` empty, the page shows the menu and the backup Microsoft Forms link, if any.
 
-## Go-live checklist (only with Garrett's approval)
+## Go-live checklist (only with Garrett Greene's approval)
 
 Done 2026-10-16 (steps 1-8). Still open: step 9 once GitHub has issued the certificate, and step 10.
 The ibs account's sign-in name is now ibs@ibaclinton.com too.
