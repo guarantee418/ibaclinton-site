@@ -264,9 +264,12 @@ async function conference(request, env, cors) {
   const mail = await graph(token, "POST", "/me/sendMail", parentMail(b, schedule, id, env));
   if (!mail.ok) console.error("conference mail", mail.status, await mail.text());
   try {
-    const to = teacherEmail(await readTeachers(call), b.teacher.name);
-    if (to) {
-      const t = await graph(token, "POST", "/me/sendMail", teacherMail(b, schedule, id, to, env));
+    // Every teacher in the panel (all three for High School) whose email is on the Teachers tab.
+    const teachers = await readTeachers(call);
+    for (const name of b.teacher.members && b.teacher.members.length ? b.teacher.members : [b.teacher.name]) {
+      const to = teacherEmail(teachers, name);
+      if (!to) continue;
+      const t = await graph(token, "POST", "/me/sendMail", teacherMail(b, schedule, id, to, name, env));
       if (!t.ok) console.error("teacher mail", t.status, await t.text());
     }
   } catch (err) { console.error("teacher mail", err && err.message); }

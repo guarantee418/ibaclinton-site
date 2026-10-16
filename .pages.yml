@@ -115,7 +115,7 @@ content:
         description: Optional extra line for parents, for example where to check in.
       - name: teachers
         label: Teachers
-        description: Each teacher gets their own sign-up panel. Type names the same way as on the Teachers tab of the office workbook, so the teacher gets an email for each booking.
+        description: Each teacher gets their own sign-up panel. Type teacher names the same way as on the Teachers tab of the office workbook, so each teacher gets an email for each booking.
         type: object
         list:
           collapsible:
@@ -130,6 +130,10 @@ content:
             label: Class or subject
             type: string
             description: For example 3rd Grade, or Art
+          - name: members
+            label: Teachers in this panel (only for a shared panel)
+            type: string
+            description: For a panel where several teachers meet each family together, list them with commas, for example Mr. Napierala, Mr. Damm, Mr. Greene. Each gets the booking email. Leave blank for one teacher.
 
   - name: parents
     label: Parent Portal page

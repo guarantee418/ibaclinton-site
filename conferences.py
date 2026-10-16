@@ -81,7 +81,11 @@ def schedule_data(data):
         while tid in seen:
             tid, n = f"{slug(name)}-{n}", n + 1
         seen.add(tid)
-        teachers.append({"id": tid, "name": name, "subject": str(item.get("subject") or "").strip()})
+        # A shared panel (High School: three teachers meet each family together) lists its teachers;
+        # each of them gets the booking email. A one-teacher panel is just its own name.
+        members = [m.strip() for m in re.split(r"[,;\n]", str(item.get("members") or "")) if m.strip()]
+        teachers.append({"id": tid, "name": name, "subject": str(item.get("subject") or "").strip(),
+                         "members": members or [name]})
     deadline = _deadline(data.get("booking_deadline"), day)
     return {
         "date": day.isoformat() if day else "",

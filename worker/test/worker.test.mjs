@@ -230,7 +230,9 @@ const SCHED = {
   deadline: "2026-11-13T20:00:00+00:00", deadline_label: "Friday, November 13 at 3:00 PM", note: "",
   slots: [{ id: "0900", label: "9:00 AM", end: "9:25 AM" }, { id: "0930", label: "9:30 AM", end: "9:55 AM" },
     { id: "1230", label: "12:30 PM", end: "12:55 PM" }],
-  teachers: [{ id: "mr-damm", name: "Mr. Damm", subject: "9th & 10th Grade" }, { id: "miss-ryans", name: "Miss Ryans", subject: "1st Grade" }],
+  teachers: [{ id: "mr-damm", name: "Mr. Damm", subject: "9th & 10th Grade", members: ["Mr. Damm"] },
+    { id: "miss-ryans", name: "Miss Ryans", subject: "1st Grade", members: ["Miss Ryans"] },
+    { id: "high-school-teachers", name: "High School Teachers", subject: "7th–12th Grade", members: ["Mr. Napierala", "Mr. Damm", "Mr. Greene"] }],
 };
 const CONF_URL = "https://site.test/conferences/schedule.json";
 const BOOK = { teacher: "mr-damm", slot: "0930", date: "2026-11-16", parent_first: "Pat", parent_last: "Smith",
@@ -291,7 +293,8 @@ function fakeConferences({ rows = [], table = true } = {}) {
     if (url.includes("/workbook/tables/Bookings/rows/add")) return ok({}, 201);
     if (url.includes("/workbook/worksheets?")) return ok({ value: [{ name: "Orders" }] });
     if (url.includes("/workbook/worksheets/Teachers/usedRange")) {
-      return ok({ values: [["Grade", "Teacher", "Email"], ["9th Grade", "Mr. Damm", "damm@school.test"]] });
+      return ok({ values: [["Grade", "Teacher", "Email"], ["9th Grade", "Mr. Damm", "damm@school.test"],
+        ["7th Grade", "Mr. Napierala", "nap@school.test"], ["11th Grade", "Mr. Greene", ""]] });
     }
     if (url.includes("/tables/add")) return ok({ id: "{T1}" });
     if (url.includes("/workbook/")) return ok({});
@@ -343,4 +346,14 @@ test("GET /conferences lists taken times and adds the tab when the workbook has 
   assert.ok(calls.some((c) => c.url.includes("/tables/add")));
   assert.ok(calls.some((c) => c.url.includes("/tables/%7BT1%7D") && JSON.parse(c.init.body).name === "Bookings"));
   assert.equal((await worker.fetch(new Request("https://lunch.test/conferences", { headers: { Origin: "https://evil.example" } }), CENV())).status, 403);
+});
+
+test("POST /conference for a shared panel emails each of its teachers that has an email", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: BEFORE });
+  const calls = fakeConferences();
+  const res = await worker.fetch(cpost({ ...BOOK, teacher: "high-school-teachers" }), CENV());
+  assert.equal(res.status, 200);
+  const mails = calls.filter((c) => c.url.endsWith("/me/sendMail")).map((c) => JSON.parse(c.init.body).message);
+  assert.deepEqual(mails.map((m) => m.toRecipients[0].emailAddress.address), ["pat@example.com", "nap@school.test", "damm@school.test"]);
+  assert.ok(mails[1].body.content.startsWith("<p>Mr. Napierala,</p>") && mails[1].body.content.includes("Mr. Napierala, Mr. Damm, Mr. Greene"));
 });

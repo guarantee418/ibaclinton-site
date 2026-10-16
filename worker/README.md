@@ -27,7 +27,9 @@ the workbook (the office handles call-in changes and exceptions first).
   `site/conferences/schedule.json` (`CONF_URL`). `GET /conferences` returns the taken times (no names);
   `POST /conference` checks the booking, adds a row to the **Bookings** table on the workbook's
   **Conferences** tab (added if missing), emails the parent a confirmation and, when the Teachers tab has
-  that teacher's email (matched by name), the teacher. The table decides what is taken: deleting a row
+  each teacher in the panel's email (matched by name), those teachers. High School (7th-12th) is one shared
+  panel: Mr. Napierala, Mr. Damm and Mr. Greene meet each family together (`members` in the content file).
+  The table decides what is taken: deleting a row
   frees the time; the office can type in call-in bookings (Time like "9:30 AM", Teacher as on the website).
   One booking per parent email per teacher. A KV lock (60 s) stops two parents taking one time at once.
 

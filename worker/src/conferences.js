@@ -136,11 +136,13 @@ export function parentMail(b, schedule, id, env) {
   return { message, saveToSentItems: true };
 }
 
-export function teacherMail(b, schedule, id, to, env) {
+export function teacherMail(b, schedule, id, to, name, env) {
   const e = escapeHtml;
+  const shared = (b.teacher.members || []).length > 1;
   const content =
-    `<p>${e(b.teacher.name)},</p>` +
-    `<p>A parent signed up for a conference with you on the school website:</p>` +
+    `<p>${e(name)},</p>` +
+    `<p>A parent signed up for a conference with you on the school website` +
+    (shared ? ` (${e(b.teacher.name)}: ${e(b.teacher.members.join(", "))})` : "") + `:</p>` +
     `<p style="margin:12px 0"><b>${e(schedule.date_label)}, ${e(b.slot.label)} to ${e(b.slot.end)}</b><br>` +
     `Student: ${e(b.student)}<br>Parent: ${e(b.first)} ${e(b.last)}<br>Email: ${e(b.email)}<br>Phone: ${e(b.phone)}` +
     (b.notes ? `<br>Wants to talk about: ${e(b.notes)}` : "") + `</p>` +
@@ -149,7 +151,7 @@ export function teacherMail(b, schedule, id, to, env) {
   const message = {
     subject: `Conference booked: ${b.student}, ${shortDate(schedule.date)} at ${b.slot.label}`,
     body: { contentType: "HTML", content },
-    toRecipients: [{ emailAddress: { address: to, name: b.teacher.name } }],
+    toRecipients: [{ emailAddress: { address: to, name } }],
   };
   if (env.REPLY_TO) message.replyTo = [{ emailAddress: { address: env.REPLY_TO } }];
   return { message, saveToSentItems: true };
