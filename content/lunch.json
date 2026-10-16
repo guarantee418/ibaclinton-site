@@ -1,4 +1,6 @@
 {
+  "week_start": "",
+  "order_deadline": "",
   "menu": [
     {
       "day": "Monday"
@@ -16,5 +18,8 @@
       "day": "Friday"
     }
   ],
-  "price": "Lunches are $8.00 ($5.00 for preschool)."
+  "price_regular": 8,
+  "price_preschool": 5,
+  "note": "",
+  "order_form_url": ""
 }

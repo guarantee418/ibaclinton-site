@@ -16,10 +16,21 @@ content:
     path: content/lunch.json
     format: json
     fields:
-      - name: week_of
-        label: Week of
-        type: string
-        description: For example "October 19 – 23". Leave the meals blank to show the general hot lunch text instead.
+      - name: week_start
+        label: Week starts (Monday)
+        type: date
+        default: ""
+        description: The Monday of the lunch week. Leave the meals blank to show the general hot lunch text instead.
+        options:
+          format: yyyy-MM-dd
+      - name: order_deadline
+        label: Order deadline
+        type: date
+        default: ""
+        description: Online ordering closes at this date and time (Eastern). After that, parents are told to call the office.
+        options:
+          time: true
+          format: yyyy-MM-dd'T'HH:mm
       - name: menu
         label: Menu
         type: object
@@ -30,29 +41,34 @@ content:
         fields:
           - name: day
             label: Day
-            type: string
+            type: select
+            options:
+              values: [Monday, Tuesday, Wednesday, Thursday, Friday]
           - name: meal
             label: Meal
             type: string
-      - name: price
-        label: Price
-        type: string
-        description: Shown under the menu. Currently "Lunches are $8.00 ($5.00 for preschool)."
-      - name: order_by
-        label: Order by
-        type: string
-        description: Optional deadline shown above the button, for example "Thursday, October 15".
-      - name: order_form_url
-        label: Order form link
-        type: string
-        description: The Microsoft Forms link for the order form, the same one that is texted to families (for example https://forms.cloud.microsoft/r/...). Leave blank to hide the button.
-        pattern:
-          regex: "^(https://.*)?$"
-          message: "Paste the full link, starting with https://"
+            description: Leave blank for a day with no hot lunch.
+      - name: price_regular
+        label: Price per lunch (K5 to 12th)
+        type: number
+        options:
+          min: 0
+      - name: price_preschool
+        label: Price per lunch (preschool)
+        type: number
+        options:
+          min: 0
       - name: note
         label: Note
         type: text
         description: Optional extra line, for example a schedule change.
+      - name: order_form_url
+        label: Backup order form link
+        type: string
+        description: Only used if online ordering is turned off. A Microsoft Forms link (https://forms.cloud.microsoft/r/...) is shown right on the page.
+        pattern:
+          regex: "^(https://.*)?$"
+          message: "Paste the full link, starting with https://"
 
   - name: documents
     label: Parent Portal documents

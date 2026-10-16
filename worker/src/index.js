@@ -1,0 +1,277 @@
+// Hot lunch order service for ibaclinton.com (Cloudflare Worker).
+//
+//   POST /order     an order from the Parent Portal form: checked against the published menu,
+//                   added to the "Orders" table of the office workbook, confirmation emailed
+//   GET  /health    {"ok":true,"connected":true|false}
+//   GET  /connect   one-time Microsoft sign-in by the office mailbox (needs ?key=SETUP_KEY)
+//   GET  /callback  Microsoft sends the sign-in back here
+//
+// Microsoft 365 access is delegated: the Worker acts only as the mailbox in MAILBOX
+// (send mail as that user, edit that user's OneDrive files). It never sees a password;
+// it keeps Microsoft's refresh token in KV. See worker/README.md for setup.
+
+const SCOPES = "offline_access User.Read Mail.Send Files.ReadWrite";
+const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri"];
+const MAX_CHILDREN = 8;
+const GRAPH = "https://graph.microsoft.com/v1.0";
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const cors = corsHeaders(request, env);
+    try {
+      if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+      if (url.pathname === "/health") {
+        return json({ ok: true, connected: !!(await env.LUNCH_KV.get("ms_refresh")) }, 200, cors);
+      }
+      if (url.pathname === "/connect" && request.method === "GET") return connect(url, env);
+      if (url.pathname === "/callback" && request.method === "GET") return callback(url, env);
+      if (url.pathname === "/order" && request.method === "POST") return await order(request, env, cors);
+      return json({ ok: false, error: "Not found" }, 404, cors);
+    } catch (err) {
+      console.error(err && err.stack || err);
+      return json({ ok: false, error: "Something went wrong on our end" }, 500, cors);
+    }
+  },
+};
+
+// ------------------------------------------------------------------ orders
+async function order(request, env, cors) {
+  if (!cors["Access-Control-Allow-Origin"]) return json({ ok: false, error: "Not allowed" }, 403, cors);
+  const text = await request.text();
+  if (text.length > 20000) return json({ ok: false, error: "Order is too large" }, 413, cors);
+  let body;
+  try { body = JSON.parse(text); } catch { return json({ ok: false, error: "Bad request" }, 400, cors); }
+  if (body.website) return json({ ok: true, order_id: "0", total: 0, email_sent: true }, 200, cors); // spam trap
+
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  if (await tooMany(env, ip)) {
+    return json({ ok: false, error: "Too many orders from this connection; please call the office" }, 429, cors);
+  }
+  const menu = await loadMenu(env);
+  const checked = validateOrder(body, menu, Date.now());
+  if (checked.error) return json({ ok: false, error: checked.error }, 400, cors);
+
+  const orderId = newOrderId();
+  const token = await accessToken(env);
+  if (!token) return json({ ok: false, error: "Online ordering isn't connected yet" }, 503, cors);
+
+  const rows = orderRows(checked.order, menu, orderId, new Date());
+  const add = await graph(token, "POST",
+    `/me/drive/root:/${encodePath(env.WORKBOOK_PATH)}:/workbook/tables/${encodeURIComponent(env.TABLE || "Orders")}/rows/add`,
+    { index: null, values: rows });
+  if (!add.ok) {
+    console.error("workbook", add.status, await add.text());
+    return json({ ok: false, error: "We couldn't save your order" }, 502, cors);
+  }
+  const mail = await graph(token, "POST", "/me/sendMail", confirmationMail(checked.order, menu, orderId, env));
+  if (!mail.ok) console.error("mail", mail.status, await mail.text());
+  return json({ ok: true, order_id: orderId, total: checked.order.total, email_sent: mail.ok }, 200, cors);
+}
+
+export function validateOrder(body, menu, now) {
+  if (!menu || !menu.week_start || !menu.deadline || !menu.days || !menu.days.length) {
+    return { error: "Online ordering isn't open right now" };
+  }
+  if (now > Date.parse(menu.deadline)) return { error: "Ordering for this week is closed; please call the office" };
+  if (body.week_start && body.week_start !== menu.week_start) {
+    return { error: "The menu changed; please reload the page and order again" };
+  }
+  const str = (v, max) => String(v == null ? "" : v).replace(/[\u0000-\u001f]/g, " ").trim().slice(0, max);
+  const parent = {
+    first: str(body.parent_first, 60), last: str(body.parent_last, 60),
+    email: str(body.email, 120), phone: str(body.phone, 30),
+  };
+  if (!parent.first || !parent.last) return { error: "Please enter your first and last name" };
+  if (!/^[^@\s<>"]+@[^@\s<>"]+\.[^@\s<>"]+$/.test(parent.email)) return { error: "Please enter a valid email address" };
+  if (!parent.phone) return { error: "Please enter a phone number" };
+  const kids = Array.isArray(body.children) ? body.children : [];
+  if (!kids.length) return { error: "Please add a student" };
+  if (kids.length > MAX_CHILDREN) return { error: "Too many students in one order" };
+  const open = new Map(menu.days.map((d) => [d.key, d]));
+  const grades = new Map(menu.grades.map((g) => [g.value, g]));
+  const children = [];
+  let total = 0;
+  for (const k of kids) {
+    const name = str(k && k.name, 80);
+    const grade = grades.get(str(k && k.grade, 10));
+    const days = [...new Set(Array.isArray(k && k.days) ? k.days.map((d) => str(d, 3)) : [])];
+    if (!name) return { error: "Please enter each student's name" };
+    if (!grade) return { error: `Please choose a grade for ${name}` };
+    if (!days.length) return { error: `Please choose at least one day for ${name}` };
+    if (days.some((d) => !open.has(d))) return { error: "That day isn't on this week's menu; please reload the page" };
+    const price = grade.preschool ? menu.prices.preschool : menu.prices.regular;
+    const ordered = DAY_KEYS.filter((d) => days.includes(d));
+    total += price * ordered.length;
+    children.push({ name, grade, price, days: ordered });
+  }
+  return { order: { parent, children, total: Math.round(total * 100) / 100 } };
+}
+
+export function orderRows(order, menu, orderId, now) {
+  const parent = `${order.parent.first} ${order.parent.last}`;
+  return order.children.map((c) => [
+    eastern(now, true), usDate(menu.week_start), orderId, parent, order.parent.email, order.parent.phone,
+    c.name, c.grade.label, c.grade.preschool ? "Yes" : "No", c.price,
+    ...DAY_KEYS.map((d) => (c.days.includes(d) ? "X" : "")),
+    '=COUNTIF(Orders[@[Mon]:[Fri]],"X")', "=[@Lunches]*[@[Price per lunch]]", "",
+  ]);
+}
+
+export function confirmationMail(order, menu, orderId, env) {
+  const e = escapeHtml;
+  const byKey = new Map(menu.days.map((d) => [d.key, d]));
+  const kids = order.children.map((c) => {
+    const lines = c.days.map((d) => {
+      const day = byKey.get(d);
+      return `<li>${e(day.day)} ${e(day.date_label)}: ${e(day.meal)}</li>`;
+    }).join("");
+    return `<p style="margin:12px 0 4px"><b>${e(c.name)}</b> (${e(c.grade.label)}), ${c.days.length} lunch` +
+      `${c.days.length === 1 ? "" : "es"} at ${money(c.price)}: ${money(c.price * c.days.length)}</p><ul style="margin:0">${lines}</ul>`;
+  }).join("");
+  const content =
+    `<p>Dear ${e(order.parent.first)} ${e(order.parent.last)},</p>` +
+    `<p>Thank you for your hot lunch order for the week of ${e(menu.week_label)}. Here is what we received:</p>` +
+    kids +
+    `<p style="margin-top:14px"><b>Total: ${money(order.total)}</b> (order number ${e(orderId)})</p>` +
+    `<p>Lunch charges are added to your Gradelink account. To change or cancel this order, please call the ` +
+    `school office at (301) 856-1616 or reply to this email.</p>` +
+    `<p>Gratefully,<br>${e(env.SIGNATURE || "Independent Baptist Academy")}</p>`;
+  const message = {
+    subject: `Hot lunch order received: week of ${menu.week_label}`,
+    body: { contentType: "HTML", content },
+    toRecipients: [{ emailAddress: { address: order.parent.email, name: `${order.parent.first} ${order.parent.last}` } }],
+  };
+  if (env.REPLY_TO) message.replyTo = [{ emailAddress: { address: env.REPLY_TO } }];
+  return { message, saveToSentItems: true };
+}
+
+async function loadMenu(env) {
+  const r = await fetch(env.MENU_URL, { cf: { cacheTtl: 30 } });
+  if (!r.ok) throw new Error(`menu ${r.status}`);
+  return r.json();
+}
+
+async function tooMany(env, ip) {
+  const key = `rl:${ip}`;
+  const n = parseInt((await env.LUNCH_KV.get(key)) || "0", 10);
+  if (n >= 10) return true;
+  await env.LUNCH_KV.put(key, String(n + 1), { expirationTtl: 3600 });
+  return false;
+}
+
+// ------------------------------------------------------------------ Microsoft sign-in
+let cached = { token: "", expires: 0 }; // access token for this Worker instance
+
+function redirectUri(url) { return `${url.origin}/callback`; }
+
+async function connect(url, env) {
+  if (!env.SETUP_KEY || url.searchParams.get("key") !== env.SETUP_KEY) return page("Not allowed.", 403);
+  const state = newOrderId() + newOrderId();
+  await env.LUNCH_KV.put(`state:${state}`, "1", { expirationTtl: 600 });
+  const auth = new URL(`https://login.microsoftonline.com/${env.TENANT_ID}/oauth2/v2.0/authorize`);
+  auth.search = new URLSearchParams({
+    client_id: env.CLIENT_ID, response_type: "code", redirect_uri: redirectUri(url),
+    response_mode: "query", scope: SCOPES, state, login_hint: env.MAILBOX, prompt: "select_account",
+  });
+  return Response.redirect(auth.toString(), 302);
+}
+
+async function callback(url, env) {
+  const state = url.searchParams.get("state") || "";
+  if (!state || !(await env.LUNCH_KV.get(`state:${state}`))) return page("This sign-in link expired. Please start again.", 400);
+  await env.LUNCH_KV.delete(`state:${state}`);
+  const code = url.searchParams.get("code");
+  if (!code) return page(`Microsoft sign-in didn't finish: ${escapeHtml(url.searchParams.get("error_description") || "no code")}`, 400);
+  const tok = await tokenRequest(env, { grant_type: "authorization_code", code, redirect_uri: redirectUri(url) });
+  if (!tok.access_token || !tok.refresh_token) return page("Microsoft sign-in failed. Please try again.", 400);
+  const me = await (await graph(tok.access_token, "GET", "/me?$select=userPrincipalName,mail")).json();
+  const who = String(me.userPrincipalName || me.mail || "").toLowerCase();
+  if (who !== String(env.MAILBOX).toLowerCase()) {
+    return page(`Signed in as ${escapeHtml(who)}, but online ordering must be connected with ${escapeHtml(env.MAILBOX)}. ` +
+      "Please sign out of Microsoft and try again.", 403);
+  }
+  await env.LUNCH_KV.put("ms_refresh", tok.refresh_token);
+  cached = { token: "", expires: 0 };
+  return page(`Connected. Hot lunch orders will be saved to ${escapeHtml(env.WORKBOOK_PATH)} and confirmations ` +
+    `sent from ${escapeHtml(env.MAILBOX)}. You can close this page.`);
+}
+
+async function accessToken(env) {
+  if (cached.token && Date.now() < cached.expires) return cached.token;
+  const refresh = await env.LUNCH_KV.get("ms_refresh");
+  if (!refresh) return "";
+  const tok = await tokenRequest(env, { grant_type: "refresh_token", refresh_token: refresh, scope: SCOPES });
+  if (!tok.access_token) {
+    console.error("token refresh failed", tok.error, tok.error_description);
+    return "";
+  }
+  if (tok.refresh_token && tok.refresh_token !== refresh) await env.LUNCH_KV.put("ms_refresh", tok.refresh_token);
+  cached = { token: tok.access_token, expires: Date.now() + (Number(tok.expires_in || 3600) - 300) * 1000 };
+  return cached.token;
+}
+
+async function tokenRequest(env, params) {
+  const r = await fetch(`https://login.microsoftonline.com/${env.TENANT_ID}/oauth2/v2.0/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ client_id: env.CLIENT_ID, client_secret: env.CLIENT_SECRET, ...params }),
+  });
+  return r.json();
+}
+
+function graph(token, method, path, body) {
+  return fetch(GRAPH + path, {
+    method,
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+}
+
+// ------------------------------------------------------------------ helpers
+function corsHeaders(request, env) {
+  const origin = request.headers.get("Origin") || "";
+  const allowed = String(env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
+  const h = { "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type", Vary: "Origin" };
+  if (allowed.includes(origin)) h["Access-Control-Allow-Origin"] = origin;
+  return h;
+}
+
+function json(data, status, headers) {
+  return new Response(JSON.stringify(data), { status, headers: { ...headers, "Content-Type": "application/json" } });
+}
+
+function page(message, status = 200) {
+  return new Response(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">` +
+    `<title>Hot lunch ordering</title><body style="font:17px/1.5 system-ui,sans-serif;max-width:36em;margin:3em auto;padding:0 1em">` +
+    `<h1 style="font-size:1.4em">Hot lunch ordering</h1><p>${message}</p></body>`,
+  { status, headers: { "Content-Type": "text/html; charset=utf-8" } });
+}
+
+function newOrderId() {
+  const a = new Uint8Array(5);
+  crypto.getRandomValues(a);
+  return Array.from(a, (b) => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[b % 32]).join("");
+}
+
+function encodePath(p) { return String(p).split("/").map(encodeURIComponent).join("/"); }
+
+export function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function money(n) { return "$" + Number(n).toFixed(2); }
+
+function usDate(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${m}/${d}/${y}`;
+}
+
+function eastern(date, withTime) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York", year: "numeric", month: "numeric", day: "numeric",
+    hour: "numeric", minute: "2-digit", hour12: true,
+  }).formatToParts(date).map((p) => [p.type, p.value]));
+  const day = `${parts.month}/${parts.day}/${parts.year}`;
+  return withTime ? `${day} ${parts.hour}:${parts.minute} ${parts.dayPeriod}` : day;
+}

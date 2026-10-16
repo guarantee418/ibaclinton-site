@@ -1,0 +1,25 @@
+# Hot lunch order service. Deployed by .github/workflows/lunch-worker.yml (manual run).
+# Secrets (set by the workflow from GitHub secrets, never in this file):
+#   CLIENT_SECRET  Microsoft Entra app client secret
+#   SETUP_KEY      random value that protects the one-time /connect sign-in link
+name = "ibaclinton-lunch"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+# KV namespace for Microsoft's sign-in token and short-lived values. The workflow fills in the id.
+[[kv_namespaces]]
+binding = "LUNCH_KV"
+id = "REPLACED_BY_WORKFLOW"
+
+[vars]
+MENU_URL = "https://guarantee418.github.io/ibaclinton-site/lunch/menu.json"
+ALLOWED_ORIGINS = "https://guarantee418.github.io,https://ibaclinton.com,https://www.ibaclinton.com"
+MAILBOX = "ibs@ibaministries.onmicrosoft.com"
+REPLY_TO = "ibs@ibcministries.org"
+SIGNATURE = "Mrs. Napierala<br>Independent Baptist Academy"
+WORKBOOK_PATH = "Hot Lunch Orders.xlsx"
+TABLE = "Orders"
+# Filled in by the workflow from GitHub secrets (not secret, but kept out of this public repo):
+TENANT_ID = ""
+CLIENT_ID = ""

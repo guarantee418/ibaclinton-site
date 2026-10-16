@@ -145,3 +145,10 @@ form.info button{justify-self:start;cursor:pointer;font:inherit;font-weight:600}
 .two img.flyer,.camp img{aspect-ratio:auto;object-fit:contain}
 table.lunch{border-collapse:collapse;width:100%;margin:.6rem 0 1rem}table.lunch th,table.lunch td{text-align:left;padding:.55rem .7rem;border-bottom:1px solid var(--line);vertical-align:top}table.lunch th{width:7.5em;color:var(--navy)}.lunch-week{font-weight:600;color:var(--navy);margin-bottom:.2rem}.lunch-by{font-weight:600}
 .lunch-form{display:block;width:100%;height:900px;border:1px solid var(--line);border-radius:4px;margin:.6rem 0 1rem;background:#fff}
+.lunch-date{display:block;font-weight:400;color:var(--muted);font-size:.85rem}
+.lunch-order{margin-top:1.4rem}.lunch-order h3{margin:0;font-size:1.3rem;color:var(--navy)}
+.lunch-days{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem}
+form.info label.lunch-day{flex-direction:row;align-items:flex-start;gap:.5rem;font-weight:400;border:1px solid var(--line);border-radius:4px;padding:.6rem .7rem;cursor:pointer}
+.lunch-day input{margin-top:.25rem}.lunch-day:has(input:checked){border-color:var(--gold);background:#fff7e0}
+.lunch-remove{grid-column:1/-1;justify-self:start;background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font:inherit;padding:0}
+.lunch-total{font-size:1.15rem;margin:0}.lunch-fine{color:var(--muted);font-size:.9rem}
