@@ -1,0 +1,107 @@
+{
+  "date": "2026-11-16",
+  "date_label": "Monday, November 16, 2026",
+  "minutes": 25,
+  "deadline": "2026-11-13T20:00:00+00:00",
+  "deadline_label": "Friday, November 13 at 3:00 PM",
+  "note": "",
+  "slots": [
+    {
+      "id": "0900",
+      "label": "9:00 AM",
+      "end": "9:25 AM"
+    },
+    {
+      "id": "0930",
+      "label": "9:30 AM",
+      "end": "9:55 AM"
+    },
+    {
+      "id": "1000",
+      "label": "10:00 AM",
+      "end": "10:25 AM"
+    },
+    {
+      "id": "1030",
+      "label": "10:30 AM",
+      "end": "10:55 AM"
+    },
+    {
+      "id": "1100",
+      "label": "11:00 AM",
+      "end": "11:25 AM"
+    },
+    {
+      "id": "1130",
+      "label": "11:30 AM",
+      "end": "11:55 AM"
+    },
+    {
+      "id": "1200",
+      "label": "12:00 PM",
+      "end": "12:25 PM"
+    },
+    {
+      "id": "1230",
+      "label": "12:30 PM",
+      "end": "12:55 PM"
+    }
+  ],
+  "teachers": [
+    {
+      "id": "miss-dove",
+      "name": "Miss Dove",
+      "subject": "Preschool (K3)"
+    },
+    {
+      "id": "mrs-febo",
+      "name": "Mrs. Febo",
+      "subject": "Preschool (K4)"
+    },
+    {
+      "id": "ms-schmidley",
+      "name": "Ms. Schmidley",
+      "subject": "Kindergarten (K5)"
+    },
+    {
+      "id": "miss-ryans",
+      "name": "Miss Ryans",
+      "subject": "1st Grade"
+    },
+    {
+      "id": "ms-raymond",
+      "name": "Ms. Raymond",
+      "subject": "2nd Grade"
+    },
+    {
+      "id": "mrs-lundberg",
+      "name": "Mrs. Lundberg",
+      "subject": "3rd Grade"
+    },
+    {
+      "id": "mrs-kirby",
+      "name": "Mrs. Kirby",
+      "subject": "4th Grade"
+    },
+    {
+      "id": "mrs-baumgartner",
+      "name": "Mrs. Baumgartner",
+      "subject": "5th & 6th Grade"
+    },
+    {
+      "id": "mr-napierala",
+      "name": "Mr. Napierala",
+      "subject": "7th & 8th Grade"
+    },
+    {
+      "id": "mr-damm",
+      "name": "Mr. Damm",
+      "subject": "9th & 10th Grade"
+    },
+    {
+      "id": "mr-greene",
+      "name": "Mr. Greene",
+      "subject": "11th & 12th Grade"
+    }
+  ]
+}

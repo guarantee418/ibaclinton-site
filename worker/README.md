@@ -21,6 +21,15 @@ the workbook (the office handles call-in changes and exceptions first).
   email, and teachers with no lunches that week, get nothing. Sent once per week (KV `homerooms:<date>`).
   The Worker also adds a live **Homerooms** tab. Both tabs are added only if missing (on each deploy and
   each Monday run). Test: Actions -> "Send a test homeroom lunch email" (one week, one address, marked TEST).
+- **Parent-teacher conferences** (`src/conferences.js`, built 2026-10-16, not live until Garrett approves):
+  parents sign up on ibaclinton.com/conferences/ (one panel per teacher). The day, hours, session length,
+  break and teachers come from `content/conferences.json` (office editor), published as
+  `site/conferences/schedule.json` (`CONF_URL`). `GET /conferences` returns the taken times (no names);
+  `POST /conference` checks the booking, adds a row to the **Bookings** table on the workbook's
+  **Conferences** tab (added if missing), emails the parent a confirmation and, when the Teachers tab has
+  that teacher's email (matched by name), the teacher. The table decides what is taken: deleting a row
+  frees the time; the office can type in call-in bookings (Time like "9:30 AM", Teacher as on the website).
+  One booking per parent email per teacher. A KV lock (60 s) stops two parents taking one time at once.
 
 ## One-time setup (Garrett, as Microsoft 365 admin)
 

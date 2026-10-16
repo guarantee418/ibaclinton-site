@@ -2,11 +2,14 @@
 //
 //   POST /order     an order from the Parent Portal form: checked against the published menu,
 //                   added to the "Orders" table of the office workbook, confirmation emailed
+//   GET  /conferences  which conference times are taken, by teacher (no names)
+//   POST /conference   a parent-teacher conference booking (src/conferences.js): checked against the
+//                   published schedule, added to the Conferences tab of the office workbook, emailed
 //   GET  /health    {"ok":true,"connected":true|false}
 //   GET  /connect   one-time Microsoft sign-in by the office mailbox (needs ?key=SETUP_KEY)
 //   GET  /callback  Microsoft sends the sign-in back here
 //   POST /admin     upkeep, needs header X-Setup-Key: {"action":"setup"} adds the Teachers and
-//                   Homerooms tabs to the workbook if missing; {"action":"homerooms","week":"YYYY-MM-DD",
+//                   Homerooms tabs (and the Conferences tab) to the workbook if missing; {"action":"homerooms","week":"YYYY-MM-DD",
 //                   "test_to":"someone@..."} sends that week's homeroom emails to test_to only
 //   cron            Mondays 7:00 AM Eastern: homeroom lunch lists to teachers (src/homerooms.js)
 //
@@ -14,6 +17,8 @@
 // (send mail as that user, edit that user's OneDrive files). It never sees a password;
 // it keeps Microsoft's refresh token in KV. See worker/README.md for setup.
 
+import { TABLE as CONF_TABLE, bookingRow, conflict, ensureConferenceTab, parentMail, readBookings, takenSlots, teacherEmail,
+  teacherMail, validateBooking } from "./conferences.js";
 import { checkHomerooms, ensureTabs, homeroomMails, mondayToSend, readTeachers, readWeek } from "./homerooms.js";
 
 const SCOPES = "offline_access User.Read Mail.Send Files.ReadWrite";
@@ -33,6 +38,8 @@ export default {
       if (url.pathname === "/connect" && request.method === "GET") return connect(url, env);
       if (url.pathname === "/callback" && request.method === "GET") return callback(url, env);
       if (url.pathname === "/order" && request.method === "POST") return await order(request, env, cors);
+      if (url.pathname === "/conferences" && request.method === "GET") return await conferences(env, cors);
+      if (url.pathname === "/conference" && request.method === "POST") return await conference(request, env, cors);
       if (url.pathname === "/admin" && request.method === "POST") return await admin(request, env);
       return json({ ok: false, error: "Not found" }, 404, cors);
     } catch (err) {
@@ -81,6 +88,7 @@ async function admin(request, env) {
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
     const call = workbook(token, env);
     const added = await ensureTabs(call);
+    if (await ensureConferenceTab(call)) added.push("Conferences");
     return json({ ok: true, tabs_added: added, homerooms_tab: await checkHomerooms(call) }, 200, {});
   }
   if (body.action === "homerooms") {
@@ -204,14 +212,89 @@ export function confirmationMail(order, menu, orderId, env) {
   return { message, saveToSentItems: true };
 }
 
+// ------------------------------------------------------------------ conferences
+async function conferences(env, cors) {
+  if (!cors["Access-Control-Allow-Origin"]) return json({ ok: false, error: "Not allowed" }, 403, cors);
+  const schedule = await loadJson(env.CONF_URL);
+  const token = await accessToken(env);
+  if (!token) return json({ ok: false, error: "Online sign-up isn't connected yet" }, 503, cors);
+  const bookings = await bookingsOrTab(workbook(token, env));
+  return json({ ok: true, date: schedule.date, taken: takenSlots(schedule, bookings) }, 200, cors);
+}
+
+async function conference(request, env, cors) {
+  if (!cors["Access-Control-Allow-Origin"]) return json({ ok: false, error: "Not allowed" }, 403, cors);
+  const text = await request.text();
+  if (text.length > 5000) return json({ ok: false, error: "Too large" }, 413, cors);
+  let body;
+  try { body = JSON.parse(text); } catch { return json({ ok: false, error: "Bad request" }, 400, cors); }
+  if (body.website) return json({ ok: true, booking_id: "0", time: "", email_sent: true }, 200, cors); // spam trap
+
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  if (await tooMany(env, ip, "rlc")) {
+    return json({ ok: false, error: "Too many sign-ups from this connection; please call the office" }, 429, cors);
+  }
+  const schedule = await loadJson(env.CONF_URL);
+  const checked = validateBooking(body, schedule, Date.now());
+  if (checked.error) return json({ ok: false, error: checked.error }, 400, cors);
+  const b = checked.booking;
+  const token = await accessToken(env);
+  if (!token) return json({ ok: false, error: "Online sign-up isn't connected yet" }, 503, cors);
+
+  // Two parents tapping the same time at once: the first one holds it for a minute while it is saved.
+  const lock = `conf-lock:${schedule.date}:${b.teacher.id}:${b.slot.id}`;
+  const taken = { ok: false, code: "taken", error: `Someone just booked ${b.slot.label} with ${b.teacher.name}. Please pick another time.` };
+  if (await env.LUNCH_KV.get(lock)) return json(taken, 409, cors);
+  await env.LUNCH_KV.put(lock, "1", { expirationTtl: 60 });
+
+  const call = workbook(token, env);
+  const clash = conflict(b, schedule, await bookingsOrTab(call));
+  if (clash) {
+    if (clash.code !== "taken") await env.LUNCH_KV.delete(lock);
+    return json({ ok: false, ...clash }, clash.code === "taken" ? 409 : 400, cors);
+  }
+  const id = newOrderId();
+  const add = await call("POST", `/tables/${CONF_TABLE}/rows/add`,
+    { index: null, values: [bookingRow(b, schedule, id, eastern(new Date(), true))] });
+  if (!add.ok) {
+    console.error("conference workbook", add.status, await add.text());
+    await env.LUNCH_KV.delete(lock);
+    return json({ ok: false, error: "We couldn't save your booking" }, 502, cors);
+  }
+  const mail = await graph(token, "POST", "/me/sendMail", parentMail(b, schedule, id, env));
+  if (!mail.ok) console.error("conference mail", mail.status, await mail.text());
+  try {
+    const to = teacherEmail(await readTeachers(call), b.teacher.name);
+    if (to) {
+      const t = await graph(token, "POST", "/me/sendMail", teacherMail(b, schedule, id, to, env));
+      if (!t.ok) console.error("teacher mail", t.status, await t.text());
+    }
+  } catch (err) { console.error("teacher mail", err && err.message); }
+  return json({ ok: true, booking_id: id, time: b.slot.label, email_sent: mail.ok }, 200, cors);
+}
+
+// The bookings, adding the Conferences tab first if the workbook doesn't have it yet.
+async function bookingsOrTab(call) {
+  const rows = await readBookings(call);
+  if (rows) return rows;
+  await ensureConferenceTab(call);
+  return [];
+}
+
+async function loadJson(url) {
+  const r = await fetch(url, { cf: { cacheTtl: 30 } });
+  if (!r.ok) throw new Error(`${url} ${r.status}`);
+  return r.json();
+}
+
 async function loadMenu(env) {
   const r = await fetch(env.MENU_URL, { cf: { cacheTtl: 30 } });
   if (!r.ok) throw new Error(`menu ${r.status}`);
   return r.json();
 }
 
-async function tooMany(env, ip) {
-  const key = `rl:${ip}`;
+async function tooMany(env, ip, prefix = "rl") {
+  const key = `${prefix}:${ip}`;
   const n = parseInt((await env.LUNCH_KV.get(key)) || "0", 10);
   if (n >= 10) return true;
   await env.LUNCH_KV.put(key, String(n + 1), { expirationTtl: 3600 });
@@ -290,7 +373,7 @@ function graph(token, method, path, body) {
 function corsHeaders(request, env) {
   const origin = request.headers.get("Origin") || "";
   const allowed = String(env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
-  const h = { "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type", Vary: "Origin" };
+  const h = { "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type", Vary: "Origin" };
   if (allowed.includes(origin)) h["Access-Control-Allow-Origin"] = origin;
   return h;
 }

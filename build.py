@@ -11,6 +11,7 @@ Keys: title, description, nav (which menu item to highlight), cta (no = hide the
 import html, json, pathlib, re
 from html.parser import HTMLParser
 
+import conferences
 import lunch
 
 # Formspree form ID for the Request Info form (the part after formspree.io/f/).
@@ -147,6 +148,9 @@ def render(path, text, layout):
     title = meta.get("fulltitle") or f'{meta["title"]} | Independent Baptist Academy'
     if "{{lunch}}" in body:
         body = body.replace("{{lunch}}", lunch.lunch_block(json.loads((CONTENT / "lunch.json").read_text()), root, LUNCH_API))
+    if "{{conferences}}" in body:
+        body = body.replace("{{conferences}}", conferences.page_block(
+            json.loads((CONTENT / "conferences.json").read_text()), root, LUNCH_API))
     if "{{parents}}" in body:
         body = body.replace("{{parents}}", parents_block(json.loads((CONTENT / "parents.json").read_text()), root))
     if FORMSPREE_ID:
@@ -187,6 +191,8 @@ if __name__ == "__main__":
           + "".join(f"<url><loc>{u}</loc></url>\n" for u in urls) + "</urlset>\n")
     (OUT / "lunch").mkdir(exist_ok=True)
     write("lunch/menu.json", lunch.menu_file(json.loads((CONTENT / "lunch.json").read_text())))
+    (OUT / "conferences").mkdir(exist_ok=True)
+    write("conferences/schedule.json", conferences.schedule_file(json.loads((CONTENT / "conferences.json").read_text())))
     write("robots.txt", f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}sitemap.xml\n")
     cname = OUT / "CNAME"
     if DOMAIN:

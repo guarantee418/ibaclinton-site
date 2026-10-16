@@ -3,6 +3,19 @@
   "intro": "This is your hub for staying up-to-date on your child’s school life. You can find information about school events and resources. We’re here to make it easier for you to be involved in your child’s education. Thank you for being part of our school community.",
   "sections": [
     {
+      "title": "Parent-Teacher Conferences",
+      "menu_label": "Conferences",
+      "anchor": "conferences",
+      "text": "<p>Sign up for a 25-minute conference with your child’s teacher on Monday, November 16, between 9:00 AM and 1:00 PM.</p>",
+      "links": [
+        {
+          "title": "Sign up for a conference",
+          "url": "https://ibaclinton.com/conferences/"
+        }
+      ],
+      "show_lunch": false
+    },
+    {
       "title": "Gradelink",
       "menu_label": "Gradelink",
       "anchor": "gradelink",
