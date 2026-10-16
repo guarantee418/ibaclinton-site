@@ -1,25 +1,30 @@
 {
-  "week_start": "",
-  "order_deadline": "",
+  "week_start": "2026-10-19",
+  "order_deadline": "2026-10-18T20:00",
   "menu": [
     {
-      "day": "Monday"
+      "day": "Monday",
+      "meal": "TEST \u2013 Chicken parmesan"
     },
     {
-      "day": "Tuesday"
+      "day": "Tuesday",
+      "meal": ""
     },
     {
-      "day": "Wednesday"
+      "day": "Wednesday",
+      "meal": "TEST \u2013 Hot dogs"
     },
     {
-      "day": "Thursday"
+      "day": "Thursday",
+      "meal": ""
     },
     {
-      "day": "Friday"
+      "day": "Friday",
+      "meal": ""
     }
   ],
   "price_regular": 8,
   "price_preschool": 5,
-  "note": "",
+  "note": "TEST MENU \u2013 please ignore. Online ordering is being tested.",
   "order_form_url": ""
 }
