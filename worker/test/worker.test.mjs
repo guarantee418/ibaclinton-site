@@ -1,4 +1,4 @@
-// Run: node --test worker/test/  (no network: Microsoft and the menu are faked)
+// Run: node --test worker/test/worker.test.mjs  (no network: Microsoft and the menu are faked)
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import worker, { validateOrder, orderRows, confirmationMail } from "../src/index.js";
