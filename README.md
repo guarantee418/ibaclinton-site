@@ -9,6 +9,23 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
 - `site/styles.css` is the one stylesheet.
 - Publishing is manual: Actions tab → "Publish to GitHub Pages" → Run workflow.
 - Request Info form: set `FORMSPREE_ID` in `build.py` once the Formspree form exists, then rebuild.
-- When ibaclinton.com is pointed here, change `BASE_PATH` in `build.py` to `/` and rebuild.
+- `build.py` also writes `sitemap.xml` and `robots.txt`. While `DOMAIN` is empty the pages carry a
+  `noindex` tag so the github.io preview stays out of search results.
+
+## Go-live checklist (only with Garrett's approval)
+
+1. Request Info form connected (`FORMSPREE_ID` set) and tested.
+2. In `build.py` set `DOMAIN = "ibaclinton.com"`, run `python3 build.py`, commit and push. This adds
+   `site/CNAME`, the Google Analytics tag (`GA_ID`, the same tag WordPress uses), switches the
+   privacy policy's cookie paragraph and removes `noindex`.
+3. Run "Publish to GitHub Pages".
+4. Repo Settings → Pages → Custom domain: `ibaclinton.com`; tick "Enforce HTTPS" once offered.
+5. DNS (Cloudflare): point the `ibaclinton.com` A records at GitHub Pages
+   (185.199.108.153, 185.199.109.153, 185.199.110.153, 185.199.111.153) and add `www` as a CNAME to
+   `guarantee418.github.io`. **Leave the Zoho MX records and other TXT records alone**, or
+   @ibaclinton.com email stops. Set the records to "DNS only" (grey cloud) until GitHub issues
+   the HTTPS certificate.
+6. In Google Search Console, submit `https://ibaclinton.com/sitemap.xml`.
+7. Keep the WordPress site on Flywheel for a few weeks as a fallback.
 - This repo is public. Only website content belongs here: no credentials, exports, database dumps,
   student names or private notes.
