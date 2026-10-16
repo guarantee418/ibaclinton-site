@@ -82,8 +82,16 @@ def lunch_block(data, root):
     form = safe_url(data.get("order_form_url"))
     if form:
         by = esc(data.get("order_by"))
-        out.append((f'<p class="lunch-by">Please order by {by}.</p>' if by else "")
-                   + f'<p><a class="btn" href="{form}">Order Hot Lunch</a></p>')
+        out.append(f'<p class="lunch-by">Please order by {by}.</p>' if by else "")
+        host = form.split("/")[2].lower()
+        if host in ("forms.office.com", "forms.cloud.microsoft", "forms.microsoft.com"):
+            # Microsoft Forms can be shown right on the page; the button stays for full-screen use.
+            sep = "&" if "?" in form else "?"
+            out.append(f'<iframe class="lunch-form" src="{form}{sep}embed=true" title="Hot lunch order form" '
+                       'loading="lazy" allowfullscreen></iframe>'
+                       f'<p><a class="btn outline" href="{form}" target="_blank" rel="noopener">Open the order form in a new window</a></p>')
+        else:
+            out.append(f'<p><a class="btn" href="{form}">Order Hot Lunch</a></p>')
     return "".join(out) + contact
 
 def render(path, text, layout):
