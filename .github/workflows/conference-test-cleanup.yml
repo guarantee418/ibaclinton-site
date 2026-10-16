@@ -1,0 +1,27 @@
+name: Delete a test conference booking
+
+# Manual only. Removes ONE row from the Conferences tab of the office workbook, by its booking
+# number, and only if its Student starts with "TEST". Real bookings can't be removed this way.
+on:
+  workflow_dispatch:
+    inputs:
+      id:
+        description: "Booking number of the TEST booking (5 letters/digits, e.g. MBG7S)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  delete:
+    runs-on: ubuntu-latest
+    env:
+      LUNCH_SETUP_KEY: ${{ secrets.LUNCH_SETUP_KEY }}
+      ID: ${{ inputs.id }}
+    steps:
+      - name: Delete
+        run: |
+          body=$(jq -nc --arg id "$ID" '{action:"delete_test_booking",id:$id}')
+          curl -fsS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" \
+            -H "X-Setup-Key: $LUNCH_SETUP_KEY" -H "Content-Type: application/json" -d "$body"
+          echo

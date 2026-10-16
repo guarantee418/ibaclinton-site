@@ -164,6 +164,21 @@ export function teacherEmail(teachers, name) {
   return t ? t.email : "";
 }
 
+// Removes one TEST booking by its booking number (admin upkeep). Only a row whose Student starts with
+// "TEST" can go, so a real family's booking is never touched. Returns what happened, without names.
+export async function deleteTestBooking(call, id) {
+  const r = await call("GET", `/tables/${TABLE}/range?$select=text`);
+  if (!r.ok) return { deleted: false, error: `table ${r.status}` };
+  const [head, ...rows] = (await r.json()).text || [];
+  const col = Object.fromEntries((head || []).map((h, i) => [String(h).trim(), i]));
+  const i = rows.findIndex((row) => String(row[col["Booking #"]] || "").trim() === id);
+  if (i < 0) return { deleted: false, error: "no booking with that number" };
+  if (!/^TEST/i.test(String(rows[i][col.Student] || "").trim())) return { deleted: false, error: "not a TEST booking" };
+  let d = await call("DELETE", `/tables/${TABLE}/rows/itemAt(index=${i})`);
+  if (!d.ok) d = await call("DELETE", `/tables/${TABLE}/rows/${i}`);
+  return d.ok ? { deleted: true } : { deleted: false, error: `delete ${d.status}` };
+}
+
 // ------------------------------------------------------------------ helpers
 export function normName(v) { return String(v || "").toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim(); }
 
