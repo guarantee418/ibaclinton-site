@@ -20,7 +20,7 @@ const ORDER = {
 };
 const ENV0 = {
   MENU_URL: "https://site.test/lunch/menu.json", ALLOWED_ORIGINS: "https://guarantee418.github.io",
-  MAILBOX: "ibs@ibaclinton.com", REPLY_TO: "ibs@ibcministries.org", SIGNATURE: "Mrs. Napierala",
+  MAILBOX: "ibs@ibaclinton.com", REPLY_TO: "ibs@ibcministries.org", SIGNATURE: "Mrs. Napierala\nIndependent Baptist <Academy>",
   WORKBOOK_PATH: "Hot Lunch Orders.xlsx", TABLE: "Orders", TENANT_ID: "tenant", CLIENT_ID: "client",
   CLIENT_SECRET: "secret", SETUP_KEY: "setup",
 };
@@ -68,6 +68,7 @@ test("confirmation email escapes everything typed in and replies to the office",
   assert.equal(mail.message.replyTo[0].emailAddress.address, "ibs@ibcministries.org");
   assert.equal(mail.message.toRecipients[0].emailAddress.address, "pat@example.com");
   assert.equal(mail.saveToSentItems, true);
+  assert.ok(html.includes("Mrs. Napierala<br>Independent Baptist &lt;Academy&gt;"));
 });
 
 function fakeMicrosoft({ workbookOk = true, me = "ibs@ibaclinton.com" } = {}) {

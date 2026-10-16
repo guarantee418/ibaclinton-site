@@ -17,7 +17,7 @@ MENU_URL = "https://ibaclinton.com/lunch/menu.json"
 ALLOWED_ORIGINS = "https://guarantee418.github.io,https://ibaclinton.com,https://www.ibaclinton.com"
 MAILBOX = "ibs@ibaclinton.com"
 REPLY_TO = "ibs@ibcministries.org"
-SIGNATURE = "Mrs. Napierala<br>Independent Baptist Academy"
+SIGNATURE = "Mrs. Napierala\nIndependent Baptist Academy"  # \n = new line
 WORKBOOK_PATH = "Hot Lunch Orders.xlsx"
 TABLE = "Orders"
 # Filled in by the workflow from GitHub secrets (not secret, but kept out of this public repo):
