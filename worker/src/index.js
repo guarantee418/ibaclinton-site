@@ -136,7 +136,7 @@ export function confirmationMail(order, menu, orderId, env) {
     `<p style="margin-top:14px"><b>Total: ${money(order.total)}</b> (order number ${e(orderId)})</p>` +
     `<p>Lunch charges are added to your Gradelink account. To change or cancel this order, please call the ` +
     `school office at (301) 856-1616 or reply to this email.</p>` +
-    `<p>Gratefully,<br>${e(env.SIGNATURE || "Independent Baptist Academy")}</p>`;
+    `<p>Gratefully,<br>${e(env.SIGNATURE || "Independent Baptist Academy").replace(/\n/g, "<br>")}</p>`;
   const message = {
     subject: `Hot lunch order received: week of ${menu.week_label}`,
     body: { contentType: "HTML", content },
