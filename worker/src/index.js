@@ -224,7 +224,9 @@ export function confirmationMail(order, menu, orderId, env) {
 }
 
 async function loadMenu(env) {
-  const r = await fetch(env.MENU_URL, { cf: { cacheTtl: 30 } });
+  // The minute in the address skips GitHub's 5-minute cache, so a new menu counts within a minute.
+  const url = `${env.MENU_URL}${env.MENU_URL.includes("?") ? "&" : "?"}v=${Math.floor(Date.now() / 60000)}`;
+  const r = await fetch(url, { cf: { cacheTtl: 30 } });
   if (!r.ok) throw new Error(`menu ${r.status}`);
   return r.json();
 }

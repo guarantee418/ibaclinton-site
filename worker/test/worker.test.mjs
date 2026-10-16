@@ -76,7 +76,7 @@ function fakeMicrosoft({ workbookOk = true, me = "ibs@ibaclinton.com" } = {}) {
   globalThis.fetch = async (url, init = {}) => {
     url = String(url); calls.push({ url, init });
     const ok = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
-    if (url === ENV0.MENU_URL) return ok(MENU);
+    if (url.split("?")[0] === ENV0.MENU_URL) return ok(MENU);
     if (url.includes("/oauth2/v2.0/token")) return ok({ access_token: "at", refresh_token: "rt2", expires_in: 3600 });
     if (url.includes("/workbook/tables/Orders/rows/add")) return workbookOk ? ok({}, 201) : ok({ error: "locked" }, 409);
     if (url.endsWith("/me/sendMail")) return new Response(null, { status: 202 });

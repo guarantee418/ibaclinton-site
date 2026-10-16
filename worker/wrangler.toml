@@ -18,7 +18,9 @@ binding = "LUNCH_KV"
 id = "REPLACED_BY_WORKFLOW"
 
 [vars]
-MENU_URL = "https://ibaclinton.com/lunch/menu.json"
+# The published menu, read from GitHub (the Pages workflow commits it after each publish), because
+# fetching it through ibaclinton.com from Cloudflare failed with 526 on 2026-10-16.
+MENU_URL = "https://raw.githubusercontent.com/guarantee418/ibaclinton-site/main/site/lunch/menu.json"
 ALLOWED_ORIGINS = "https://guarantee418.github.io,https://ibaclinton.com,https://www.ibaclinton.com"
 MAILBOX = "ibs@ibaclinton.com"
 REPLY_TO = "ibs@ibcministries.org"
