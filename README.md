@@ -35,6 +35,9 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
   (`site/lunch.js`). `site/lunch/menu.json` is the published menu the order service checks against.
 - Orders go to the Cloudflare Worker in `worker/` (setup and upkeep in `worker/README.md`), which
   writes them to the office's Excel workbook and emails the parent a confirmation.
+- **Staff lunches** ($4, `price_staff`, not shown anywhere on the site): staff order on the same form
+  opened as `ibaclinton.com/parents/?staff#hot-lunch`, which adds a "Staff" choice under Grade. The row's
+  Grade says Staff (counted with K5-12th on the Kitchen tab).
 - With `LUNCH_API` empty, the page shows the menu and the backup Microsoft Forms link, if any.
 
 ## Go-live checklist (only with Garrett Greene's approval)

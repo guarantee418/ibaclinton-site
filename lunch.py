@@ -17,6 +17,9 @@ DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 GRADES = [("K3", "Preschool (K3)", True), ("K4", "Preschool (K4)", True), ("K5", "Kindergarten (K5)", False)] + [
     (str(n), f"{n}{'st' if n == 1 else 'nd' if n == 2 else 'rd' if n == 3 else 'th'} Grade", False)
     for n in range(1, 13)]
+# Staff can order too, at the staff price. The choice isn't on the public form: lunch.js adds it
+# only when the page is opened with ?staff (ibaclinton.com/parents/?staff#hot-lunch).
+STAFF = {"value": "STAFF", "label": "Staff", "preschool": False, "staff": True}
 
 def esc(value):
     return html.escape(str(value or "").strip())
@@ -67,10 +70,11 @@ def menu_data(data):
         "deadline": deadline.astimezone(dt.timezone.utc).isoformat() if deadline else "",
         "deadline_label": (f"{deadline:%A, %B} {deadline.day} at {deadline:%I:%M %p}".replace(" 0", " ")
                            if deadline else ""),
-        "prices": {"regular": float(data.get("price_regular") or 8), "preschool": float(data.get("price_preschool") or 5)},
+        "prices": {"regular": float(data.get("price_regular") or 8), "preschool": float(data.get("price_preschool") or 5),
+                   "staff": float(data.get("price_staff") or 4)},
         "note": str(data.get("note") or "").strip(),
         "days": days,
-        "grades": [{"value": v, "label": l, "preschool": p} for v, l, p in GRADES],
+        "grades": [{"value": v, "label": l, "preschool": p} for v, l, p in GRADES] + [STAFF],
     }
 
 def menu_file(data):
@@ -123,7 +127,7 @@ def _forms_link(form):
 
 def order_form(menu, root, api):
     grade_options = '<option value="">Choose…</option>' + "".join(
-        f'<option value="{esc(g["value"])}">{esc(g["label"])}</option>' for g in menu["grades"])
+        f'<option value="{esc(g["value"])}">{esc(g["label"])}</option>' for g in menu["grades"] if not g.get("staff"))
     day_boxes = "".join(
         f'<label class="lunch-day"><input type="checkbox" name="days" value="{d["key"]}">'
         f'<span><b>{esc(d["day"])}</b> {esc(d["date_label"])}<br>{esc(d["meal"])}</span></label>'

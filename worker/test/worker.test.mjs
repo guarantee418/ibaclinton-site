@@ -221,3 +221,15 @@ test("POST /admin needs the setup key", async () => {
   assert.equal((await worker.fetch(req("wrong"), env)).status, 403);
   assert.equal((await worker.fetch(req("setup"), env)).status, 503); // right key, not connected
 });
+
+test("staff lunches use the staff price; a menu without one refuses staff", () => {
+  const menu = { ...MENU, prices: { ...MENU.prices, staff: 4 },
+    grades: [...MENU.grades, { value: "STAFF", label: "Staff", preschool: false, staff: true }] };
+  const kid = { name: "Mr. Teacher", grade: "STAFF", days: ["mon", "wed"] };
+  const ok = validateOrder({ ...ORDER, children: [kid] }, menu, BEFORE);
+  assert.equal(ok.order.total, 8);
+  const rows = orderRows(ok.order, menu, "ABCDE", new Date(BEFORE));
+  assert.equal(rows[0][7], "Staff"); assert.equal(rows[0][8], "No"); assert.equal(rows[0][9], 4);
+  const noPrice = { ...menu, prices: { regular: 8, preschool: 5 } };
+  assert.match(validateOrder({ ...ORDER, children: [kid] }, noPrice, BEFORE).error, /grade/);
+});
