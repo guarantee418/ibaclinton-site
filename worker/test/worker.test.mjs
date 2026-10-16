@@ -397,3 +397,23 @@ test("deleteTestBooking removes only a TEST row, by booking number", async () =>
   assert.deepEqual(await deleteTestBooking(call, "MBG7S"), { deleted: true });
   assert.deepEqual(deleted, ["/tables/Bookings/rows/itemAt(index=1)"]);
 });
+
+test("deleteTestOrder removes all rows of a TEST order, bottom first, and nothing real", async () => {
+  const { deleteTestOrder } = await import("../src/index.js");
+  const deleted = [];
+  const call = async (method, path) => {
+    if (method === "GET") return new Response(JSON.stringify({ text: [HEAD,
+      row("", "Real Kid", "3rd Grade", ["Mon"]).map((v, i) => (i === 2 ? "REAL1" : v)),
+      ["", "10/26/2026", "25MQU", "TEST Parent", "", "", "TEST Student", "3rd Grade"],
+      ["", "", "", "", "", "", "", ""],
+      ["", "10/26/2026", "25MQU", "TEST Parent", "", "", "TEST Staff", "Staff"],
+      ["", "10/26/2026", "MIXED", "Pat", "", "", "TEST Student", "3rd Grade"],
+      ["", "10/26/2026", "MIXED", "Pat", "", "", "Real Kid", "3rd Grade"]] }));
+    deleted.push(path); return new Response(null, { status: 204 });
+  };
+  assert.deepEqual(await deleteTestOrder(call, "Orders", "REAL1"), { deleted: 0, error: "not a TEST order" });
+  assert.deepEqual(await deleteTestOrder(call, "Orders", "MIXED"), { deleted: 0, error: "not a TEST order" });
+  assert.deepEqual(await deleteTestOrder(call, "Orders", "NOPE1"), { deleted: 0, error: "no order with that number" });
+  assert.deepEqual(await deleteTestOrder(call, "Orders", "25MQU"), { deleted: 2 });
+  assert.deepEqual(deleted, ["/tables/Orders/rows/itemAt(index=3)", "/tables/Orders/rows/itemAt(index=1)"]);
+});
