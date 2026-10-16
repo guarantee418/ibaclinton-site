@@ -17,19 +17,21 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
 
 ## Online editor for the school office (Pages CMS)
 
-- Mrs. Mora and Mrs. Napierala edit the **Hot Lunch** menu (`content/lunch.json`) and the Parent Portal
-  document lists (`content/documents.json`, PDFs uploaded to `site/files/`) at app.pagescms.org
+- Mrs. Mora and Mrs. Napierala edit the **Hot Lunch** menu (`content/lunch.json`) and the whole
+  **Parent Portal page** (`content/parents.json`: welcome text, every section's heading, text, links and
+  PDFs, section order; PDFs uploaded to `site/files/`) at app.pagescms.org
   (`ibaclinton.com/admin/` links there). They are invited by email as collaborators, no GitHub account.
 - `.pages.yml` defines what they can edit. Collaborators can't change it; changing it needs Garrett's OK.
 - Their saves commit to `main`, and the Pages workflow publishes changes to `content/` or `site/files/`
   automatically (approved by Garrett 2026-10-16). Everything else is still published by hand.
 - The workflow runs `build.py`, so the committed `site/` copy of those pages may lag behind; that's fine.
 - Everything typed in the editor is HTML-escaped by `build.py`, and only `https://` links are used.
+  Section text is rich text: `build.py` keeps only simple formatting (bold, italics, lists, links).
 
 ## Hot lunch ordering
 
 - The Hot Lunch section of the Parent Portal comes from `content/lunch.json` via `lunch.py`: menu
-  table, prices, deadline and (when `LUNCH_API` in `build.py` is set) the online order form
+  table, prices, deadline (9:00 AM the Friday before the week, unless the office types another) and (when `LUNCH_API` in `build.py` is set) the online order form
   (`site/lunch.js`). `site/lunch/menu.json` is the published menu the order service checks against.
 - Orders go to the Cloudflare Worker in `worker/` (setup and upkeep in `worker/README.md`), which
   writes them to the office's Excel workbook and emails the parent a confirmation.

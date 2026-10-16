@@ -1,7 +1,7 @@
 name: Publish to GitHub Pages
 
 # Runs by itself only when the school office saves a change in the online editor
-# (lunch menu and Parent Portal documents: content/ and uploaded PDFs in site/files/).
+# (lunch menu and the Parent Portal page: content/ and uploaded PDFs in site/files/).
 # Everything else is published by hand from the Actions tab when Garrett approves.
 on:
   workflow_dispatch:

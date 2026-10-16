@@ -144,3 +144,80 @@ test("/connect needs the setup key; /callback only accepts the office mailbox", 
   // A used state can't be replayed
   assert.equal((await worker.fetch(new Request(`https://lunch.test/callback?code=c&state=${state2}`), env)).status, 400);
 });
+
+// ------------------------------------------------------------------ homeroom lunch lists
+import { excelDate, homeroomMails, mondayToSend, readWeek, ensureTabs } from "../src/homerooms.js";
+
+const HEAD = ["Submitted", "Week of", "Order #", "Parent", "Email", "Phone", "Student", "Grade", "Preschool",
+  "Price per lunch", "Mon", "Tue", "Wed", "Thu", "Fri", "Lunches", "Total", "Notes"];
+const row = (week, student, grade, days) => ["", week, "A", "P", "p@x", "1", student, grade, "No", 8,
+  ...["Mon", "Tue", "Wed", "Thu", "Fri"].map((d) => (days.includes(d) ? "X" : "")), 0, 0, ""];
+const TEACHERS = [
+  { grade: "3rd Grade", teacher: "Mrs. Lundberg", email: "lund@school.test" },
+  { grade: "7th Grade", teacher: "Mr. Napierala", email: "nap@school.test" },
+  { grade: "8th Grade", teacher: "Mr. Napierala", email: "NAP@school.test" },
+  { grade: "1st Grade", teacher: "Miss Ryans", email: "" },
+];
+const fakeCall = (values) => async () => new Response(JSON.stringify({ values }), { status: 200 });
+
+test("readWeek keeps one week, merges a student ordered twice, reads Excel dates", async () => {
+  const kids = await readWeek(fakeCall([HEAD,
+    row(46321, "Sam <b>", "3rd Grade", ["Mon"]),            // 10/26/2026 as an Excel day number
+    row("10/26/2026", "Sam <b>", "3rd Grade", ["Wed"]),     // same student, second order
+    row(46314, "Old Week", "3rd Grade", ["Mon"]),           // 10/19
+    row(46321, "Nobody", "3rd Grade", []),
+    row(null, "", "", [])]), "2026-10-26");
+  assert.equal(kids.length, 1);
+  assert.deepEqual([...kids[0].days].sort(), ["Mon", "Wed"]);
+  assert.equal(excelDate(46321), "2026-10-26");
+});
+
+test("homeroom emails: one per teacher, Cc the office, escaped, none without email or orders", () => {
+  const students = [
+    { name: "Zed <b>", grade: "8th Grade", days: new Set(["Mon"]) },
+    { name: "Amy", grade: "7th Grade", days: new Set(["Mon", "Fri"]) },
+    { name: "Lu", grade: "1st Grade", days: new Set(["Tue"]) },
+  ];
+  const env = { ...ENV0, HOMEROOM_CC: "ibs@ibcministries.org" };
+  const mails = homeroomMails(students, TEACHERS, "2026-10-26", env);
+  assert.equal(mails.length, 1); // Lundberg has no orders, Ryans has no email
+  const m = mails[0].mail.message;
+  assert.equal(m.toRecipients[0].emailAddress.address, "nap@school.test");
+  assert.equal(m.ccRecipients[0].emailAddress.address, "ibs@ibcministries.org");
+  assert.equal(m.subject, "Hot lunch this week: 7th & 8th (week of October 26)");
+  const html = m.body.content;
+  assert.ok(html.includes("Zed &lt;b&gt;") && !html.includes("Zed <b>"));
+  assert.ok(html.indexOf("Amy") < html.indexOf("Zed")); // 7th before 8th
+  // Test mode: everything to the tester, no Cc, teachers without email included
+  const test = homeroomMails(students, TEACHERS, "2026-10-26", env, "boss@school.test");
+  assert.equal(test.length, 2);
+  assert.ok(test.every((t) => t.mail.message.toRecipients[0].emailAddress.address === "boss@school.test"));
+  assert.ok(test.every((t) => !t.mail.message.ccRecipients && t.mail.message.subject.startsWith("[TEST]")));
+});
+
+test("Monday 7 AM Eastern only, in summer and winter time", () => {
+  assert.equal(mondayToSend(new Date("2026-10-26T11:00:00Z")), "2026-10-26"); // EDT
+  assert.equal(mondayToSend(new Date("2026-10-26T12:00:00Z")), "");
+  assert.equal(mondayToSend(new Date("2026-11-02T12:00:00Z")), "2026-11-02"); // EST
+  assert.equal(mondayToSend(new Date("2026-11-02T11:00:00Z")), "");
+  assert.equal(mondayToSend(new Date("2026-10-27T11:00:00Z")), "");
+});
+
+test("ensureTabs adds only missing tabs", async () => {
+  const calls = [];
+  const call = async (method, path, body) => {
+    calls.push({ method, path, body });
+    if (path.startsWith("/worksheets?")) return new Response(JSON.stringify({ value: [{ name: "Orders" }, { name: "Teachers" }] }));
+    return new Response("{}", { status: 200 });
+  };
+  assert.deepEqual(await ensureTabs(call), ["Homerooms"]);
+  assert.ok(!calls.some((c) => c.path.startsWith("/worksheets/Teachers")));
+  assert.ok(calls.some((c) => c.body && c.body.formulas && String(c.body.formulas[0][0]).startsWith("=LET(")));
+});
+
+test("POST /admin needs the setup key", async () => {
+  const env = { ...ENV0, LUNCH_KV: kv() };
+  const req = (key) => new Request("https://lunch.test/admin", { method: "POST", body: '{"action":"setup"}', headers: { "X-Setup-Key": key } });
+  assert.equal((await worker.fetch(req("wrong"), env)).status, 403);
+  assert.equal((await worker.fetch(req("setup"), env)).status, 503); // right key, not connected
+});

@@ -7,6 +7,11 @@ main = "src/index.js"
 compatibility_date = "2025-09-01"
 workers_dev = true
 
+# Homeroom lunch lists, Mondays 7:00 AM Eastern (11:00 UTC in summer time, 12:00 in winter;
+# the Worker sends only on the run that falls at 7 AM Eastern).
+[triggers]
+crons = ["0 11 * * 1", "0 12 * * 1"]
+
 # KV namespace for Microsoft's sign-in token and short-lived values. The workflow fills in the id.
 [[kv_namespaces]]
 binding = "LUNCH_KV"
@@ -20,6 +25,7 @@ REPLY_TO = "ibs@ibcministries.org"
 SIGNATURE = "Mrs. Napierala\nIndependent Baptist Academy"  # \n = new line
 WORKBOOK_PATH = "Hot Lunch Orders.xlsx"
 TABLE = "Orders"
+HOMEROOM_CC = "ibs@ibcministries.org"  # Cc on the Monday homeroom lunch lists
 # Filled in by the workflow from GitHub secrets (not secret, but kept out of this public repo):
 TENANT_ID = ""
 CLIENT_ID = ""

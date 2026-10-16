@@ -73,12 +73,35 @@ lines = [
      "yellow box to see a different week.", False),
     ("Billing: on the Orders tab, use the filter on 'Week of' to show one week. Each row's Total is what "
      "to charge that student in Gradelink.", False),
+    ("Teachers: the Teachers tab lists each grade's homeroom teacher and email. Every Monday at 7:00 AM each "
+     "teacher gets an email (Cc the office) listing their students with hot lunch that week. Update it each "
+     "school year; a grade with no email gets no list.", False),
+    ("Homerooms: the Homerooms tab shows the same lists for this week, youngest grade first. The order "
+     "service adds this tab by itself.", False),
     ("Changes by phone: remove an X (or type X) under a day and the totals update. To cancel a whole order, "
      "delete the student's row. Use Notes for anything worth remembering.", False),
     ("", False),
     ("Please don't rename this file, the Orders tab, the Orders table or its column headings, and don't move "
      "the file out of the OneDrive's main folder. The website needs them to add orders.", True),
 ]
+# Homeroom teachers (worker/src/homerooms.js reads this tab; it adds the live Homerooms tab itself,
+# because its formula needs Excel's newer list functions that this script can't write).
+GRADES = [("Preschool (K3)", "Miss Dove"), ("Preschool (K4)", "Mrs. Febo"), ("Kindergarten (K5)", "Ms. Schmidley"),
+          ("1st Grade", "Miss Ryans"), ("2nd Grade", "Ms. Raymond"), ("3rd Grade", "Mrs. Lundberg"),
+          ("4th Grade", "Mrs. Kirby"), ("5th Grade", "Mrs. Baumgartner"), ("6th Grade", "Mrs. Baumgartner"),
+          ("7th Grade", "Mr. Napierala"), ("8th Grade", "Mr. Napierala"), ("9th Grade", "Mr. Damm"),
+          ("10th Grade", "Mr. Damm"), ("11th Grade", "Mr. Greene"), ("12th Grade", "Mr. Greene")]
+t = wb.create_sheet("Teachers", 1)
+t.append(["Grade", "Teacher", "Email"])
+for g, name in GRADES:
+    t.append([g, name, ""])
+for c in "ABC":
+    t[f"{c}1"].font = Font(bold=True)
+for col, w in zip("ABC", (20, 20, 32)):
+    t.column_dimensions[col].width = w
+t["E1"] = "Homeroom teacher for each grade. Type each teacher's email in column C. Keep the Grade column as it is."
+t["E1"].font = Font(italic=True, color="666666")
+
 for i, (text, bold) in enumerate(lines, start=1):
     h[f"A{i}"] = text
     h[f"A{i}"].alignment = Alignment(wrap_text=True, vertical="top")

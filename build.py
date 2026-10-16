@@ -9,6 +9,7 @@ Keys: title, description, nav (which menu item to highlight), cta (no = hide the
 "Explore the Possibilities" band), hero (image file in img/ for the page banner).
 """
 import html, json, pathlib, re
+from html.parser import HTMLParser
 
 import lunch
 
@@ -67,6 +68,63 @@ def docs_list(items, root):
             lis.append(f'<li><a href="{url}">{title}</a></li>')
     return '<ul class="docs">' + "".join(lis) + "</ul>" if lis else ""
 
+# Parent Portal (content/parents.json): the office edits every section in the online editor.
+# Section text is rich text (HTML) from the editor; only simple formatting tags and https,
+# mailto and tel links are kept.
+ALLOWED_TAGS = {"p", "br", "b", "strong", "i", "em", "u", "ul", "ol", "li", "a", "h3", "h4", "blockquote"}
+
+class _Clean(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.out, self.skip = [], 0
+    def handle_starttag(self, tag, attrs):
+        if tag in ("script", "style"):
+            self.skip += 1
+        if self.skip or tag not in ALLOWED_TAGS:
+            return
+        if tag == "a":
+            href = str(dict(attrs).get("href") or "").strip()
+            ok = href.startswith(("https://", "mailto:", "tel:"))
+            self.out.append(f'<a href="{html.escape(href, quote=True)}">' if ok else "<a>")
+        else:
+            self.out.append(f"<{tag}>")
+    def handle_endtag(self, tag):
+        if tag in ("script", "style"):
+            self.skip = max(0, self.skip - 1)
+        elif not self.skip and tag in ALLOWED_TAGS and tag != "br":
+            self.out.append(f"</{tag}>")
+    def handle_data(self, data):
+        if not self.skip:
+            self.out.append(html.escape(data, quote=False))
+
+def clean_html(value):
+    c = _Clean()
+    c.feed(str(value or ""))
+    c.close()
+    return "".join(c.out).strip()
+
+def slug(value):
+    return re.sub(r"[^a-z0-9]+", "-", str(value or "").lower()).strip("-")
+
+def parents_block(data, root):
+    sections = [s for s in data.get("sections") or [] if str(s.get("title") or "").strip()]
+    for s in sections:
+        s["_id"] = slug(s.get("anchor")) or slug(s.get("menu_label")) or slug(s.get("title"))
+        s["_label"] = str(s.get("menu_label") or "").strip() or str(s["title"]).strip()
+    jump = "".join(f'<li><a href="#{s["_id"]}">{esc(s["_label"])}</a></li>'
+                   for s in sorted(sections, key=lambda s: s["_label"].lower()))
+    blocks = []
+    for s in sections:
+        extra = ""
+        if s.get("show_lunch"):
+            extra = lunch.lunch_block(json.loads((CONTENT / "lunch.json").read_text()), root, LUNCH_API)
+        blocks.append(f'<div class="block" id="{s["_id"]}"><h2>{esc(s["title"])}</h2>'
+                      f'{clean_html(s.get("text"))}{docs_list(s.get("links"), root)}{extra}</div>')
+    return (f'<h2>{esc(data.get("heading"))}</h2>'
+            + (f'<p class="lead">{esc(data.get("intro"))}</p>' if str(data.get("intro") or "").strip() else "")
+            + (f'<ul class="jump">{jump}</ul>' if jump else "")
+            + f'\n<div class="blocks">\n{"\n".join(blocks)}\n</div>')
+
 def render(path, text, layout):
     head, body = text.split("\n---\n", 1)
     meta = dict(line.split(": ", 1) for line in head.strip().splitlines())
@@ -89,9 +147,8 @@ def render(path, text, layout):
     title = meta.get("fulltitle") or f'{meta["title"]} | Independent Baptist Academy'
     if "{{lunch}}" in body:
         body = body.replace("{{lunch}}", lunch.lunch_block(json.loads((CONTENT / "lunch.json").read_text()), root, LUNCH_API))
-    if "{{docs:" in body:
-        docs = json.loads((CONTENT / "documents.json").read_text())
-        body = re.sub(r"\{\{docs:(\w+)\}\}", lambda m: docs_list(docs.get(m.group(1)), root), body)
+    if "{{parents}}" in body:
+        body = body.replace("{{parents}}", parents_block(json.loads((CONTENT / "parents.json").read_text()), root))
     if FORMSPREE_ID:
         body = body.replace("{{formspree}}", f"https://formspree.io/f/{FORMSPREE_ID}").replace("{{form_notice}}", "")
     else:
