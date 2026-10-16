@@ -1,9 +1,7 @@
 {
-  "week_of": "Test",
   "menu": [
     {
-      "day": "Monday",
-      "meal": "Test meal"
+      "day": "Monday"
     },
     {
       "day": "Tuesday"
