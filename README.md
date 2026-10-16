@@ -26,6 +26,15 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
 - The workflow runs `build.py`, so the committed `site/` copy of those pages may lag behind; that's fine.
 - Everything typed in the editor is HTML-escaped by `build.py`, and only `https://` links are used.
 
+## Hot lunch ordering
+
+- The Hot Lunch section of the Parent Portal comes from `content/lunch.json` via `lunch.py`: menu
+  table, prices, deadline and (when `LUNCH_API` in `build.py` is set) the online order form
+  (`site/lunch.js`). `site/lunch/menu.json` is the published menu the order service checks against.
+- Orders go to the Cloudflare Worker in `worker/` (setup and upkeep in `worker/README.md`), which
+  writes them to the office's Excel workbook and emails the parent a confirmation.
+- With `LUNCH_API` empty, the page shows the menu and the backup Microsoft Forms link, if any.
+
 ## Go-live checklist (only with Garrett's approval)
 
 1. Request Info form tested (one test submission reached ggreene@).

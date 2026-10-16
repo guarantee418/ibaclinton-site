@@ -10,6 +10,8 @@ Keys: title, description, nav (which menu item to highlight), cta (no = hide the
 """
 import html, json, pathlib, re
 
+import lunch
+
 # Formspree form ID for the Request Info form (the part after formspree.io/f/).
 # Leave empty until the form exists; the page then shows a "call or email us" notice.
 FORMSPREE_ID = "xaeqabaz"  # Formspree account: ggreene@ibcministries.org
@@ -19,6 +21,11 @@ FORMSPREE_ID = "xaeqabaz"  # Formspree account: ggreene@ibcministries.org
 # that writes site/CNAME, switches 404.html's links to "/", turns on Google Analytics and
 # lets search engines index the pages (the preview asks them not to).
 DOMAIN = ""
+
+# Address of the hot lunch order service (worker/, a Cloudflare Worker), for example
+# "https://ibaclinton-lunch.<account>.workers.dev". Empty = no online ordering: the page shows
+# the menu and, if the office pasted one, the Microsoft Forms link instead.
+LUNCH_API = ""
 
 # Google tag from the WordPress site (added there by Site Kit). Reusing it keeps the
 # Analytics history in one place. Only added to pages when DOMAIN is set.
@@ -60,40 +67,6 @@ def docs_list(items, root):
             lis.append(f'<li><a href="{url}">{title}</a></li>')
     return '<ul class="docs">' + "".join(lis) + "</ul>" if lis else ""
 
-def lunch_block(data, root):
-    contact = ('<p>If your student is enrolled and you are not receiving the lunch form, please contact the '
-               'school office at <a href="tel:3018561616">(301) 856-1616</a> or '
-               '<a href="mailto:iba@ibcministries.org">iba@ibcministries.org</a>.</p>')
-    menu = [(esc(d.get("day")), esc(d.get("meal"))) for d in data.get("menu") or [] if str(d.get("meal") or "").strip()]
-    if not menu:
-        return ('<p>A lunch menu form is sent out via email/text one week in advance for students to select '
-                'the days they would like to eat hot lunch.</p>'
-                + (f"<p>{esc(data.get('price'))}</p>" if esc(data.get("price")) else "") + contact +
-                f'<img src="{root}img/hot-lunch-menu.jpg" alt="Sample weekly hot lunch menu with a different meal '
-                'for each day, such as chicken parmesan, soft tacos, hot dogs, chili and burgers" loading="lazy" '
-                'width="1000" height="562" style="border-radius:4px;margin-top:.8rem">')
-    week = esc(data.get("week_of"))
-    out = [f'<p class="lunch-week">Week of {week}</p>' if week else ""]
-    out.append('<table class="lunch"><tbody>' + "".join(
-        f"<tr><th scope=\"row\">{day}</th><td>{meal}</td></tr>" for day, meal in menu) + "</tbody></table>")
-    for key in ("price", "note"):
-        if esc(data.get(key)):
-            out.append(f"<p>{esc(data.get(key))}</p>")
-    form = safe_url(data.get("order_form_url"))
-    if form:
-        by = esc(data.get("order_by"))
-        out.append(f'<p class="lunch-by">Please order by {by}.</p>' if by else "")
-        host = form.split("/")[2].lower()
-        if host in ("forms.office.com", "forms.cloud.microsoft", "forms.microsoft.com"):
-            # Microsoft Forms can be shown right on the page; the button stays for full-screen use.
-            sep = "&" if "?" in form else "?"
-            out.append(f'<iframe class="lunch-form" src="{form}{sep}embed=true" title="Hot lunch order form" '
-                       'loading="lazy" allowfullscreen></iframe>'
-                       f'<p><a class="btn outline" href="{form}" target="_blank" rel="noopener">Open the order form in a new window</a></p>')
-        else:
-            out.append(f'<p><a class="btn" href="{form}">Order Hot Lunch</a></p>')
-    return "".join(out) + contact
-
 def render(path, text, layout):
     head, body = text.split("\n---\n", 1)
     meta = dict(line.split(": ", 1) for line in head.strip().splitlines())
@@ -115,7 +88,7 @@ def render(path, text, layout):
         f'<div class="wrap"><h1>{meta["title"]}</h1></div></div>')
     title = meta.get("fulltitle") or f'{meta["title"]} | Independent Baptist Academy'
     if "{{lunch}}" in body:
-        body = body.replace("{{lunch}}", lunch_block(json.loads((CONTENT / "lunch.json").read_text()), root))
+        body = body.replace("{{lunch}}", lunch.lunch_block(json.loads((CONTENT / "lunch.json").read_text()), root, LUNCH_API))
     if "{{docs:" in body:
         docs = json.loads((CONTENT / "documents.json").read_text())
         body = re.sub(r"\{\{docs:(\w+)\}\}", lambda m: docs_list(docs.get(m.group(1)), root), body)
@@ -155,6 +128,8 @@ if __name__ == "__main__":
     write("sitemap.xml", '<?xml version="1.0" encoding="UTF-8"?>\n'
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
           + "".join(f"<url><loc>{u}</loc></url>\n" for u in urls) + "</urlset>\n")
+    (OUT / "lunch").mkdir(exist_ok=True)
+    write("lunch/menu.json", lunch.menu_file(json.loads((CONTENT / "lunch.json").read_text())))
     write("robots.txt", f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}sitemap.xml\n")
     cname = OUT / "CNAME"
     if DOMAIN:

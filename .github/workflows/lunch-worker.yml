@@ -1,0 +1,58 @@
+name: Deploy hot lunch order service
+
+# Manual only. Installs or updates the Cloudflare Worker in worker/ (see worker/README.md).
+# Needs these repository secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID,
+# MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET, LUNCH_SETUP_KEY.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lunch-worker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worker
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+      MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+      MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+      LUNCH_SETUP_KEY: ${{ secrets.LUNCH_SETUP_KEY }}
+      WRANGLER: npx --yes wrangler@3.114.0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test
+        run: node --test test/
+      - name: Find or create the KV namespace
+        run: |
+          id=$($WRANGLER kv namespace list | node -e '
+            let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+              const j=JSON.parse(s.slice(s.indexOf("[")));
+              const n=j.find(x=>x.title==="ibaclinton-lunch-LUNCH_KV"); console.log(n?n.id:"");});')
+          if [ -z "$id" ]; then
+            id=$($WRANGLER kv namespace create LUNCH_KV | grep -oE '[0-9a-f]{32}' | head -1)
+          fi
+          test -n "$id"
+          sed -i "s/REPLACED_BY_WORKFLOW/$id/" wrangler.toml
+      - name: Deploy
+        run: |
+          $WRANGLER deploy --var "TENANT_ID:$MS_TENANT_ID" --var "CLIENT_ID:$MS_CLIENT_ID" | tee deploy.log
+          grep -oE 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1 > url.txt
+          echo "Order service address: $(cat url.txt)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Set secrets
+        run: |
+          printf '%s' "$MS_CLIENT_SECRET" | $WRANGLER secret put CLIENT_SECRET
+          printf '%s' "$LUNCH_SETUP_KEY" | $WRANGLER secret put SETUP_KEY
+      - name: Check it answers
+        run: curl -fsS "$(cat url.txt)/health"
