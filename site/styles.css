@@ -143,3 +143,4 @@ form.info button{justify-self:start;cursor:pointer;font:inherit;font-weight:600}
 }
 /* flyers keep their full shape (no cropping) */
 .two img.flyer,.camp img{aspect-ratio:auto;object-fit:contain}
+table.lunch{border-collapse:collapse;width:100%;margin:.6rem 0 1rem}table.lunch th,table.lunch td{text-align:left;padding:.55rem .7rem;border-bottom:1px solid var(--line);vertical-align:top}table.lunch th{width:7.5em;color:var(--navy)}.lunch-week{font-weight:600;color:var(--navy);margin-bottom:.2rem}.lunch-by{font-weight:600}

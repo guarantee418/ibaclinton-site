@@ -1,8 +1,15 @@
 name: Publish to GitHub Pages
 
-# Manual only. Run from the Actions tab when Garrett approves a publish.
+# Runs by itself only when the school office saves a change in the online editor
+# (lunch menu and Parent Portal documents: content/ and uploaded PDFs in site/files/).
+# Everything else is published by hand from the Actions tab when Garrett approves.
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "content/**"
+      - "site/files/**"
 
 permissions:
   contents: read
@@ -21,6 +28,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Build the site
+        run: python3 build.py
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -1,0 +1,29 @@
+{
+  "week_of": "",
+  "menu": [
+    {
+      "day": "Monday",
+      "meal": ""
+    },
+    {
+      "day": "Tuesday",
+      "meal": ""
+    },
+    {
+      "day": "Wednesday",
+      "meal": ""
+    },
+    {
+      "day": "Thursday",
+      "meal": ""
+    },
+    {
+      "day": "Friday",
+      "meal": ""
+    }
+  ],
+  "price": "Lunches are $8.00 ($5.00 for preschool).",
+  "order_form_url": "",
+  "order_by": "",
+  "note": ""
+}

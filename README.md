@@ -15,6 +15,17 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
 - `build.py` also writes `sitemap.xml` and `robots.txt`. While `DOMAIN` is empty the pages carry a
   `noindex` tag so the github.io preview stays out of search results.
 
+## Online editor for the school office (Pages CMS)
+
+- Mrs. Mora and Mrs. Napierala edit the **Hot Lunch** menu (`content/lunch.json`) and the Parent Portal
+  document lists (`content/documents.json`, PDFs uploaded to `site/files/`) at app.pagescms.org
+  (`ibaclinton.com/admin/` links there). They are invited by email as collaborators, no GitHub account.
+- `.pages.yml` defines what they can edit. Collaborators can't change it; changing it needs Garrett's OK.
+- Their saves commit to `main`, and the Pages workflow publishes changes to `content/` or `site/files/`
+  automatically (approved by Garrett 2026-10-16). Everything else is still published by hand.
+- The workflow runs `build.py`, so the committed `site/` copy of those pages may lag behind; that's fine.
+- Everything typed in the editor is HTML-escaped by `build.py`, and only `https://` links are used.
+
 ## Go-live checklist (only with Garrett's approval)
 
 1. Request Info form tested (one test submission reached ggreene@).
