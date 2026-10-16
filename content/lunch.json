@@ -1,0 +1,29 @@
+{
+  "week_of": "",
+  "menu": [
+    {
+      "day": "Monday",
+      "meal": ""
+    },
+    {
+      "day": "Tuesday",
+      "meal": ""
+    },
+    {
+      "day": "Wednesday",
+      "meal": ""
+    },
+    {
+      "day": "Thursday",
+      "meal": ""
+    },
+    {
+      "day": "Friday",
+      "meal": ""
+    }
+  ],
+  "price": "",
+  "order_form_url": "",
+  "order_by": "",
+  "note": ""
+}

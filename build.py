@@ -8,7 +8,7 @@ Each page file starts with a few `key: value` lines, then a line with `---`, the
 Keys: title, description, nav (which menu item to highlight), cta (no = hide the
 "Explore the Possibilities" band), hero (image file in img/ for the page banner).
 """
-import pathlib, re
+import html, json, pathlib, re
 
 # Formspree form ID for the Request Info form (the part after formspree.io/f/).
 # Leave empty until the form exists; the page then shows a "call or email us" notice.
@@ -35,11 +35,55 @@ GTAG = f"""<script async src="https://www.googletagmanager.com/gtag/js?id={GA_ID
 <script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments);}}gtag("js",new Date());gtag("config","{GA_ID}");</script>"""
 
 ROOT = pathlib.Path(__file__).parent
-SRC, OUT = ROOT / "src", ROOT / "site"
+SRC, OUT, CONTENT = ROOT / "src", ROOT / "site", ROOT / "content"
 NAV = [("parents", "parents/", "Parents"), ("about", "about/", "About"),
        ("staff", "about-copy/", "Staff"), ("academics", "academics/", "Academics"),
        ("admissions", "admissions/", "Admissions"), ("student-life", "student-life/", "Student Life"),
        ("give", "https://secure.anedot.com/ibc/academy-donations", "Give")]
+
+# content/*.json is edited by the school office through the online editor (.pages.yml).
+# Everything from it is escaped, and only https links are used.
+def esc(value):
+    return html.escape(str(value or "").strip())
+
+def safe_url(value):
+    value = str(value or "").strip()
+    return value if value.startswith("https://") else ""
+
+def docs_list(items, root):
+    lis = []
+    for item in items or []:
+        title, url = esc(item.get("title")), safe_url(item.get("url"))
+        if not url and item.get("file"):
+            url = f"{root}files/" + html.escape(pathlib.PurePosixPath(str(item["file"])).name, quote=True)
+        if title and url:
+            lis.append(f'<li><a href="{url}">{title}</a></li>')
+    return '<ul class="docs">' + "".join(lis) + "</ul>" if lis else ""
+
+def lunch_block(data, root):
+    contact = ('<p>If your student is enrolled and you are not receiving the lunch form, please contact the '
+               'school office at <a href="tel:3018561616">(301) 856-1616</a> or '
+               '<a href="mailto:iba@ibcministries.org">iba@ibcministries.org</a>.</p>')
+    menu = [(esc(d.get("day")), esc(d.get("meal"))) for d in data.get("menu") or [] if str(d.get("meal") or "").strip()]
+    if not menu:
+        return ('<p>A lunch menu form is sent out via email/text one week in advance for students to select '
+                'the days they would like to eat hot lunch.</p>' + contact +
+                f'<img src="{root}img/hot-lunch-menu.jpg" alt="Sample weekly hot lunch menu with a different meal '
+                'for each day, such as chicken parmesan, soft tacos, hot dogs, chili and burgers" loading="lazy" '
+                'width="1000" height="562" style="border-radius:4px;margin-top:.8rem">')
+    week = esc(data.get("week_of"))
+    out = [f'<p class="lunch-week">Week of {week}</p>' if week else ""]
+    out.append('<table class="lunch"><tbody>' + "".join(
+        f"<tr><th scope=\"row\">{day}</th><td>{meal}</td></tr>" for day, meal in menu) + "</tbody></table>")
+    for key in ("price", "note"):
+        if esc(data.get(key)):
+            out.append(f"<p>{esc(data.get(key))}</p>")
+    form = safe_url(data.get("order_form_url"))
+    if form:
+        by = esc(data.get("order_by"))
+        out.append((f'<p class="lunch-by">Please order by {by}.</p>' if by else "")
+                   + f'<p><a class="btn" href="{form}">Order Hot Lunch</a></p>')
+    return "".join(out) + contact
 
 def render(path, text, layout):
     head, body = text.split("\n---\n", 1)
@@ -61,6 +105,11 @@ def render(path, text, layout):
         f'<div class="page-hero"{f" style=\"--bg:url({root}img/{hero})\"" if hero else ""}>'
         f'<div class="wrap"><h1>{meta["title"]}</h1></div></div>')
     title = meta.get("fulltitle") or f'{meta["title"]} | Independent Baptist Academy'
+    if "{{lunch}}" in body:
+        body = body.replace("{{lunch}}", lunch_block(json.loads((CONTENT / "lunch.json").read_text()), root))
+    if "{{docs:" in body:
+        docs = json.loads((CONTENT / "documents.json").read_text())
+        body = re.sub(r"\{\{docs:(\w+)\}\}", lambda m: docs_list(docs.get(m.group(1)), root), body)
     if FORMSPREE_ID:
         body = body.replace("{{formspree}}", f"https://formspree.io/f/{FORMSPREE_ID}").replace("{{form_notice}}", "")
     else:

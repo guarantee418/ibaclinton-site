@@ -1,0 +1,102 @@
+{
+  "calendars": [
+    {
+      "title": "IBA Calendar 2025–2026",
+      "file": "files/Revised-IBA-Calendar-2025-2026.pdf"
+    },
+    {
+      "title": "Preschool Calendar 2025–2026",
+      "file": "files/Preschool_Calendar.pdf"
+    }
+  ],
+  "handbooks": [
+    {
+      "title": "Preschool Handbook",
+      "file": "files/Preschool-Handbook.pdf"
+    },
+    {
+      "title": "Elementary Handbook",
+      "file": "files/Elementary-Handbook-2024-2025.pdf"
+    },
+    {
+      "title": "Jr & Sr High School Handbook",
+      "file": "files/High-School-Handbook-2024-2025.pdf"
+    }
+  ],
+  "athletics": [
+    {
+      "title": "Boys Basketball Schedule",
+      "file": "files/Boys-Basketball-Game-Schedule.pdf"
+    }
+  ],
+  "spirit_days": [
+    {
+      "title": "IBA Spirit Days",
+      "file": "files/2025-2026-Spirit-Day-Calendar.pdf"
+    },
+    {
+      "title": "Preschool Spirit Days",
+      "file": "files/K3-K5-Spirit-Days.pdf"
+    }
+  ],
+  "supply_lists": [
+    {
+      "title": "Preschool Supply List",
+      "file": "files/Preschool-Supply-List-2024.pdf"
+    }
+  ],
+  "fine_arts": [
+    {
+      "title": "Art",
+      "file": "files/Art.pdf"
+    },
+    {
+      "title": "Bible Memory",
+      "file": "files/Bible-Memory-Rules.pdf"
+    },
+    {
+      "title": "Essay Writing",
+      "file": "files/Essay-Writing.pdf"
+    },
+    {
+      "title": "Graphic Design",
+      "file": "files/Graphic-Design.pdf"
+    },
+    {
+      "title": "Handiwork",
+      "file": "files/Handiwork.pdf"
+    },
+    {
+      "title": "History Project",
+      "file": "files/History-Project.pdf"
+    },
+    {
+      "title": "Music",
+      "file": "files/Music.pdf"
+    },
+    {
+      "title": "Poetry Writing",
+      "file": "files/Poetry-Writing.pdf"
+    },
+    {
+      "title": "Science Experiment",
+      "file": "files/Science-Experiment.pdf"
+    },
+    {
+      "title": "Science Research Project",
+      "file": "files/Science-Research-Project.pdf"
+    },
+    {
+      "title": "Speech",
+      "file": "files/Speech.pdf"
+    },
+    {
+      "title": "Spelling 4th–6th Grade",
+      "file": "files/Spelling-4th-6th-Grade.pdf"
+    },
+    {
+      "title": "Spelling 7th–12th Grade",
+      "file": "files/Spelling-7th-12th-Grade.pdf"
+    }
+  ]
+}
