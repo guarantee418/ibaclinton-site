@@ -1,0 +1,104 @@
+{
+  "week_start": "2026-10-26",
+  "week_label": "October 26 \u2013 28",
+  "deadline": "2026-10-23T19:00:00+00:00",
+  "deadline_label": "Friday, October 23 at 3:00 PM",
+  "prices": {
+    "regular": 8.0,
+    "preschool": 5.0
+  },
+  "note": "TEST",
+  "days": [
+    {
+      "key": "mon",
+      "day": "Monday",
+      "meal": "TEST \u2013 Chicken parmesan",
+      "date": "2026-10-26",
+      "date_label": "Oct 26"
+    },
+    {
+      "key": "wed",
+      "day": "Wednesday",
+      "meal": "TEST \u2013 Hot dogs",
+      "date": "2026-10-28",
+      "date_label": "Oct 28"
+    }
+  ],
+  "grades": [
+    {
+      "value": "K3",
+      "label": "Preschool (K3)",
+      "preschool": true
+    },
+    {
+      "value": "K4",
+      "label": "Preschool (K4)",
+      "preschool": true
+    },
+    {
+      "value": "K5",
+      "label": "Kindergarten (K5)",
+      "preschool": false
+    },
+    {
+      "value": "1",
+      "label": "1st Grade",
+      "preschool": false
+    },
+    {
+      "value": "2",
+      "label": "2nd Grade",
+      "preschool": false
+    },
+    {
+      "value": "3",
+      "label": "3rd Grade",
+      "preschool": false
+    },
+    {
+      "value": "4",
+      "label": "4th Grade",
+      "preschool": false
+    },
+    {
+      "value": "5",
+      "label": "5th Grade",
+      "preschool": false
+    },
+    {
+      "value": "6",
+      "label": "6th Grade",
+      "preschool": false
+    },
+    {
+      "value": "7",
+      "label": "7th Grade",
+      "preschool": false
+    },
+    {
+      "value": "8",
+      "label": "8th Grade",
+      "preschool": false
+    },
+    {
+      "value": "9",
+      "label": "9th Grade",
+      "preschool": false
+    },
+    {
+      "value": "10",
+      "label": "10th Grade",
+      "preschool": false
+    },
+    {
+      "value": "11",
+      "label": "11th Grade",
+      "preschool": false
+    },
+    {
+      "value": "12",
+      "label": "12th Grade",
+      "preschool": false
+    }
+  ]
+}
