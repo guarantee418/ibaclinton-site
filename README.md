@@ -21,7 +21,7 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
 3. Run "Publish to GitHub Pages".
 4. Repo Settings → Pages → Custom domain: `ibaclinton.com`; tick "Enforce HTTPS" once offered.
 5. DNS (Cloudflare): point the `ibaclinton.com` A records at GitHub Pages
-   (185.199.108.153, 185.199.109.153, 185.199.110.153, 185.199.111.153) and add `www` as a CNAME to
+   (185.199.108.153, 185.199.109.153, 185.199.110.153, 185.199.111.153) and change `www` (now A records) to a CNAME to
    `guarantee418.github.io`. **Leave the Zoho MX records and other TXT records alone**, or
    @ibaclinton.com email stops. Set the records to "DNS only" (grey cloud) until GitHub issues
    the HTTPS certificate.
