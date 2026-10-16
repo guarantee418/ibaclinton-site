@@ -1,0 +1,80 @@
+{
+  "date": "2026-11-16",
+  "date_label": "Monday, November 16, 2026",
+  "minutes": 15,
+  "deadline": "2026-11-13T20:00:00+00:00",
+  "deadline_label": "Friday, November 13 at 3:00 PM",
+  "note": "",
+  "slots": [
+    {
+      "id": "0900",
+      "label": "9:00 AM",
+      "end": "9:15 AM"
+    },
+    {
+      "id": "0920",
+      "label": "9:20 AM",
+      "end": "9:35 AM"
+    },
+    {
+      "id": "0940",
+      "label": "9:40 AM",
+      "end": "9:55 AM"
+    },
+    {
+      "id": "1000",
+      "label": "10:00 AM",
+      "end": "10:15 AM"
+    },
+    {
+      "id": "1020",
+      "label": "10:20 AM",
+      "end": "10:35 AM"
+    },
+    {
+      "id": "1040",
+      "label": "10:40 AM",
+      "end": "10:55 AM"
+    },
+    {
+      "id": "1100",
+      "label": "11:00 AM",
+      "end": "11:15 AM"
+    },
+    {
+      "id": "1120",
+      "label": "11:20 AM",
+      "end": "11:35 AM"
+    },
+    {
+      "id": "1140",
+      "label": "11:40 AM",
+      "end": "11:55 AM"
+    },
+    {
+      "id": "1200",
+      "label": "12:00 PM",
+      "end": "12:15 PM"
+    },
+    {
+      "id": "1220",
+      "label": "12:20 PM",
+      "end": "12:35 PM"
+    },
+    {
+      "id": "1240",
+      "label": "12:40 PM",
+      "end": "12:55 PM"
+    }
+  ],
+  "teachers": [
+    {
+      "id": "test-teacher",
+      "name": "TEST Teacher",
+      "subject": "Test only",
+      "members": [
+        "TEST Teacher"
+      ]
+    }
+  ]
+}
