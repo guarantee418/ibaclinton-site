@@ -37,7 +37,7 @@ content:
       - name: price
         label: Price
         type: string
-        description: Optional, for example "$5.00 per lunch".
+        description: Shown under the menu. Currently "Lunches are $8.00 ($5.00 for preschool)."
       - name: order_by
         label: Order by
         type: string
@@ -45,7 +45,7 @@ content:
       - name: order_form_url
         label: Order form link
         type: string
-        description: The Microsoft Forms link for this week's order form (starts with https://). Leave blank to hide the button.
+        description: The Microsoft Forms link for the order form, the same one that is texted to families (for example https://forms.cloud.microsoft/r/...). Leave blank to hide the button.
         pattern:
           regex: "^(https://.*)?$"
           message: "Paste the full link, starting with https://"
