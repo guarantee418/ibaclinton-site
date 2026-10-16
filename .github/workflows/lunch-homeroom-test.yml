@@ -1,0 +1,32 @@
+name: Send a test homeroom lunch email
+
+# Manual only. Sends the homeroom lunch lists for one week (normally sent to the teachers
+# Mondays at 7:00 AM) to ONE address instead, marked TEST. Teachers get nothing.
+on:
+  workflow_dispatch:
+    inputs:
+      week:
+        description: "Monday of the lunch week (YYYY-MM-DD)"
+        required: true
+      to:
+        description: "Send the test emails to"
+        required: true
+        default: "ggreene@ibcministries.org"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      LUNCH_SETUP_KEY: ${{ secrets.LUNCH_SETUP_KEY }}
+      WEEK: ${{ inputs.week }}
+      TO: ${{ inputs.to }}
+    steps:
+      - name: Send
+        run: |
+          body=$(jq -nc --arg w "$WEEK" --arg t "$TO" '{action:"homerooms",week:$w,test_to:$t}')
+          curl -fsS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" \
+            -H "X-Setup-Key: $LUNCH_SETUP_KEY" -H "Content-Type: application/json" -d "$body"
+          echo

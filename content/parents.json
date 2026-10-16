@@ -1,0 +1,212 @@
+{
+  "heading": "Welcome to the Parent Portal!",
+  "intro": "This is your hub for staying up-to-date on your child’s school life. You can find information about school events and resources. We’re here to make it easier for you to be involved in your child’s education. Thank you for being part of our school community.",
+  "sections": [
+    {
+      "title": "Gradelink",
+      "menu_label": "Gradelink",
+      "anchor": "gradelink",
+      "text": "<p>Gradelink makes it simple to maintain parent and school communication. The parent portal provides access to academic progress, making it easy to view class and assignment grades, due dates, upcoming homework, and more.</p><p>Parents and students can download file attachments posted by the teacher, including worksheets, permission slips, study guides, and the class syllabus.</p>",
+      "links": [
+        {
+          "title": "Log in to Gradelink",
+          "url": "https://secure.gradelink.com/lkg/Gradelink.xml"
+        }
+      ],
+      "show_lunch": false
+    },
+    {
+      "title": "Calendars",
+      "menu_label": "Calendars",
+      "anchor": "calendars",
+      "text": "<p>Our school calendar is designed to balance academic rigor with well-deserved breaks, providing students and educators with optimal learning opportunities.</p>",
+      "links": [
+        {
+          "title": "IBA & Stepping Stones Calendar 2026-2027",
+          "file": "/files/iba-calendar-2026-2027.pdf"
+        }
+      ],
+      "show_lunch": false
+    },
+    {
+      "title": "Report Student Absence",
+      "menu_label": "Report Absence",
+      "anchor": "absence",
+      "text": "<p>Advanced notice of your student’s absence for appointments, family events, etc. will help teachers prepare and keep students on track.</p>",
+      "links": [
+        {
+          "title": "Go to Absence Form",
+          "url": "https://forms.office.com/r/2qsnLG3R9y"
+        }
+      ],
+      "show_lunch": false
+    },
+    {
+      "title": "Student Handbooks",
+      "menu_label": "Handbooks",
+      "anchor": "handbooks",
+      "text": "",
+      "links": [
+        {
+          "title": "Preschool Handbook",
+          "file": "files/Preschool-Handbook.pdf"
+        },
+        {
+          "title": "Elementary Handbook",
+          "file": "files/Elementary-Handbook-2024-2025.pdf"
+        },
+        {
+          "title": "Jr & Sr High School Handbook",
+          "file": "files/High-School-Handbook-2024-2025.pdf"
+        }
+      ],
+      "show_lunch": false
+    },
+    {
+      "title": "Athletics",
+      "menu_label": "Athletics",
+      "anchor": "athletics",
+      "text": "<p>6th–12th graders who are participating in our sports program will find practice and game schedules for each season below:</p>",
+      "links": [
+        {
+          "title": "Boys Basketball Schedule",
+          "file": "files/Boys-Basketball-Game-Schedule.pdf"
+        }
+      ],
+      "show_lunch": false
+    },
+    {
+      "title": "Intramural Sports",
+      "menu_label": "Intramurals",
+      "anchor": "intramurals",
+      "text": "<p>Every year for the elementary grades we have intramural sports. They always enjoy getting to face off against their fellow classmates on the basketball court as well as on the soccer field. We create our own league within the school. All parents are welcome to come in and watch their student play just like any other sports game. This ensures that our elementary students benefit from playing sports without the added expense and time it takes to participate in a league.</p><p>Game schedules and team lists are sent home to families. Please contact the school office if you need a copy.</p>",
+      "links": [],
+      "show_lunch": false
+    },
+    {
+      "title": "Hot Lunch",
+      "menu_label": "Hot Lunch",
+      "anchor": "hot-lunch",
+      "text": "",
+      "links": [],
+      "show_lunch": true
+    },
+    {
+      "title": "Spirit Days",
+      "menu_label": "Spirit Days",
+      "anchor": "spirit-days",
+      "text": "<p>Throughout the year, we have Spirit Days when students and staff have the opportunity to show off their school spirit!</p>",
+      "links": [
+        {
+          "title": "IBA Spirit Days",
+          "file": "files/2025-2026-Spirit-Day-Calendar.pdf"
+        },
+        {
+          "title": "Preschool Spirit Days",
+          "file": "files/K3-K5-Spirit-Days.pdf"
+        }
+      ],
+      "show_lunch": false
+    },
+    {
+      "title": "Supply Lists",
+      "menu_label": "Supply Lists",
+      "anchor": "supply-lists",
+      "text": "<p><b>Academy:</b> For the IBA supplies, we now charge a $50 school supply fee which covers everything except a backpack, lunchbox, water bottle and King James Bible.</p>",
+      "links": [
+        {
+          "title": "Preschool Supply List",
+          "file": "files/Preschool-Supply-List-2024.pdf"
+        }
+      ],
+      "show_lunch": false
+    },
+    {
+      "title": "Fine Arts",
+      "menu_label": "Fine Arts",
+      "anchor": "fine-arts",
+      "text": "<p>Every year our students from fourth grade to twelfth grade participate in Fine Arts. We are part of an association of Christian schools. We compete against each other in Regional and State competitions. These are competitions our students look forward to participating in every year. Details for the event categories are below:</p>",
+      "links": [
+        {
+          "title": "Art",
+          "file": "files/Art.pdf"
+        },
+        {
+          "title": "Bible Memory",
+          "file": "files/Bible-Memory-Rules.pdf"
+        },
+        {
+          "title": "Essay Writing",
+          "file": "files/Essay-Writing.pdf"
+        },
+        {
+          "title": "Graphic Design",
+          "file": "files/Graphic-Design.pdf"
+        },
+        {
+          "title": "Handiwork",
+          "file": "files/Handiwork.pdf"
+        },
+        {
+          "title": "History Project",
+          "file": "files/History-Project.pdf"
+        },
+        {
+          "title": "Music",
+          "file": "files/Music.pdf"
+        },
+        {
+          "title": "Poetry Writing",
+          "file": "files/Poetry-Writing.pdf"
+        },
+        {
+          "title": "Science Experiment",
+          "file": "files/Science-Experiment.pdf"
+        },
+        {
+          "title": "Science Research Project",
+          "file": "files/Science-Research-Project.pdf"
+        },
+        {
+          "title": "Speech",
+          "file": "files/Speech.pdf"
+        },
+        {
+          "title": "Spelling 4th–6th Grade",
+          "file": "files/Spelling-4th-6th-Grade.pdf"
+        },
+        {
+          "title": "Spelling 7th–12th Grade",
+          "file": "files/Spelling-7th-12th-Grade.pdf"
+        }
+      ],
+      "show_lunch": false
+    },
+    {
+      "title": "Parent Teacher Town Halls",
+      "menu_label": "Town Halls",
+      "anchor": "town-halls",
+      "text": "<p>We host these town hall meetings to maintain good communication and healthy interaction between parents and educators as we work together for our students.</p>",
+      "links": [
+        {
+          "title": "Submit Your Question",
+          "url": "https://forms.office.com/r/cjba2SWYgR"
+        }
+      ],
+      "show_lunch": false
+    },
+    {
+      "title": "Traffic Patterns",
+      "menu_label": "Traffic Patterns",
+      "anchor": "traffic",
+      "text": "<p>To optimize student pickup and dropoff times, we have instituted the following traffic patterns for the Preschool and Academy.</p>",
+      "links": [
+        {
+          "title": "Traffic Patterns",
+          "file": "files/Traffic-Patterns.pdf"
+        }
+      ],
+      "show_lunch": false
+    }
+  ]
+}

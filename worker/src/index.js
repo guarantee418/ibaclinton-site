@@ -5,10 +5,16 @@
 //   GET  /health    {"ok":true,"connected":true|false}
 //   GET  /connect   one-time Microsoft sign-in by the office mailbox (needs ?key=SETUP_KEY)
 //   GET  /callback  Microsoft sends the sign-in back here
+//   POST /admin     upkeep, needs header X-Setup-Key: {"action":"setup"} adds the Teachers and
+//                   Homerooms tabs to the workbook if missing; {"action":"homerooms","week":"YYYY-MM-DD",
+//                   "test_to":"someone@..."} sends that week's homeroom emails to test_to only
+//   cron            Mondays 7:00 AM Eastern: homeroom lunch lists to teachers (src/homerooms.js)
 //
 // Microsoft 365 access is delegated: the Worker acts only as the mailbox in MAILBOX
 // (send mail as that user, edit that user's OneDrive files). It never sees a password;
 // it keeps Microsoft's refresh token in KV. See worker/README.md for setup.
+
+import { checkHomerooms, ensureTabs, homeroomMails, mondayToSend, readTeachers, readWeek } from "./homerooms.js";
 
 const SCOPES = "offline_access User.Read Mail.Send Files.ReadWrite";
 const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri"];
@@ -27,13 +33,65 @@ export default {
       if (url.pathname === "/connect" && request.method === "GET") return connect(url, env);
       if (url.pathname === "/callback" && request.method === "GET") return callback(url, env);
       if (url.pathname === "/order" && request.method === "POST") return await order(request, env, cors);
+      if (url.pathname === "/admin" && request.method === "POST") return await admin(request, env);
       return json({ ok: false, error: "Not found" }, 404, cors);
     } catch (err) {
       console.error(err && err.stack || err);
       return json({ ok: false, error: "Something went wrong on our end" }, 500, cors);
     }
   },
+
+  async scheduled(event, env, ctx) {
+    const week = mondayToSend(new Date(event.scheduledTime));
+    if (week) ctx.waitUntil(homeroomRun(env, week).then((r) => console.log("homerooms", JSON.stringify(r))));
+  },
 };
+
+// ------------------------------------------------------------------ homeroom lists and upkeep
+function workbook(token, env) {
+  const base = `/me/drive/root:/${encodePath(env.WORKBOOK_PATH)}:/workbook`;
+  return (method, sub, body) => graph(token, method, base + sub, body);
+}
+
+export async function homeroomRun(env, week, testTo = "") {
+  const token = await accessToken(env);
+  if (!token) return { ok: false, error: "not connected" };
+  const call = workbook(token, env);
+  const added = await ensureTabs(call);
+  if (!testTo && await env.LUNCH_KV.get(`homerooms:${week}`)) return { ok: true, week, already_sent: true };
+  const students = await readWeek(call, week);
+  const teachers = await readTeachers(call);
+  const mails = homeroomMails(students, teachers, week, env, testTo);
+  let sent = 0;
+  for (const m of mails) {
+    const r = await graph(token, "POST", "/me/sendMail", m.mail);
+    if (r.ok) sent++; else console.error("homeroom mail", r.status, await r.text());
+  }
+  if (!testTo) await env.LUNCH_KV.put(`homerooms:${week}`, String(sent), { expirationTtl: 60 * 86400 });
+  return { ok: sent === mails.length, week, tabs_added: added, students: students.length, emails: mails.length, sent,
+    grades_without_email: teachers.filter((t) => !t.email).length };
+}
+
+async function admin(request, env) {
+  if (!env.SETUP_KEY || request.headers.get("X-Setup-Key") !== env.SETUP_KEY) return json({ ok: false, error: "Not allowed" }, 403, {});
+  let body = {};
+  try { body = JSON.parse(await request.text() || "{}"); } catch { return json({ ok: false, error: "Bad request" }, 400, {}); }
+  if (body.action === "setup") {
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    const call = workbook(token, env);
+    const added = await ensureTabs(call);
+    return json({ ok: true, tabs_added: added, homerooms_tab: await checkHomerooms(call) }, 200, {});
+  }
+  if (body.action === "homerooms") {
+    const week = String(body.week || ""), to = String(body.test_to || "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(week) || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
+      return json({ ok: false, error: "week (YYYY-MM-DD) and test_to are required" }, 400, {});
+    }
+    return json(await homeroomRun(env, week, to), 200, {});
+  }
+  return json({ ok: false, error: "Unknown action" }, 400, {});
+}
 
 // ------------------------------------------------------------------ orders
 async function order(request, env, cors) {

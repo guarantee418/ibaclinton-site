@@ -1,0 +1,193 @@
+// Homeroom lunch lists: every Monday at 7:00 AM Eastern each homeroom teacher gets one email
+// listing their students with hot lunch that week (from the Orders table), Cc the office.
+//
+// Who teaches which grade lives in the "Teachers" tab of the office workbook (grade, teacher,
+// email), so staff email addresses stay out of this public repo and the office can update it
+// each year. The service also adds a "Homerooms" tab (the same list, live, for the office).
+// Both tabs are created only when missing; the office's edits are never overwritten.
+
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+export const TEACHERS_SHEET = "Teachers";
+export const HOMEROOMS_SHEET = "Homerooms";
+
+// Grade labels exactly as the order form writes them (lunch.py GRADES), youngest first,
+// with the homeroom teacher as of 2026-2027. Only used to fill a new Teachers tab.
+export const GRADES = [
+  ["Preschool (K3)", "Miss Dove"], ["Preschool (K4)", "Mrs. Febo"], ["Kindergarten (K5)", "Ms. Schmidley"],
+  ["1st Grade", "Miss Ryans"], ["2nd Grade", "Ms. Raymond"], ["3rd Grade", "Mrs. Lundberg"],
+  ["4th Grade", "Mrs. Kirby"], ["5th Grade", "Mrs. Baumgartner"], ["6th Grade", "Mrs. Baumgartner"],
+  ["7th Grade", "Mr. Napierala"], ["8th Grade", "Mr. Napierala"], ["9th Grade", "Mr. Damm"],
+  ["10th Grade", "Mr. Damm"], ["11th Grade", "Mr. Greene"], ["12th Grade", "Mr. Greene"],
+];
+const GRADE_ORDER = new Map(GRADES.map(([g], i) => [g, i]));
+
+const HOMEROOMS_FORMULA =
+  "=LET(f,Orders[Week of]=$B$3,t,CHOOSECOLS(FILTER(Orders[[Student]:[Fri]],f),2,1,5,6,7,8,9)," +
+  "IFERROR(SORTBY(t,IFERROR(XMATCH(CHOOSECOLS(t,1),$K$6:$K$20),99),1,CHOOSECOLS(t,2),1)," +
+  "\"No lunch orders for this week yet.\"))";
+
+// ------------------------------------------------------------------ workbook tabs
+export async function ensureTabs(call) {
+  const r = await call("GET", "/worksheets?$select=name");
+  if (!r.ok) throw new Error(`worksheets ${r.status}`);
+  const have = new Set(((await r.json()).value || []).map((w) => w.name));
+  const made = [];
+  if (!have.has(TEACHERS_SHEET)) {
+    await must(call("POST", "/worksheets/add", { name: TEACHERS_SHEET }));
+    const s = `/worksheets/${TEACHERS_SHEET}`;
+    await must(call("PATCH", `${s}/range(address='A1:C16')`, {
+      values: [["Grade", "Teacher", "Email"], ...GRADES.map(([g, t]) => [g, t, ""])],
+    }));
+    await must(call("PATCH", `${s}/range(address='E1:E3')`, {
+      values: [["Homeroom teacher for each grade. Every Monday at 7:00 AM each teacher gets an email listing"],
+        ["their students with hot lunch that week. Type each teacher's email in column C; a grade with no"],
+        ["email gets no list. Keep the Grade column as it is. Update the teachers each school year."]],
+    }));
+    await call("PATCH", `${s}/range(address='A1:C1')/format/font`, { bold: true });
+    await call("PATCH", `${s}/range(address='A:A')/format`, { columnWidth: 120 });
+    await call("PATCH", `${s}/range(address='B:B')/format`, { columnWidth: 130 });
+    await call("PATCH", `${s}/range(address='C:C')/format`, { columnWidth: 220 });
+    made.push(TEACHERS_SHEET);
+  }
+  if (!have.has(HOMEROOMS_SHEET)) {
+    await must(call("POST", "/worksheets/add", { name: HOMEROOMS_SHEET }));
+    const s = `/worksheets/${HOMEROOMS_SHEET}`;
+    await must(call("PATCH", `${s}/range(address='A1:C3')`, {
+      formulas: [["Lunches by homeroom", "", ""], ["", "", ""],
+        ["Week of (Monday)", "=TODAY()-WEEKDAY(TODAY(),3)+IF(WEEKDAY(TODAY(),2)>5,7,0)",
+          "Shows this school week (next week on weekends). Type another Monday's date to see that week."]],
+    }));
+    await must(call("PATCH", `${s}/range(address='B3')`, { numberFormat: [["m/d/yyyy"]] }));
+    await must(call("PATCH", `${s}/range(address='A5:G5')`, { values: [["Grade", "Student", ...DAYS]] }));
+    await must(call("PATCH", `${s}/range(address='K5:K20')`, { values: [["Grade order"], ...GRADES.map(([g]) => [g])] }));
+    await must(call("PATCH", `${s}/range(address='A6')`, { formulas: [[HOMEROOMS_FORMULA]] }));
+    await call("PATCH", `${s}/range(address='A1')/format/font`, { bold: true, size: 14 });
+    await call("PATCH", `${s}/range(address='A5:G5')/format/font`, { bold: true });
+    await call("PATCH", `${s}/range(address='A:B')/format`, { columnWidth: 130 });
+    made.push(HOMEROOMS_SHEET);
+  }
+  return made;
+}
+
+// What the Homerooms list shows now, without any names: "list (n rows)", the empty-week text or an error.
+export async function checkHomerooms(call) {
+  const r = await call("GET", `/worksheets/${HOMEROOMS_SHEET}/range(address='A6:A300')?$select=values`);
+  if (!r.ok) return `unreadable (${r.status})`;
+  const col = ((await r.json()).values || []).map((row) => row[0]).filter((v) => v !== "" && v != null);
+  if (!col.length) return "empty";
+  if (String(col[0]).startsWith("#")) return `error ${col[0]}`;
+  if (String(col[0]).startsWith("No lunch orders")) return "no orders this week";
+  return `list (${col.length} rows)`;
+}
+
+// ------------------------------------------------------------------ the weekly emails
+export async function readWeek(call, weekIso) {
+  const t = await call("GET", "/tables/Orders/range?$select=values");
+  if (!t.ok) throw new Error(`orders ${t.status}`);
+  const [head, ...rows] = (await t.json()).values || [];
+  const col = Object.fromEntries((head || []).map((h, i) => [String(h).trim(), i]));
+  for (const need of ["Week of", "Student", "Grade", ...DAYS]) {
+    if (!(need in col)) throw new Error(`Orders table has no "${need}" column`);
+  }
+  const kids = new Map();
+  for (const r of rows) {
+    if (excelDate(r[col["Week of"]]) !== weekIso) continue;
+    const name = String(r[col.Student] || "").trim(), grade = String(r[col.Grade] || "").trim();
+    if (!name) continue;
+    const key = `${grade}|${name.toLowerCase()}`;
+    const k = kids.get(key) || { name, grade, days: new Set() };
+    DAYS.forEach((d) => { if (String(r[col[d]] || "").trim().toUpperCase() === "X") k.days.add(d); });
+    kids.set(key, k);
+  }
+  return [...kids.values()].filter((k) => k.days.size);
+}
+
+export async function readTeachers(call) {
+  const r = await call("GET", `/worksheets/${TEACHERS_SHEET}/usedRange?$select=values`);
+  if (!r.ok) throw new Error(`teachers ${r.status}`);
+  const [, ...rows] = (await r.json()).values || [];
+  return rows.map((r) => ({ grade: String(r[0] || "").trim(), teacher: String(r[1] || "").trim(), email: String(r[2] || "").trim() }))
+    .filter((t) => t.grade);
+}
+
+// One email per teacher (a teacher with two grades gets one list). Grades with no teacher
+// email, and teachers with no lunches that week, get nothing.
+export function homeroomMails(students, teachers, weekIso, env, testTo) {
+  const byEmail = new Map();
+  for (const t of teachers) {
+    if (!testTo && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(t.email)) continue;
+    const key = (t.email || `(no email) ${t.teacher}`).toLowerCase();
+    const g = byEmail.get(key) || { teacher: t.teacher, email: t.email, grades: [] };
+    g.grades.push(t.grade);
+    byEmail.set(key, g);
+  }
+  const label = weekLabel(weekIso);
+  const mails = [];
+  for (const g of byEmail.values()) {
+    const kids = students.filter((s) => g.grades.includes(s.grade)).sort((a, b) =>
+      (rank(a.grade) - rank(b.grade)) || a.name.localeCompare(b.name));
+    if (!kids.length) continue;
+    const e = escapeHtml;
+    const two = g.grades.length > 1;
+    const th = (x) => `<th style="text-align:left;padding:4px 10px;border-bottom:2px solid #1B2A4A">${x}</th>`;
+    const td = (x, c) => `<td style="padding:4px 10px;border-bottom:1px solid #ddd${c ? ";text-align:center" : ""}">${x}</td>`;
+    const rows = kids.map((k) => `<tr>${td(e(k.name))}${two ? td(e(k.grade)) : ""}${DAYS.map((d) => td(k.days.has(d) ? "&#10003;" : "", true)).join("")}</tr>`).join("");
+    const totals = `<tr><td style="padding:4px 10px"><b>Lunches</b></td>${two ? "<td></td>" : ""}` +
+      DAYS.map((d) => `<td style="padding:4px 10px;text-align:center"><b>${kids.filter((k) => k.days.has(d)).length}</b></td>`).join("") + "</tr>";
+    const content =
+      (testTo ? `<p style="color:#a00"><b>TEST.</b> This would go to ${e(g.teacher)} &lt;${e(g.email || "no email yet")}&gt;` +
+        `${env.HOMEROOM_CC ? `, Cc ${e(env.HOMEROOM_CC)}` : ""}.</p>` : "") +
+      `<p>Good morning${g.teacher ? `, ${e(g.teacher)}` : ""}!</p>` +
+      `<p>These students in your homeroom (${e(g.grades.join(", "))}) have hot lunch this week, the week of ${e(label)}:</p>` +
+      `<table style="border-collapse:collapse;font-size:15px"><thead><tr>${th("Student")}${two ? th("Grade") : ""}` +
+      `${DAYS.map(th).join("")}</tr></thead><tbody>${rows}${totals}</tbody></table>` +
+      `<p>Orders placed online by the Friday deadline are included. If something changes, the office will let you know.</p>` +
+      `<p>Thank you,<br>${e(env.SIGNATURE || "Independent Baptist Academy").replace(/\n/g, "<br>")}</p>`;
+    const message = {
+      subject: `${testTo ? "[TEST] " : ""}Hot lunch this week: ${g.grades.length > 1 ? g.grades.map(short).join(" & ") : g.grades[0]} (week of ${label})`,
+      body: { contentType: "HTML", content },
+      toRecipients: [{ emailAddress: { address: testTo || g.email, name: testTo ? undefined : g.teacher } }],
+    };
+    if (!testTo && env.HOMEROOM_CC) message.ccRecipients = env.HOMEROOM_CC.split(",").map((a) => ({ emailAddress: { address: a.trim() } }));
+    if (env.REPLY_TO) message.replyTo = [{ emailAddress: { address: env.REPLY_TO } }];
+    mails.push({ teacher: g.teacher, mail: { message, saveToSentItems: true } });
+  }
+  return mails;
+}
+
+// The Monday of the school week to report on, if `now` is Monday 7 AM Eastern; else "".
+export function mondayToSend(now) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit", weekday: "short",
+    hour: "numeric", hourCycle: "h23",
+  }).formatToParts(now).map((x) => [x.type, x.value]));
+  if (p.weekday !== "Mon" || Number(p.hour) !== 7) return "";
+  return `${p.year}-${p.month}-${p.day}`;
+}
+
+// ------------------------------------------------------------------ helpers
+async function must(p) {
+  const r = await p;
+  if (!r.ok) throw new Error(`workbook ${r.status} ${(await r.text()).slice(0, 200)}`);
+  return r;
+}
+
+// Excel stores dates as day numbers since 1899-12-30; a row may also hold the typed text "10/26/2026".
+export function excelDate(v) {
+  if (typeof v === "number" && v > 0) return new Date(Date.UTC(1899, 11, 30) + Math.round(v) * 86400000).toISOString().slice(0, 10);
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(v || "").trim());
+  if (m) return `${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`;
+  const iso = /^(\d{4}-\d{2}-\d{2})/.exec(String(v || "").trim());
+  return iso ? iso[1] : "";
+}
+
+function weekLabel(iso) {
+  return new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", { timeZone: "UTC", month: "long", day: "numeric" });
+}
+
+function rank(grade) { return GRADE_ORDER.has(grade) ? GRADE_ORDER.get(grade) : 99; }
+function short(grade) { return grade.replace(/ Grade$/, "").replace(/^Preschool \((K\d)\)$/, "$1").replace(/^Kindergarten \(K5\)$/, "K5"); }
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}

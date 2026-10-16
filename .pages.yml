@@ -24,10 +24,10 @@ content:
         options:
           format: yyyy-MM-dd
       - name: order_deadline
-        label: Order deadline
+        label: Order deadline (only if different)
         type: date
         default: ""
-        description: Online ordering closes at this date and time (Eastern). After that, parents are told to call the office.
+        description: Leave blank for the usual deadline, 9:00 AM on the Friday before the lunch week. Fill in only for a different date or time (Eastern), for example when that Friday is a day off.
         options:
           time: true
           format: yyyy-MM-dd'T'HH:mm
@@ -70,135 +70,64 @@ content:
           regex: "^(https://.*)?$"
           message: "Paste the full link, starting with https://"
 
-  - name: documents
-    label: Parent Portal documents
+  - name: parents
+    label: Parent Portal page
     type: file
-    path: content/documents.json
+    path: content/parents.json
     format: json
     fields:
-      - name: calendars
-        label: Calendars
+      - name: heading
+        label: Welcome heading
+        type: string
+      - name: intro
+        label: Welcome text
+        type: text
+      - name: sections
+        label: Sections
+        description: Shown on the page in this order (drag to reorder). The quick links at the top list them A to Z.
         type: object
-        list: true
+        list:
+          collapsible:
+            collapsed: true
+            summary: "{title}"
         fields:
           - name: title
-            label: Link text
+            label: Heading
             type: string
             required: true
-          - name: file
-            label: PDF
-            type: file
-            description: Upload a PDF, or use the web link below instead.
-            options:
-              extensions: [pdf]
-          - name: url
-            label: Web link (instead of a PDF)
+          - name: menu_label
+            label: Quick link name
             type: string
-            pattern:
-              regex: "^(https://.*)?$"
-              message: "Paste the full link, starting with https://"
-      - name: handbooks
-        label: Student Handbooks
-        type: object
-        list: true
-        fields:
-          - name: title
-            label: Link text
+            description: Short name for the quick links at the top, for example "Handbooks". Leave blank to use the heading.
+          - name: text
+            label: Text
+            type: rich-text
+          - name: links
+            label: Links and PDFs
+            type: object
+            list: true
+            fields:
+              - name: title
+                label: Link text
+                type: string
+                required: true
+              - name: file
+                label: PDF
+                type: file
+                description: Upload a PDF, or use the web link below instead.
+                options:
+                  extensions: [pdf]
+              - name: url
+                label: Web link (instead of a PDF)
+                type: string
+                pattern:
+                  regex: "^(https://.*)?$"
+                  message: "Paste the full link, starting with https://"
+          - name: show_lunch
+            label: Show the hot lunch menu and order form here
+            type: boolean
+            description: Turn on for the Hot Lunch section only. The menu itself is edited under Hot Lunch.
+          - name: anchor
+            label: Page link name (advanced)
             type: string
-            required: true
-          - name: file
-            label: PDF
-            type: file
-            description: Upload a PDF, or use the web link below instead.
-            options:
-              extensions: [pdf]
-          - name: url
-            label: Web link (instead of a PDF)
-            type: string
-            pattern:
-              regex: "^(https://.*)?$"
-              message: "Paste the full link, starting with https://"
-      - name: athletics
-        label: Athletics schedules
-        type: object
-        list: true
-        fields:
-          - name: title
-            label: Link text
-            type: string
-            required: true
-          - name: file
-            label: PDF
-            type: file
-            description: Upload a PDF, or use the web link below instead.
-            options:
-              extensions: [pdf]
-          - name: url
-            label: Web link (instead of a PDF)
-            type: string
-            pattern:
-              regex: "^(https://.*)?$"
-              message: "Paste the full link, starting with https://"
-      - name: spirit_days
-        label: Spirit Days
-        type: object
-        list: true
-        fields:
-          - name: title
-            label: Link text
-            type: string
-            required: true
-          - name: file
-            label: PDF
-            type: file
-            description: Upload a PDF, or use the web link below instead.
-            options:
-              extensions: [pdf]
-          - name: url
-            label: Web link (instead of a PDF)
-            type: string
-            pattern:
-              regex: "^(https://.*)?$"
-              message: "Paste the full link, starting with https://"
-      - name: supply_lists
-        label: Supply Lists
-        type: object
-        list: true
-        fields:
-          - name: title
-            label: Link text
-            type: string
-            required: true
-          - name: file
-            label: PDF
-            type: file
-            description: Upload a PDF, or use the web link below instead.
-            options:
-              extensions: [pdf]
-          - name: url
-            label: Web link (instead of a PDF)
-            type: string
-            pattern:
-              regex: "^(https://.*)?$"
-              message: "Paste the full link, starting with https://"
-      - name: fine_arts
-        label: Fine Arts
-        type: object
-        list: true
-        fields:
-          - name: title
-            label: Link text
-            type: string
-            required: true
-          - name: file
-            label: PDF
-            type: file
-            description: Upload a PDF, or use the web link below instead.
-            options:
-              extensions: [pdf]
-          - name: url
-            label: Web link (instead of a PDF)
-            type: string
-            pattern:
-              regex: "^(https://.*)?$"
-              message: "Paste the full link, starting with https://"
+            description: Used in links like ibaclinton.com/parents/#hot-lunch. Leave as is; for a new section leave blank.

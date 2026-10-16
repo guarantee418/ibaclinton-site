@@ -56,3 +56,9 @@ jobs:
           printf '%s' "$LUNCH_SETUP_KEY" | $WRANGLER secret put SETUP_KEY
       - name: Check it answers
         run: curl -fsS "$(cat url.txt)/health"
+      - name: Make sure the workbook has its Teachers and Homerooms tabs
+        # Adds them only if missing; prints no names. Fails quietly if the office mailbox isn't connected.
+        run: |
+          curl -sS -X POST "$(cat url.txt)/admin" -H "X-Setup-Key: $LUNCH_SETUP_KEY" \
+            -H "Content-Type: application/json" -d '{"action":"setup"}' || true
+          echo

@@ -14,6 +14,13 @@ the workbook (the office handles call-in changes and exceptions first).
   offline_access), so the Worker can act only as that one account. No password is stored;
   the account signs in once at `/connect` and the Worker keeps Microsoft's refresh token in KV.
 - **Approved by Garrett (2026-10-16):** automatic confirmation emails to parents for lunch orders.
+- **Homeroom lunch lists** (`src/homerooms.js`, approved by Garrett 2026-10-16): Mondays 7:00 AM
+  Eastern (cron), each homeroom teacher gets one email listing their students with hot lunch that
+  week, Cc `HOMEROOM_CC` (ibs@ibcministries.org). Teachers and their emails are in the workbook's
+  **Teachers** tab (kept out of this public repo; the office updates it each year). Grades with no
+  email, and teachers with no lunches that week, get nothing. Sent once per week (KV `homerooms:<date>`).
+  The Worker also adds a live **Homerooms** tab. Both tabs are added only if missing (on each deploy and
+  each Monday run). Test: Actions -> "Send a test homeroom lunch email" (one week, one address, marked TEST).
 
 ## One-time setup (Garrett, as Microsoft 365 admin)
 

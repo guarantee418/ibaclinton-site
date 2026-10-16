@@ -11,6 +11,7 @@ import json
 from zoneinfo import ZoneInfo
 
 EASTERN = ZoneInfo("America/New_York")
+USUAL_DEADLINE = dt.time(9, 0)  # orders close Friday at 9:00 AM the week before
 DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 # Grades a parent can pick. Preschool grades pay the preschool price.
 GRADES = [("K3", "Preschool (K3)", True), ("K4", "Preschool (K4)", True), ("K5", "Kindergarten (K5)", False)] + [
@@ -29,11 +30,15 @@ def _date(value):
     except ValueError:
         return None
 
-def _deadline(value):
+def _deadline(value, start=None):
+    """The office's deadline if they typed one, else the usual: 9:00 AM on the Friday before the week."""
     try:
         return dt.datetime.fromisoformat(str(value or "").strip()).replace(tzinfo=EASTERN)
     except ValueError:
-        return None
+        if not start:
+            return None
+        return dt.datetime.combine(start - dt.timedelta(days=(start.weekday() - 4) % 7 or 7),
+                                   USUAL_DEADLINE, tzinfo=EASTERN)
 
 def _range_label(start, end):
     if start.month == end.month:
@@ -52,7 +57,7 @@ def menu_data(data):
         days.append({"key": day[:3].lower(), "day": day, "meal": meal,
                      "date": date.isoformat() if date else "",
                      "date_label": f"{date:%b} {date.day}" if date else ""})
-    deadline = _deadline(data.get("order_deadline"))
+    deadline = _deadline(data.get("order_deadline"), start)
     week_label = str(data.get("week_of") or "").strip()
     if start and days and not week_label:
         week_label = _range_label(dt.date.fromisoformat(days[0]["date"]), dt.date.fromisoformat(days[-1]["date"]))
@@ -84,7 +89,7 @@ def lunch_block(data, root, api):
                '<a href="mailto:iba@ibcministries.org">iba@ibcministries.org</a>.</p>')
     if not menu["days"]:
         return ('<p>A lunch menu form is sent out via email/text one week in advance for students to select '
-                'the days they would like to eat hot lunch.</p>' + price_line + contact +
+                'the days they would like to eat hot lunch. Orders are due by 9:00 AM on the Friday before.</p>' + price_line + contact +
                 f'<img src="{root}img/hot-lunch-menu.jpg" alt="Sample weekly hot lunch menu with a different meal '
                 'for each day, such as chicken parmesan, soft tacos, hot dogs, chili and burgers" loading="lazy" '
                 'width="1000" height="562" style="border-radius:4px;margin-top:.8rem">')
