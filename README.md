@@ -37,6 +37,9 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
 
 ## Go-live checklist (only with Garrett Greene's approval)
 
+Done 2026-10-16 (steps 1-8). Still open: step 9 once GitHub has issued the certificate, and step 10.
+The ibs account's sign-in name is now ibs@ibaclinton.com too.
+
 DNS moves from the old Cloudflare account (no login) to GoDaddy, and Microsoft 365 gets the
 domain at the same time, so lunch confirmations come from ibs@ibaclinton.com. The old WordPress
 site stops being reachable at ibaclinton.com once the nameservers switch.
