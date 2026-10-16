@@ -76,7 +76,7 @@ function fakeMicrosoft({ workbookOk = true, me = "ibs@ibaclinton.com" } = {}) {
   globalThis.fetch = async (url, init = {}) => {
     url = String(url); calls.push({ url, init });
     const ok = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
-    if (url === ENV0.MENU_URL) return ok(MENU);
+    if (url.split("?")[0] === ENV0.MENU_URL) return ok(MENU);
     if (url.includes("/oauth2/v2.0/token")) return ok({ access_token: "at", refresh_token: "rt2", expires_in: 3600 });
     if (url.includes("/workbook/tables/Orders/rows/add")) return workbookOk ? ok({}, 201) : ok({ error: "locked" }, 409);
     if (url.endsWith("/me/sendMail")) return new Response(null, { status: 202 });
@@ -287,7 +287,7 @@ function fakeConferences({ rows = [], table = true } = {}) {
   globalThis.fetch = async (url, init = {}) => {
     url = String(url); calls.push({ url, init });
     const ok = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
-    if (url === CONF_URL) return ok(SCHED);
+    if (url.startsWith(CONF_URL)) return ok(SCHED);
     if (url.includes("/oauth2/v2.0/token")) return ok({ access_token: "at", refresh_token: "rt1", expires_in: 3600 });
     if (url.includes("/workbook/tables/Bookings/range")) return table ? ok({ text: [CHEAD, ...rows] }) : ok({ error: "ItemNotFound" }, 404);
     if (url.includes("/workbook/tables/Bookings/rows/add")) return ok({}, 201);
@@ -356,4 +356,29 @@ test("POST /conference for a shared panel emails each of its teachers that has a
   const mails = calls.filter((c) => c.url.endsWith("/me/sendMail")).map((c) => JSON.parse(c.init.body).message);
   assert.deepEqual(mails.map((m) => m.toRecipients[0].emailAddress.address), ["pat@example.com", "nap@school.test", "damm@school.test"]);
   assert.ok(mails[1].body.content.startsWith("<p>Mr. Napierala,</p>") && mails[1].body.content.includes("Mr. Napierala, Mr. Damm, Mr. Greene"));
+});
+
+test("staff lunches use the staff price; a menu without one refuses staff", () => {
+  const menu = { ...MENU, prices: { ...MENU.prices, staff: 4 },
+    grades: [...MENU.grades, { value: "STAFF", label: "Staff", preschool: false, staff: true }] };
+  const kid = { name: "Mr. Teacher", grade: "STAFF", days: ["mon", "wed"] };
+  const ok = validateOrder({ ...ORDER, children: [kid] }, menu, BEFORE);
+  assert.equal(ok.order.total, 8);
+  const rows = orderRows(ok.order, menu, "ABCDE", new Date(BEFORE));
+  assert.equal(rows[0][7], "Staff"); assert.equal(rows[0][8], "No"); assert.equal(rows[0][9], 4);
+  const noPrice = { ...menu, prices: { regular: 8, preschool: 5 } };
+  assert.match(validateOrder({ ...ORDER, children: [kid] }, noPrice, BEFORE).error, /grade/);
+});
+
+test("fillTeacherEmails fills only blank emails, by grade code or label", async () => {
+  const { fillTeacherEmails } = await import("../src/homerooms.js");
+  let written;
+  const call = async (method, path, body) => {
+    if (method === "GET") return new Response(JSON.stringify({ values: [["Grade", "Teacher", "Email"],
+      ["Preschool (K3)", "Miss Dove", ""], ["1st Grade", "Miss Ryans", "kept@school.test"], ["12th Grade", "Mr. Greene", ""]] }));
+    written = body; return new Response("{}");
+  };
+  const n = await fillTeacherEmails(call, "K3=dove@school.test, 1=new@school.test,12th Grade=g@school.test,9=bad");
+  assert.equal(n, 2);
+  assert.deepEqual(written.values, [["Email"], ["dove@school.test"], ["kept@school.test"], ["g@school.test"]]);
 });

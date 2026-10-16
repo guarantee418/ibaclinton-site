@@ -20,11 +20,12 @@ the workbook (the office handles call-in changes and exceptions first).
   **Teachers** tab (kept out of this public repo; the office updates it each year). Grades with no
   email, and teachers with no lunches that week, get nothing. Sent once per week (KV `homerooms:<date>`).
   The Worker also adds a live **Homerooms** tab. Both tabs are added only if missing (on each deploy and
-  each Monday run). Test: Actions -> "Send a test homeroom lunch email" (one week, one address, marked TEST).
+  each Monday run). Blank teacher emails are filled from the `TEACHER_EMAILS` repo secret on each
+  deploy (`K3=a@x.org,K4=...,1=...,12=...`); emails typed in the tab are never changed. Test: Actions -> "Send a test homeroom lunch email" (one week, one address, marked TEST).
 - **Parent-teacher conferences** (`src/conferences.js`, built 2026-10-16, not live until Garrett approves):
   parents sign up on ibaclinton.com/conferences/ (one panel per teacher). The day, hours, session length,
   break and teachers come from `content/conferences.json` (office editor), published as
-  `site/conferences/schedule.json` (`CONF_URL`). `GET /conferences` returns the taken times (no names);
+  `site/conferences/schedule.json` (`CONF_URL`, read from GitHub like the menu). `GET /conferences` returns the taken times (no names);
   `POST /conference` checks the booking, adds a row to the **Bookings** table on the workbook's
   **Conferences** tab (added if missing), emails the parent a confirmation and, when the Teachers tab has
   each teacher in the panel's email (matched by name), those teachers. High School (7th-12th) is one shared

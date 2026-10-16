@@ -9,7 +9,8 @@
 //   GET  /connect   one-time Microsoft sign-in by the office mailbox (needs ?key=SETUP_KEY)
 //   GET  /callback  Microsoft sends the sign-in back here
 //   POST /admin     upkeep, needs header X-Setup-Key: {"action":"setup"} adds the Teachers and
-//                   Homerooms tabs (and the Conferences tab) to the workbook if missing; {"action":"homerooms","week":"YYYY-MM-DD",
+//                   Homerooms tabs (and the Conferences tab) to the workbook if missing (and, with
+//                   "teacher_emails", fills blank teacher emails); {"action":"homerooms","week":"YYYY-MM-DD",
 //                   "test_to":"someone@..."} sends that week's homeroom emails to test_to only
 //   cron            Mondays 7:00 AM Eastern: homeroom lunch lists to teachers (src/homerooms.js)
 //
@@ -19,7 +20,7 @@
 
 import { TABLE as CONF_TABLE, bookingRow, conflict, ensureConferenceTab, parentMail, readBookings, takenSlots, teacherEmail,
   teacherMail, validateBooking } from "./conferences.js";
-import { checkHomerooms, ensureTabs, homeroomMails, mondayToSend, readTeachers, readWeek } from "./homerooms.js";
+import { checkHomerooms, ensureTabs, fillTeacherEmails, weekCounts, homeroomMails, mondayToSend, readTeachers, readWeek } from "./homerooms.js";
 
 const SCOPES = "offline_access User.Read Mail.Send Files.ReadWrite";
 const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri"];
@@ -89,7 +90,26 @@ async function admin(request, env) {
     const call = workbook(token, env);
     const added = await ensureTabs(call);
     if (await ensureConferenceTab(call)) added.push("Conferences");
-    return json({ ok: true, tabs_added: added, homerooms_tab: await checkHomerooms(call) }, 200, {});
+    const filled = body.teacher_emails ? await fillTeacherEmails(call, body.teacher_emails) : 0;
+    return json({ ok: true, tabs_added: added, teacher_emails_filled: filled, homerooms_tab: await checkHomerooms(call) }, 200, {});
+  }
+  if (body.action === "weeks") { // how many order rows per week (no names), for checking the workbook
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    return json({ ok: true, weeks: await weekCounts(workbook(token, env)) }, 200, {});
+  }
+  if (body.action === "menu") { // how fetching the menu goes, hop by hop (no secrets)
+    const hops = [];
+    let next = env.MENU_URL;
+    for (let i = 0; i < 5 && next; i++) {
+      try {
+        const r = await fetch(next, { redirect: "manual" });
+        const loc = r.headers.get("Location");
+        hops.push({ url: next, status: r.status, type: r.headers.get("Content-Type"), location: loc });
+        next = loc ? new URL(loc, next).toString() : "";
+      } catch (err) { hops.push({ url: next, error: String(err && err.message || err) }); next = ""; }
+    }
+    return json({ ok: true, hops }, 200, {});
   }
   if (body.action === "homerooms") {
     const week = String(body.week || ""), to = String(body.test_to || "").trim();
@@ -166,7 +186,8 @@ export function validateOrder(body, menu, now) {
     if (!grade) return { error: `Please choose a grade for ${name}` };
     if (!days.length) return { error: `Please choose at least one day for ${name}` };
     if (days.some((d) => !open.has(d))) return { error: "That day isn't on this week's menu; please reload the page" };
-    const price = grade.preschool ? menu.prices.preschool : menu.prices.regular;
+    const price = grade.staff ? menu.prices.staff : grade.preschool ? menu.prices.preschool : menu.prices.regular;
+    if (!(price > 0)) return { error: `Please choose a grade for ${name}` };
     const ordered = DAY_KEYS.filter((d) => days.includes(d));
     total += price * ordered.length;
     children.push({ name, grade, price, days: ordered });
@@ -285,13 +306,16 @@ async function bookingsOrTab(call) {
 }
 
 async function loadJson(url) {
-  const r = await fetch(url, { cf: { cacheTtl: 30 } });
+  // As for the menu: the minute in the address skips GitHub's 5-minute cache.
+  const r = await fetch(`${url}${url.includes("?") ? "&" : "?"}v=${Math.floor(Date.now() / 60000)}`, { cf: { cacheTtl: 30 } });
   if (!r.ok) throw new Error(`${url} ${r.status}`);
   return r.json();
 }
 
 async function loadMenu(env) {
-  const r = await fetch(env.MENU_URL, { cf: { cacheTtl: 30 } });
+  // The minute in the address skips GitHub's 5-minute cache, so a new menu counts within a minute.
+  const url = `${env.MENU_URL}${env.MENU_URL.includes("?") ? "&" : "?"}v=${Math.floor(Date.now() / 60000)}`;
+  const r = await fetch(url, { cf: { cacheTtl: 30 } });
   if (!r.ok) throw new Error(`menu ${r.status}`);
   return r.json();
 }
