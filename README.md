@@ -7,7 +7,9 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
 - `python3 build.py` combines them into the finished site in `site/`. Commit both `src/` and `site/`.
 - `site/img/` holds photos (resized, location data stripped); `site/files/` holds PDFs.
 - `site/styles.css` is the one stylesheet.
-- Publishing is manual: Actions tab → "Publish to GitHub Pages" → Run workflow.
+- Publishing is manual: Actions tab → "Publish to GitHub Pages" → Run workflow **on `main`**. The
+  github-pages environment only deploys from `main`, so merge the working branch into `main` first.
+- Staff photos: 480x600 JPEG, all metadata removed, named `last-first.jpg` in `site/img/staff/`.
 - Request Info form: Formspree form `xaeqabaz` (account and inbox: ggreene@ibcministries.org; free plan,
   50 submissions a month). The form ID is public by nature, so it lives in `build.py`; no secret is needed.
 - `build.py` also writes `sitemap.xml` and `robots.txt`. While `DOMAIN` is empty the pages carry a
