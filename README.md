@@ -35,7 +35,7 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
   writes them to the office's Excel workbook and emails the parent a confirmation.
 - With `LUNCH_API` empty, the page shows the menu and the backup Microsoft Forms link, if any.
 
-## Go-live checklist (only with Garrett's approval)
+## Go-live checklist (only with Garrett Greene's approval)
 
 DNS moves from the old Cloudflare account (no login) to GoDaddy, and Microsoft 365 gets the
 domain at the same time, so lunch confirmations come from ibs@ibaclinton.com. The old WordPress
