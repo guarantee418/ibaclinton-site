@@ -57,8 +57,12 @@ jobs:
       - name: Check it answers
         run: curl -fsS "$(cat url.txt)/health"
       - name: Make sure the workbook has its Teachers and Homerooms tabs
-        # Adds them only if missing; prints no names. Fails quietly if the office mailbox isn't connected.
+        # Adds them only if missing, and fills blank teacher emails from the TEACHER_EMAILS secret
+        # ("K3=a@x.org,K4=...,1=...,12=..."); emails typed in the tab win. Prints counts only.
+        env:
+          TEACHER_EMAILS: ${{ secrets.TEACHER_EMAILS }}
         run: |
+          body=$(jq -nc --arg t "$TEACHER_EMAILS" '{action:"setup",teacher_emails:$t}')
           curl -sS -X POST "$(cat url.txt)/admin" -H "X-Setup-Key: $LUNCH_SETUP_KEY" \
-            -H "Content-Type: application/json" -d '{"action":"setup"}' || true
+            -H "Content-Type: application/json" -d "$body" || true
           echo

@@ -233,3 +233,16 @@ test("staff lunches use the staff price; a menu without one refuses staff", () =
   const noPrice = { ...menu, prices: { regular: 8, preschool: 5 } };
   assert.match(validateOrder({ ...ORDER, children: [kid] }, noPrice, BEFORE).error, /grade/);
 });
+
+test("fillTeacherEmails fills only blank emails, by grade code or label", async () => {
+  const { fillTeacherEmails } = await import("../src/homerooms.js");
+  let written;
+  const call = async (method, path, body) => {
+    if (method === "GET") return new Response(JSON.stringify({ values: [["Grade", "Teacher", "Email"],
+      ["Preschool (K3)", "Miss Dove", ""], ["1st Grade", "Miss Ryans", "kept@school.test"], ["12th Grade", "Mr. Greene", ""]] }));
+    written = body; return new Response("{}");
+  };
+  const n = await fillTeacherEmails(call, "K3=dove@school.test, 1=new@school.test,12th Grade=g@school.test,9=bad");
+  assert.equal(n, 2);
+  assert.deepEqual(written.values, [["Email"], ["dove@school.test"], ["kept@school.test"], ["g@school.test"]]);
+});
