@@ -20,7 +20,7 @@ FORMSPREE_ID = "xaeqabaz"  # Formspree account: ggreene@ibcministries.org
 # guarantee418.github.io/ibaclinton-site/. Set to "ibaclinton.com" on go-live day and rebuild:
 # that writes site/CNAME, switches 404.html's links to "/", turns on Google Analytics and
 # lets search engines index the pages (the preview asks them not to).
-DOMAIN = ""
+DOMAIN = "ibaclinton.com"
 
 # Address of the hot lunch order service (worker/, a Cloudflare Worker), for example
 # "https://ibaclinton-lunch.<account>.workers.dev". Empty = no online ordering: the page shows
