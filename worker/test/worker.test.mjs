@@ -20,7 +20,7 @@ const ORDER = {
 };
 const ENV0 = {
   MENU_URL: "https://site.test/lunch/menu.json", ALLOWED_ORIGINS: "https://guarantee418.github.io",
-  MAILBOX: "ibs@ibaministries.onmicrosoft.com", REPLY_TO: "ibs@ibcministries.org", SIGNATURE: "Mrs. Napierala",
+  MAILBOX: "ibs@ibaclinton.com", REPLY_TO: "ibs@ibcministries.org", SIGNATURE: "Mrs. Napierala",
   WORKBOOK_PATH: "Hot Lunch Orders.xlsx", TABLE: "Orders", TENANT_ID: "tenant", CLIENT_ID: "client",
   CLIENT_SECRET: "secret", SETUP_KEY: "setup",
 };
@@ -70,7 +70,7 @@ test("confirmation email escapes everything typed in and replies to the office",
   assert.equal(mail.saveToSentItems, true);
 });
 
-function fakeMicrosoft({ workbookOk = true, me = "ibs@ibaministries.onmicrosoft.com" } = {}) {
+function fakeMicrosoft({ workbookOk = true, me = "ibs@ibaclinton.com" } = {}) {
   const calls = [];
   globalThis.fetch = async (url, init = {}) => {
     url = String(url); calls.push({ url, init });
@@ -121,14 +121,14 @@ test("POST /order refuses other websites, traps spam, and reports a workbook fai
 });
 
 test("/connect needs the setup key; /callback only accepts the office mailbox", async () => {
-  fakeMicrosoft({ me: "someone.else@ibaministries.onmicrosoft.com" });
+  fakeMicrosoft({ me: "someone.else@ibaclinton.com" });
   const env = { ...ENV0, LUNCH_KV: kv() };
   assert.equal((await worker.fetch(new Request("https://lunch.test/connect?key=wrong"), env)).status, 403);
   const go = await worker.fetch(new Request("https://lunch.test/connect?key=setup"), env);
   assert.equal(go.status, 302);
   const auth = new URL(go.headers.get("Location"));
   assert.equal(auth.searchParams.get("redirect_uri"), "https://lunch.test/callback");
-  assert.equal(auth.searchParams.get("login_hint"), "ibs@ibaministries.onmicrosoft.com");
+  assert.equal(auth.searchParams.get("login_hint"), "ibs@ibaclinton.com");
   const state = auth.searchParams.get("state");
   const cb = await worker.fetch(new Request(`https://lunch.test/callback?code=c&state=${state}`), env);
   assert.equal(cb.status, 403);
