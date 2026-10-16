@@ -14,7 +14,7 @@
 // (send mail as that user, edit that user's OneDrive files). It never sees a password;
 // it keeps Microsoft's refresh token in KV. See worker/README.md for setup.
 
-import { checkHomerooms, ensureTabs, homeroomMails, mondayToSend, readTeachers, readWeek } from "./homerooms.js";
+import { checkHomerooms, ensureTabs, weekCounts, homeroomMails, mondayToSend, readTeachers, readWeek } from "./homerooms.js";
 
 const SCOPES = "offline_access User.Read Mail.Send Files.ReadWrite";
 const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri"];
@@ -82,6 +82,11 @@ async function admin(request, env) {
     const call = workbook(token, env);
     const added = await ensureTabs(call);
     return json({ ok: true, tabs_added: added, homerooms_tab: await checkHomerooms(call) }, 200, {});
+  }
+  if (body.action === "weeks") { // how many order rows per week (no names), for checking the workbook
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    return json({ ok: true, weeks: await weekCounts(workbook(token, env)) }, 200, {});
   }
   if (body.action === "homerooms") {
     const week = String(body.week || ""), to = String(body.test_to || "").trim();
@@ -158,7 +163,8 @@ export function validateOrder(body, menu, now) {
     if (!grade) return { error: `Please choose a grade for ${name}` };
     if (!days.length) return { error: `Please choose at least one day for ${name}` };
     if (days.some((d) => !open.has(d))) return { error: "That day isn't on this week's menu; please reload the page" };
-    const price = grade.preschool ? menu.prices.preschool : menu.prices.regular;
+    const price = grade.staff ? menu.prices.staff : grade.preschool ? menu.prices.preschool : menu.prices.regular;
+    if (!(price > 0)) return { error: `Please choose a grade for ${name}` };
     const ordered = DAY_KEYS.filter((d) => days.includes(d));
     total += price * ordered.length;
     children.push({ name, grade, price, days: ordered });

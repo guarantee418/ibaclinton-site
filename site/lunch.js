@@ -7,6 +7,11 @@
   var status = document.getElementById("lunch-status");
   var totalEl = document.getElementById("lunch-total");
   var addBtn = document.getElementById("lunch-add");
+  // Staff order from ?staff (not linked on the site): add a "Staff" choice to the grade list.
+  if (/[?&]staff\b/.test(location.search)) {
+    var opt = document.createElement("option"); opt.value = "STAFF"; opt.textContent = "Staff";
+    list.querySelector("[name=grade]").appendChild(opt);
+  }
   var template = list.firstElementChild.cloneNode(true);
   var MAX = 8, menu = null;
 
@@ -16,7 +21,8 @@
   function price(grade) {
     if (!menu || !grade) return 0;
     for (var i = 0; i < menu.grades.length; i++)
-      if (menu.grades[i].value === grade) return menu.grades[i].preschool ? menu.prices.preschool : menu.prices.regular;
+      if (menu.grades[i].value === grade)
+        return menu.grades[i].staff ? menu.prices.staff : menu.grades[i].preschool ? menu.prices.preschool : menu.prices.regular;
     return 0;
   }
   function refresh() {

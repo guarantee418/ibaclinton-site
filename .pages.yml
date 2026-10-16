@@ -58,6 +58,12 @@ content:
         type: number
         options:
           min: 0
+      - name: price_staff
+        label: Price per lunch (staff)
+        type: number
+        description: Not shown on the website. Staff order with the link ibaclinton.com/parents/?staff#hot-lunch, which adds a "Staff" choice under Grade.
+        options:
+          min: 0
       - name: note
         label: Note
         type: text

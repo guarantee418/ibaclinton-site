@@ -102,6 +102,20 @@ export async function readWeek(call, weekIso) {
   return [...kids.values()].filter((k) => k.days.size);
 }
 
+export async function weekCounts(call) {
+  const t = await call("GET", "/tables/Orders/range?$select=values");
+  if (!t.ok) throw new Error(`orders ${t.status}`);
+  const [head, ...rows] = (await t.json()).values || [];
+  const i = (head || []).map((h) => String(h).trim()).indexOf("Week of");
+  const out = {};
+  for (const r of rows) {
+    const raw = r[i];
+    const key = excelDate(raw) || (raw === "" || raw == null ? "(blank)" : `(unreadable: ${typeof raw})`);
+    out[key] = (out[key] || 0) + 1;
+  }
+  return out;
+}
+
 export async function readTeachers(call) {
   const r = await call("GET", `/worksheets/${TEACHERS_SHEET}/usedRange?$select=values`);
   if (!r.ok) throw new Error(`teachers ${r.status}`);

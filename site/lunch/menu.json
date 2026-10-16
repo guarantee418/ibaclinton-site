@@ -5,7 +5,8 @@
   "deadline_label": "",
   "prices": {
     "regular": 8.0,
-    "preschool": 5.0
+    "preschool": 5.0,
+    "staff": 4.0
   },
   "note": "",
   "days": [],
@@ -84,6 +85,12 @@
       "value": "12",
       "label": "12th Grade",
       "preschool": false
+    },
+    {
+      "value": "STAFF",
+      "label": "Staff",
+      "preschool": false,
+      "staff": true
     }
   ]
 }
