@@ -24,6 +24,11 @@ jobs:
       WEEK: ${{ inputs.week }}
       TO: ${{ inputs.to }}
     steps:
+      - name: How the service reaches the published menu
+        run: |
+          curl -sS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" \
+            -H "X-Setup-Key: $LUNCH_SETUP_KEY" -H "Content-Type: application/json" -d '{"action":"menu"}' || true
+          echo
       - name: Order rows in the workbook per week (counts only)
         run: |
           curl -fsS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" \
