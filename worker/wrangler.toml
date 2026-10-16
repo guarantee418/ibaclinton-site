@@ -13,7 +13,7 @@ binding = "LUNCH_KV"
 id = "REPLACED_BY_WORKFLOW"
 
 [vars]
-MENU_URL = "https://ibaclinton.com/lunch/menu.json"
+MENU_URL = "https://raw.githubusercontent.com/guarantee418/ibaclinton-site/claude/charming-maxwell-kzu8qt/worker/test-menu.json"
 ALLOWED_ORIGINS = "https://guarantee418.github.io,https://ibaclinton.com,https://www.ibaclinton.com"
 MAILBOX = "ibs@ibaclinton.com"
 REPLY_TO = "ibs@ibcministries.org"
