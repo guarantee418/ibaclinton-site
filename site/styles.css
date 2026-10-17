@@ -129,7 +129,6 @@ form.info textarea{min-height:5.5rem}
 form.info .opt{font-weight:400;color:var(--muted)}
 form.info .hp{position:absolute;left:-5000px}
 form.info button{justify-self:start;cursor:pointer;font:inherit;font-weight:600}
-.calendly-inline-widget{min-width:300px;height:760px;margin-top:1.5rem}
 .contact-line a{font-weight:600;color:var(--navy)}
 
 @media(max-width:820px){
@@ -171,3 +170,14 @@ form.info label.lunch-day{flex-direction:row;align-items:flex-start;gap:.5rem;fo
 .conf-form h3{margin:0;font-size:1.3rem;color:var(--navy)}
 #conf-status:empty{display:none}
 form.info textarea{resize:vertical}
+/* School tours (tours.py, tours.js) */
+.tour-list{list-style:none;padding:0;margin:.6rem 0 1.4rem;display:grid;gap:.7rem;max-width:44em}
+.tour-list li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.8rem;padding:1rem 1.1rem;border:1px solid var(--line);border-radius:4px;background:#fff}
+.tour-list li>div{display:flex;flex-direction:column;gap:.2rem;min-width:0}
+.tour-list li b{color:var(--navy);font-size:1.05rem}
+.tour-list li span{color:var(--muted);font-size:.92rem}
+.tour-list li.open{border-color:var(--gold);background:var(--cream)}
+.tour-list .tour-status{font-weight:600;color:var(--navy)}
+.tour-list .tour-status.full{color:#9a3b30}.tour-list .tour-status.ok{color:#2c7a3f}
+.tour-form h3{margin:0;font-size:1.3rem;color:var(--navy)}
+#tour-status:empty{display:none}

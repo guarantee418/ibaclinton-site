@@ -417,3 +417,110 @@ test("deleteTestOrder removes all rows of a TEST order, bottom first, and nothin
   assert.deepEqual(await deleteTestOrder(call, "Orders", "25MQU"), { deleted: 2 });
   assert.deepEqual(deleted, ["/tables/Orders/rows/itemAt(index=3)", "/tables/Orders/rows/itemAt(index=1)"]);
 });
+
+// ------------------------------------------------------------------ school tours
+import { takenCounts, tourConflict, validateSignup, signupRow, familyMail, officeMail } from "../src/tours.js";
+
+const TOURS = { note: "", tours: [
+  { id: "2027-01-28-1300", date: "2027-01-28", time: "1:00 PM", label: "Thursday, January 28, 2027 at 1:00 PM",
+    starts: "2027-01-28T18:00:00+00:00", spots: 2, deadline: "2027-01-27T20:00:00+00:00", note: "" },
+  { id: "2027-02-25-1300", date: "2027-02-25", time: "1:00 PM", label: "Thursday, February 25, 2027 at 1:00 PM",
+    starts: "2027-02-25T18:00:00+00:00", spots: 5, deadline: "2027-02-24T20:00:00+00:00", note: "" }] };
+const TOUR_URL = "https://site.test/tours/schedule.json";
+const SIGN = { tour: "2027-01-28-1300", parent_first: "Pat", parent_last: "Smith", email: "Pat@Example.com",
+  phone: "301-555-0100", children: "Sam, 3rd grade", notes: "" };
+const THEAD = ["Signed up", "Tour date", "Time", "Parent", "Email", "Phone", "Children and grades", "Notes", "Signup #"];
+const trow = (date, time, email) => ["", date, time, "P", email, "", "", "", "A"];
+
+test("tour sign-ups are checked against the published tours", () => {
+  const ok = validateSignup(SIGN, TOURS, BEFORE);
+  assert.equal(ok.error, undefined);
+  assert.equal(ok.signup.email, "pat@example.com");
+  assert.match(validateSignup({ ...SIGN, tour: "nope" }, TOURS, BEFORE).error, /choose a tour/);
+  assert.match(validateSignup(SIGN, TOURS, Date.parse("2027-01-27T20:00:01Z")).error, /closed/);
+  assert.match(validateSignup({ ...SIGN, children: "" }, TOURS, BEFORE).error, /children/);
+  assert.match(validateSignup({ ...SIGN, phone: "" }, TOURS, BEFORE).error, /phone/);
+});
+
+test("a tour is full at its number of families, counting rows the office typed", () => {
+  const rows = [{ date: "2027-01-28", time: normTime("1:00:00 PM"), email: "a@b.c" },
+    { date: "2027-01-28", time: normTime("13:00"), email: "d@e.f" },
+    { date: "2027-02-25", time: "1:00 PM", email: "pat@example.com" }];
+  assert.deepEqual(takenCounts(TOURS, rows), { "2027-01-28-1300": 2, "2027-02-25-1300": 1 });
+  const s = validateSignup(SIGN, TOURS, BEFORE).signup;
+  assert.equal(tourConflict(s, rows).code, "full");
+  assert.equal(tourConflict(s, rows.slice(1)), null);
+  const feb = validateSignup({ ...SIGN, tour: "2027-02-25-1300" }, TOURS, BEFORE).signup;
+  assert.equal(tourConflict(feb, rows).code, "already");
+});
+
+test("tour row and emails: formula-safe and escaped; the office hears who signed up", () => {
+  const s = validateSignup({ ...SIGN, children: "=SUM(1)", parent_first: "<i>" }, TOURS, BEFORE).signup;
+  const row = signupRow(s, "TOUR1", "1/5/2027 9:00 AM");
+  assert.deepEqual(row.slice(1, 3), ["1/28/2027", "1:00 PM"]);
+  assert.equal(row[6], "'=SUM(1)"); assert.equal(row.length, THEAD.length);
+  const fam = familyMail(s, "TOUR1", ENV0).message;
+  assert.ok(fam.body.content.includes("&lt;i&gt;") && fam.subject.includes("January 28, 2027"));
+  const off = officeMail(s, "TOUR1", 2, { TOUR_NOTIFY: "office@school.test" }).message;
+  assert.equal(off.toRecipients[0].emailAddress.address, "office@school.test");
+  assert.equal(off.replyTo[0].emailAddress.address, "pat@example.com");
+  assert.ok(off.body.content.includes("2 of 2 spots"));
+});
+
+function fakeTours({ rows = [], table = true } = {}) {
+  const calls = [];
+  globalThis.fetch = async (url, init = {}) => {
+    url = String(url); calls.push({ url, init });
+    const ok = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
+    if (url.startsWith(TOUR_URL)) return ok(TOURS);
+    if (url.includes("/oauth2/v2.0/token")) return ok({ access_token: "at", refresh_token: "rt1", expires_in: 3600 });
+    if (url.includes("/workbook/tables/Signups/range")) return table ? ok({ text: [THEAD, ...rows] }) : ok({ error: "ItemNotFound" }, 404);
+    if (url.includes("/workbook/tables/Signups/rows/add")) return ok({}, 201);
+    if (url.includes("/workbook/worksheets?")) return ok({ value: [{ name: "Orders" }] });
+    if (url.includes("/tables/add")) return ok({ id: "{T2}" });
+    if (url.includes("/workbook/")) return ok({});
+    if (url.endsWith("/me/sendMail")) return new Response(null, { status: 202 });
+    return ok({ error: "unexpected " + url }, 500);
+  };
+  return calls;
+}
+const TENV = () => ({ ...ENV0, TOUR_URL, TOUR_NOTIFY: "office@school.test", LUNCH_KV: kv({ ms_refresh: "rt1" }) });
+const tpost = (body) => new Request("https://lunch.test/tour", {
+  method: "POST", body: JSON.stringify(body),
+  headers: { "Content-Type": "application/json", Origin: "https://guarantee418.github.io", "CF-Connecting-IP": "9.9.9.9" },
+});
+
+test("POST /tour end to end: saves the row, emails the family and the office, frees the lock", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: BEFORE });
+  const calls = fakeTours({ rows: [trow("1/28/2027", "1:00 PM", "a@b.c")] });
+  const env = TENV();
+  const res = await worker.fetch(tpost(SIGN), env);
+  assert.equal(res.status, 200, await res.clone().text());
+  const mails = calls.filter((c) => c.url.endsWith("/me/sendMail")).map((c) => JSON.parse(c.init.body).message);
+  assert.deepEqual(mails.map((m) => m.toRecipients[0].emailAddress.address), ["pat@example.com", "office@school.test"]);
+  assert.ok(mails[1].body.content.includes("2 of 2 spots"));
+  assert.equal(await env.LUNCH_KV.get("tour-lock:2027-01-28-1300"), null);
+});
+
+test("POST /tour refuses a full tour; GET /tours counts and adds the tab when missing", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: BEFORE });
+  fakeTours({ rows: [trow("1/28/2027", "1:00 PM", "a@b.c"), trow("1/28/2027", "1:00 PM", "d@e.f")] });
+  const full = await worker.fetch(tpost(SIGN), TENV());
+  assert.equal(full.status, 409);
+  assert.equal((await full.json()).code, "full");
+  const get = (env) => worker.fetch(new Request("https://lunch.test/tours", { headers: { Origin: "https://guarantee418.github.io" } }), env);
+  assert.deepEqual((await (await get(TENV())).json()).taken, { "2027-01-28-1300": 2 });
+  const calls = fakeTours({ table: false });
+  assert.deepEqual((await (await get(TENV())).json()).taken, {});
+  assert.ok(calls.some((c) => c.url.includes("/worksheets/add")) && calls.some((c) => c.url.includes("/tables/%7BT2%7D")));
+});
+
+test("POST /tour: a second family at the same moment is asked to try again", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: BEFORE });
+  fakeTours();
+  const env = TENV();
+  await env.LUNCH_KV.put("tour-lock:2027-01-28-1300", "1");
+  const busy = await worker.fetch(tpost(SIGN), env);
+  assert.equal(busy.status, 409);
+  assert.equal((await busy.json()).code, "busy");
+});

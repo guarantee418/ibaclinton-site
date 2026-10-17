@@ -30,6 +30,9 @@ WORKBOOK_PATH = "Hot Lunch Orders.xlsx"
 TABLE = "Orders"
 # The published parent-teacher conference schedule, also read from GitHub (same reason).
 CONF_URL = "https://raw.githubusercontent.com/guarantee418/ibaclinton-site/main/site/conferences/schedule.json"
+# The published school tours (same reason), and who hears about each tour sign-up.
+TOUR_URL = "https://raw.githubusercontent.com/guarantee418/ibaclinton-site/main/site/tours/schedule.json"
+TOUR_NOTIFY = "iba@ibcministries.org"
 HOMEROOM_CC = "ibs@ibcministries.org"  # Cc on the Monday homeroom lunch lists
 # Filled in by the workflow from GitHub secrets (not secret, but kept out of this public repo):
 TENANT_ID = ""

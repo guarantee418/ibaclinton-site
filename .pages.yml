@@ -76,6 +76,60 @@ content:
           regex: "^(https://.*)?$"
           message: "Paste the full link, starting with https://"
 
+  - name: tours
+    label: School Tours
+    type: file
+    path: content/tours.json
+    format: json
+    fields:
+      - name: spots
+        label: Families per tour (usual)
+        type: number
+        description: A tour shows as full once this many families have signed up. Each tour can set its own number below.
+        options:
+          min: 1
+      - name: note
+        label: Note
+        type: text
+        description: Optional line shown above the tours on the Book a Tour page.
+      - name: tours
+        label: Tours
+        description: Families sign up at ibaclinton.com/tour/. Past tours drop off the page by themselves. Sign-ups are on the Tours tab of the office workbook.
+        type: object
+        list:
+          collapsible:
+            collapsed: false
+            summary: "{date} {time}"
+        fields:
+          - name: date
+            label: Date
+            type: date
+            required: true
+            options:
+              format: yyyy-MM-dd
+          - name: time
+            label: Time
+            type: string
+            required: true
+            description: For example 1:00 PM
+          - name: spots
+            label: Families (only if different)
+            type: number
+            description: Leave blank for the usual number above.
+            options:
+              min: 1
+          - name: signup_deadline
+            label: Sign-up deadline (only if different)
+            type: date
+            description: Leave blank for the usual, 3:00 PM on the school day before. Eastern time.
+            options:
+              time: true
+              format: yyyy-MM-dd'T'HH:mm
+          - name: note
+            label: Note
+            type: string
+            description: Optional, for example "Preschool families welcome"
+
   - name: conferences
     label: Parent-Teacher Conferences
     type: file

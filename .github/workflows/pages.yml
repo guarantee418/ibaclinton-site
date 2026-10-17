@@ -37,13 +37,14 @@ jobs:
       - id: deployment
         uses: actions/deploy-pages@v4
       - name: Keep the published lunch menu and conference schedule in git
-        # The order service (worker/) reads site/lunch/menu.json and site/conferences/schedule.json
+        # The order service (worker/) reads site/lunch/menu.json, site/conferences/schedule.json
+        # and site/tours/schedule.json
         # from GitHub, not through the domain.
         run: |
-          git diff --quiet -- site/lunch/menu.json site/conferences/schedule.json && exit 0
+          git diff --quiet -- site/lunch/menu.json site/conferences/schedule.json site/tours/schedule.json && exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/lunch/menu.json site/conferences/schedule.json
-          git commit -m "Published lunch menu / conference schedule (automatic)"
+          git add site/lunch/menu.json site/conferences/schedule.json site/tours/schedule.json
+          git commit -m "Published lunch menu / conference schedule / tours (automatic)"
           for i in 1 2 3; do git pull --rebase -q && git push -q && exit 0; sleep 5; done
           exit 1
