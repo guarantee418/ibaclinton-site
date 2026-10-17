@@ -1,0 +1,16 @@
+{
+  "note": "",
+  "tours": [
+    {
+      "id": "2027-01-29-0900",
+      "date": "2027-01-29",
+      "time": "9:00 AM",
+      "label": "TEST tour, Friday, January 29, 2027 at 9:00 AM",
+      "starts": "2027-01-29T14:00:00+00:00",
+      "spots": 5,
+      "deadline": "2027-01-27T20:00:00+00:00",
+      "deadline_label": "Wednesday, January 27 at 3:00 PM",
+      "note": "TEST only"
+    }
+  ]
+}
