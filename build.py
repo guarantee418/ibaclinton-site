@@ -13,6 +13,7 @@ from html.parser import HTMLParser
 
 import conferences
 import lunch
+import tours
 
 # Formspree form ID for the Request Info form (the part after formspree.io/f/).
 # Leave empty until the form exists; the page then shows a "call or email us" notice.
@@ -151,6 +152,8 @@ def render(path, text, layout):
     if "{{conferences}}" in body:
         body = body.replace("{{conferences}}", conferences.page_block(
             json.loads((CONTENT / "conferences.json").read_text()), root, LUNCH_API))
+    if "{{tours}}" in body:
+        body = body.replace("{{tours}}", tours.page_block(json.loads((CONTENT / "tours.json").read_text()), root, LUNCH_API))
     if "{{parents}}" in body:
         body = body.replace("{{parents}}", parents_block(json.loads((CONTENT / "parents.json").read_text()), root))
     if FORMSPREE_ID:
@@ -193,6 +196,8 @@ if __name__ == "__main__":
     write("lunch/menu.json", lunch.menu_file(json.loads((CONTENT / "lunch.json").read_text())))
     (OUT / "conferences").mkdir(exist_ok=True)
     write("conferences/schedule.json", conferences.schedule_file(json.loads((CONTENT / "conferences.json").read_text())))
+    (OUT / "tours").mkdir(exist_ok=True)
+    write("tours/schedule.json", tours.schedule_file(json.loads((CONTENT / "tours.json").read_text())))
     write("robots.txt", f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}sitemap.xml\n")
     cname = OUT / "CNAME"
     if DOMAIN:

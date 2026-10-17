@@ -5,6 +5,9 @@
 //   GET  /conferences  which conference times are taken, by teacher (no names)
 //   POST /conference   a parent-teacher conference booking (src/conferences.js): checked against the
 //                   published schedule, added to the Conferences tab of the office workbook, emailed
+//   GET  /tours        how many families have signed up for each tour (no names)
+//   POST /tour         a school tour sign-up (src/tours.js): checked against the published tours,
+//                   refused when the tour is full, added to the Tours tab of the office workbook, emailed
 //   GET  /health    {"ok":true,"connected":true|false}
 //   GET  /connect   one-time Microsoft sign-in by the office mailbox (needs ?key=SETUP_KEY)
 //   GET  /callback  Microsoft sends the sign-in back here
@@ -23,6 +26,8 @@
 
 import { TABLE as CONF_TABLE, bookingRow, conflict, deleteTestBooking, ensureConferenceTab, parentMail, readBookings, takenSlots, teacherEmail,
   teacherMail, validateBooking } from "./conferences.js";
+import { TABLE as TOUR_TABLE, deleteTestSignup, ensureTourTab, familyMail, officeMail, readSignups, signupRow, takenCounts,
+  tourConflict, validateSignup } from "./tours.js";
 import { checkHomerooms, ensureTabs, fillTeacherEmails, weekCounts, homeroomMails, mondayToSend, readTeachers, readWeek } from "./homerooms.js";
 
 const SCOPES = "offline_access User.Read Mail.Send Files.ReadWrite";
@@ -44,6 +49,8 @@ export default {
       if (url.pathname === "/order" && request.method === "POST") return await order(request, env, cors);
       if (url.pathname === "/conferences" && request.method === "GET") return await conferences(env, cors);
       if (url.pathname === "/conference" && request.method === "POST") return await conference(request, env, cors);
+      if (url.pathname === "/tours" && request.method === "GET") return await tours(env, cors);
+      if (url.pathname === "/tour" && request.method === "POST") return await tour(request, env, cors);
       if (url.pathname === "/admin" && request.method === "POST") return await admin(request, env);
       return json({ ok: false, error: "Not found" }, 404, cors);
     } catch (err) {
@@ -93,6 +100,7 @@ async function admin(request, env) {
     const call = workbook(token, env);
     const added = await ensureTabs(call);
     if (await ensureConferenceTab(call)) added.push("Conferences");
+    if (await ensureTourTab(call)) added.push("Tours");
     const filled = body.teacher_emails ? await fillTeacherEmails(call, body.teacher_emails) : 0;
     return json({ ok: true, tabs_added: added, teacher_emails_filled: filled, homerooms_tab: await checkHomerooms(call) }, 200, {});
   }
@@ -120,6 +128,14 @@ async function admin(request, env) {
     const token = await accessToken(env);
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
     const r = await deleteTestBooking(workbook(token, env), id);
+    return json({ ok: r.deleted, id, ...r }, r.deleted ? 200 : 400, {});
+  }
+  if (body.action === "delete_test_signup") { // removes one tour sign-up whose parent is "TEST..."
+    const id = String(body.id || "").trim().toUpperCase();
+    if (!/^[A-Z0-9]{5}$/.test(id)) return json({ ok: false, error: "id (the 5-letter sign-up number) is required" }, 400, {});
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    const r = await deleteTestSignup(workbook(token, env), id);
     return json({ ok: r.deleted, id, ...r }, r.deleted ? 200 : 400, {});
   }
   if (body.action === "delete_test_order") { // removes a lunch order whose rows are all "TEST..."
@@ -342,6 +358,73 @@ async function bookingsOrTab(call) {
   const rows = await readBookings(call);
   if (rows) return rows;
   await ensureConferenceTab(call);
+  return [];
+}
+
+// ------------------------------------------------------------------ school tours
+async function tours(env, cors) {
+  if (!cors["Access-Control-Allow-Origin"]) return json({ ok: false, error: "Not allowed" }, 403, cors);
+  const schedule = await loadJson(env.TOUR_URL);
+  const token = await accessToken(env);
+  if (!token) return json({ ok: false, error: "Online sign-up isn't connected yet" }, 503, cors);
+  return json({ ok: true, taken: takenCounts(schedule, await signupsOrTab(workbook(token, env))) }, 200, cors);
+}
+
+async function tour(request, env, cors) {
+  if (!cors["Access-Control-Allow-Origin"]) return json({ ok: false, error: "Not allowed" }, 403, cors);
+  const text = await request.text();
+  if (text.length > 5000) return json({ ok: false, error: "Too large" }, 413, cors);
+  let body;
+  try { body = JSON.parse(text); } catch { return json({ ok: false, error: "Bad request" }, 400, cors); }
+  if (body.website) return json({ ok: true, signup_id: "0", email_sent: true }, 200, cors); // spam trap
+
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  if (await tooMany(env, ip, "rlt")) {
+    return json({ ok: false, error: "Too many sign-ups from this connection; please call the office" }, 429, cors);
+  }
+  const schedule = await loadJson(env.TOUR_URL);
+  const checked = validateSignup(body, schedule, Date.now());
+  if (checked.error) return json({ ok: false, error: checked.error }, 400, cors);
+  const s = checked.signup;
+  const token = await accessToken(env);
+  if (!token) return json({ ok: false, error: "Online sign-up isn't connected yet" }, 503, cors);
+
+  // One sign-up at a time per tour, so the last spot can't go to two families.
+  const lock = `tour-lock:${s.tour.id}`;
+  if (await env.LUNCH_KV.get(lock)) {
+    return json({ ok: false, code: "busy", error: "Another family is signing up for this tour right now. Please try again in a minute." }, 409, cors);
+  }
+  await env.LUNCH_KV.put(lock, "1", { expirationTtl: 60 });
+  try {
+    const call = workbook(token, env);
+    const signups = await signupsOrTab(call);
+    const clash = tourConflict(s, signups);
+    if (clash) return json({ ok: false, ...clash }, clash.code === "full" ? 409 : 400, cors);
+    const id = newOrderId();
+    const add = await call("POST", `/tables/${TOUR_TABLE}/rows/add`,
+      { index: null, values: [signupRow(s, id, eastern(new Date(), true))] });
+    if (!add.ok) {
+      console.error("tour workbook", add.status, await add.text());
+      return json({ ok: false, error: "We couldn't save your sign-up" }, 502, cors);
+    }
+    const count = takenCounts(schedule, signups)[s.tour.id] + 1 || 1;
+    const mail = await graph(token, "POST", "/me/sendMail", familyMail(s, id, env));
+    if (!mail.ok) console.error("tour mail", mail.status, await mail.text());
+    if (env.TOUR_NOTIFY) {
+      const o = await graph(token, "POST", "/me/sendMail", officeMail(s, id, count, env));
+      if (!o.ok) console.error("tour office mail", o.status, await o.text());
+    }
+    return json({ ok: true, signup_id: id, email_sent: mail.ok }, 200, cors);
+  } finally {
+    await env.LUNCH_KV.delete(lock);
+  }
+}
+
+// The sign-ups, adding the Tours tab first if the workbook doesn't have it yet.
+async function signupsOrTab(call) {
+  const rows = await readSignups(call);
+  if (rows) return rows;
+  await ensureTourTab(call);
   return [];
 }
 

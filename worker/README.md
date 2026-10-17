@@ -33,6 +33,13 @@ the workbook (the office handles call-in changes and exceptions first).
   The table decides what is taken: deleting a row
   frees the time; the office can type in call-in bookings (Time like "9:30 AM", Teacher as on the website).
   One booking per parent email per teacher. A KV lock (60 s) stops two parents taking one time at once.
+- **School tours** (`src/tours.js`, built 2026-10-17): families sign up on ibaclinton.com/tour/ (every "Book a
+  Tour" button goes there; it replaced the Calendly embed). Tours (date, time, families per tour, deadline)
+  come from `content/tours.json` (office editor), published as `site/tours/schedule.json` (`TOUR_URL`, read
+  from GitHub). `GET /tours` returns how many families each tour has (no names); `POST /tour` checks the
+  sign-up, refuses it once the tour has as many sign-ups as spots, adds a row to the **Signups** table on the
+  workbook's **Tours** tab (added if missing), emails the family a confirmation and the office (`TOUR_NOTIFY`)
+  the details. One sign-up per email per tour; a KV lock makes sign-ups for one tour go one at a time.
 
 ## One-time setup (Garrett, as Microsoft 365 admin)
 
