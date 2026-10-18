@@ -8,7 +8,8 @@ the workbook (the office handles call-in changes and exceptions first).
 
 - **Mailbox:** `ibs@ibaclinton.com` (Mrs. Napierala's office account). Confirmations
   are sent from it, replies go to `ibs@ibcministries.org`, and a copy stays in its Sent Items.
-- **Workbook:** `Hot Lunch Orders.xlsx` in the root of that account's OneDrive. Made by
+- **Workbook:** `IBA Portal Forms.xlsx` in the root of that account's OneDrive (named
+  "Hot Lunch Orders.xlsx" until 2026-10; `WORKBOOK_PATH` in `wrangler.toml` must match the file name). Made by
   `make_workbook.py`; the Orders table's columns must stay in order.
 - **Access:** delegated Microsoft Graph permissions (User.Read, Mail.Send, Files.ReadWrite,
   offline_access), so the Worker can act only as that one account. No password is stored;
@@ -44,7 +45,7 @@ the workbook (the office handles call-in changes and exceptions first).
 ## One-time setup (Garrett, as Microsoft 365 admin)
 
 1. **Workbook.** Sign in to OneDrive as `ibs@ibaclinton.com` and upload
-   `Hot Lunch Orders.xlsx` to the main folder (not a subfolder). Share it with whoever needs it
+   `IBA Portal Forms.xlsx` to the main folder (not a subfolder). Share it with whoever needs it
    (Garrett, Mrs. Mora, kitchen). The account needs a license with Exchange Online and OneDrive.
 2. **Cloudflare (free).** Create an account at dash.cloudflare.com and pick a workers.dev
    subdomain (for example `ibaclinton`). The service will live at

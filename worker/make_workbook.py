@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Make the empty office workbook "Hot Lunch Orders.xlsx" (python3 worker/make_workbook.py).
+"""Make the empty office workbook "IBA Portal Forms.xlsx" (python3 worker/make_workbook.py).
 
 It goes in the office mailbox's OneDrive (root folder). The order service adds one row per
 student to the "Orders" table; its columns must stay in this order.
@@ -9,7 +9,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.worksheet.table import Table, TableStyleInfo
 
-OUT = pathlib.Path(__file__).with_name("Hot Lunch Orders.xlsx")
+OUT = pathlib.Path(__file__).with_name("IBA Portal Forms.xlsx")
 COLUMNS = ["Submitted", "Week of", "Order #", "Parent", "Email", "Phone", "Student", "Grade", "Preschool",
            "Price per lunch", "Mon", "Tue", "Wed", "Thu", "Fri", "Lunches", "Total", "Notes"]
 WIDTHS = [18, 11, 9, 20, 26, 14, 22, 16, 10, 9, 6, 6, 6, 6, 6, 9, 10, 30]

@@ -21,7 +21,7 @@ const ORDER = {
 const ENV0 = {
   MENU_URL: "https://site.test/lunch/menu.json", ALLOWED_ORIGINS: "https://guarantee418.github.io",
   MAILBOX: "ibs@ibaclinton.com", REPLY_TO: "ibs@ibcministries.org", SIGNATURE: "Mrs. Napierala\nIndependent Baptist <Academy>",
-  WORKBOOK_PATH: "Hot Lunch Orders.xlsx", TABLE: "Orders", TENANT_ID: "tenant", CLIENT_ID: "client",
+  WORKBOOK_PATH: "IBA Portal Forms.xlsx", TABLE: "Orders", TENANT_ID: "tenant", CLIENT_ID: "client",
   CLIENT_SECRET: "secret", SETUP_KEY: "setup",
 };
 
@@ -103,7 +103,7 @@ test("POST /order end to end: saves rows, sends mail, rotates the token", async 
   assert.equal(data.ok, true); assert.equal(data.total, 21); assert.equal(data.email_sent, true);
   assert.equal(res.headers.get("Access-Control-Allow-Origin"), "https://guarantee418.github.io");
   const add = calls.find((c) => c.url.includes("rows/add"));
-  assert.ok(add.url.includes("/me/drive/root:/Hot%20Lunch%20Orders.xlsx:/workbook/tables/Orders/rows/add"));
+  assert.ok(add.url.includes("/me/drive/root:/IBA%20Portal%20Forms.xlsx:/workbook/tables/Orders/rows/add"));
   assert.equal(JSON.parse(add.init.body).values.length, 2);
   assert.ok(calls.some((c) => c.url.endsWith("/me/sendMail")));
   assert.equal(await env.LUNCH_KV.get("ms_refresh"), "rt2");
