@@ -41,6 +41,14 @@ the workbook (the office handles call-in changes and exceptions first).
   sign-up, refuses it once the tour has as many sign-ups as spots, adds a row to the **Signups** table on the
   workbook's **Tours** tab (added if missing), emails the family a confirmation and the office (`TOUR_NOTIFY`)
   the details. One sign-up per email per tour; a KV lock makes sign-ups for one tour go one at a time.
+- **Transcript requests** (`src/transcripts.js`, built 2026-10-18): current students and alumni ask for a
+  transcript on ibaclinton.com/transcripts/ (footer link). `GET /transcripts` returns the fees and payment link;
+  `POST /transcript` checks the request (student, birth date, grade or class year, delivery, signed release; a
+  parent may ask only for an enrolled student), adds a row to the **Requests** table on the workbook's
+  **Transcripts** tab (added if missing) with Status "Fee to post in Gradelink" (current student), "Waiting for
+  payment" (alumni) or "New" (no fee), and emails the requester and the office (`TRANSCRIPT_NOTIFY`). Fees and the
+  PaySimple payment page are `TRANSCRIPT_FEE_STUDENT`, `TRANSCRIPT_FEE_ALUMNI` and `TRANSCRIPT_PAY_URL` in
+  `wrangler.toml`; with no payment page the office collects alumni fees. The office releases the transcript.
 
 ## One-time setup (Garrett, as Microsoft 365 admin)
 

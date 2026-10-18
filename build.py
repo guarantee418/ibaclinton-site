@@ -154,6 +154,7 @@ def render(path, text, layout):
             json.loads((CONTENT / "conferences.json").read_text()), root, LUNCH_API))
     if "{{tours}}" in body:
         body = body.replace("{{tours}}", tours.page_block(json.loads((CONTENT / "tours.json").read_text()), root, LUNCH_API))
+    body = body.replace("{{api}}", esc(LUNCH_API))
     if "{{parents}}" in body:
         body = body.replace("{{parents}}", parents_block(json.loads((CONTENT / "parents.json").read_text()), root))
     if FORMSPREE_ID:

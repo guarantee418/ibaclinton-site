@@ -181,3 +181,9 @@ form.info textarea{resize:vertical}
 .tour-list .tour-status.full{color:#9a3b30}.tour-list .tour-status.ok{color:#2c7a3f}
 .tour-form h3{margin:0;font-size:1.3rem;color:var(--navy)}
 #tour-status:empty{display:none}
+.tr-facts{max-width:44em;padding-left:1.2rem}.tr-facts li{margin:.3rem 0}
+.tr-form [hidden]{display:none!important}
+.tr-rest{display:grid;gap:1.2rem}
+form.info label.tr-choice{flex-direction:row;align-items:flex-start;gap:.5rem;font-weight:400;font-size:1rem;cursor:pointer}
+form.info .tr-who{grid-template-columns:1fr}
+#tr-status:empty{display:none}

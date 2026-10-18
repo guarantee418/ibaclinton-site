@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Transcript Requests | Independent Baptist Academy</title>
+<meta name="description" content="Request an official or unofficial transcript from Independent Baptist Academy in Clinton, Maryland, for current students and alumni.">
+<link rel="icon" href="../img/icon.png">
+<link rel="apple-touch-icon" href="../img/icon.png">
+<link rel="stylesheet" href="../styles.css">
+<script async src="https://www.googletagmanager.com/gtag/js?id=GT-PJ5L2Z5R"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","GT-PJ5L2Z5R");</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="top"><div class="wrap">
+  <a href="../stepping-stones-preschool/">Preschool</a><a href="https://secure.gradelink.com/gradelink">Gradelink</a><a href="../tour/">Book a Tour</a>
+</div></div>
+
+<header class="site"><div class="wrap">
+  <a href="../"><img class="logo" src="../img/logo.png" alt="Independent Baptist Academy home" width="568" height="120"></a>
+  <button class="menu-btn" aria-expanded="false" aria-controls="nav" onclick="var n=document.getElementById('nav');var o=n.classList.toggle('open');this.setAttribute('aria-expanded',o)">Menu</button>
+  <nav id="nav" aria-label="Main"><ul><li><a href="../parents/">Parents</a></li><li><a href="../about/">About</a></li><li><a href="../about-copy/">Staff</a></li><li><a href="../academics/">Academics</a></li><li><a href="../admissions/">Admissions</a></li><li><a href="../student-life/">Student Life</a></li><li><a href="https://secure.anedot.com/ibc/academy-donations">Give</a></li></ul></nav>
+</div></header>
+
+<main id="main">
+<div class="page-hero"><div class="wrap"><h1>Transcript Requests</h1></div></div>
+<section class="tight"><div class="wrap">
+  <p class="lead">Current students and alumni can request a transcript here. Please allow at least 3 business days for processing.</p>
+  <ul class="tr-facts">
+    <li><b>Official</b> transcripts go straight from the school to the college, employer or other recipient (by mail or secure email).</li>
+    <li><b>Unofficial</b> copies are for your own records.</li>
+    <li id="tr-fee-line">There is a transcript fee. We send the transcript once it is paid.</li>
+  </ul>
+  <p class="contact-line">Questions? Call <a href="tel:3018561616">(301) 856-1616</a> or email <a href="mailto:iba@ibcministries.org">iba@ibcministries.org</a>.</p>
+
+  <form class="info tr-form" id="tr-form" data-api="https://ibaclinton-lunch.guarantee418.workers.dev" novalidate hidden>
+    <fieldset class="tr-who"><legend>Who is this transcript for?</legend>
+      <label class="tr-choice"><input type="radio" name="who" value="student" required> A current student</label>
+      <label class="tr-choice"><input type="radio" name="who" value="alumni"> A former student (alumni)</label>
+    </fieldset>
+
+    <div class="tr-rest" hidden>
+    <fieldset><legend>Student</legend>
+      <label>First name<input name="student_first" autocomplete="given-name" maxlength="60" required></label>
+      <label>Last name<input name="student_last" autocomplete="family-name" maxlength="60" required></label>
+      <label class="tr-alumni full">Name while at IBA, if different <span class="opt">(optional)</span><input name="former_name" maxlength="120" placeholder="For example, a maiden name"></label>
+      <label>Date of birth<input type="date" name="birth_date" min="1940-01-01" required></label>
+      <label class="tr-student">Grade<select name="grade"><option value="">Choose…</option>
+        <option value="K5">K5</option><option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option>
+        <option value="4">4th</option><option value="5">5th</option><option value="6">6th</option><option value="7">7th</option>
+        <option value="8">8th</option><option value="9">9th</option><option value="10">10th</option><option value="11">11th</option>
+        <option value="12">12th</option></select></label>
+      <label class="tr-alumni">Year graduated or last attended<input name="class_year" inputmode="numeric" maxlength="4" placeholder="For example, 2015"></label>
+    </fieldset>
+
+    <fieldset><legend>Your contact information</legend>
+      <label class="tr-student full">Who is making this request?<select name="relation">
+        <option value="parent">Parent or guardian</option><option value="student">The student</option></select></label>
+      <label class="tr-parent full">Your name (parent or guardian)<input name="requester_name" autocomplete="name" maxlength="120"></label>
+      <label>Email<input type="email" name="email" autocomplete="email" maxlength="120" required></label>
+      <label>Phone<input type="tel" name="phone" autocomplete="tel" maxlength="30" required></label>
+    </fieldset>
+
+    <fieldset><legend>Transcript</legend>
+      <label>Type<select name="kind" required><option value="">Choose…</option>
+        <option value="official">Official (sent to a school or employer)</option><option value="unofficial">Unofficial (for your records)</option></select></label>
+      <label>Number of copies<select name="copies"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+      <label>Reason<select name="reason" required><option value="">Choose…</option>
+        <option>College/University</option><option>Employment</option><option>Military</option><option>Personal</option>
+        <option>Background check</option><option>Other</option></select></label>
+      <label class="tr-other">Please explain<input name="reason_other" maxlength="120"></label>
+    </fieldset>
+
+    <fieldset><legend>Delivery</legend>
+      <label class="full">How should we deliver it?<select name="delivery" required><option value="">Choose…</option>
+        <option value="mail">Mail</option><option value="email">Email (PDF)</option><option value="pickup">Pick up at the school office</option></select></label>
+      <label class="tr-send full">Send to (name of school, company or person)<input name="send_to" maxlength="150" autocomplete="organization"></label>
+      <label class="tr-send full">Attention to <span class="opt">(optional)</span><input name="attention" maxlength="120" placeholder="For example, Office of Admissions"></label>
+      <label class="tr-email full">Recipient’s email address<input type="email" name="recipient_email" maxlength="120"></label>
+      <label class="tr-mail full">Street address<input name="street" autocomplete="address-line1" maxlength="120"></label>
+      <label class="tr-mail full">Apartment, suite, etc. <span class="opt">(optional)</span><input name="street2" autocomplete="address-line2" maxlength="120"></label>
+      <label class="tr-mail">City<input name="city" autocomplete="address-level2" maxlength="60"></label>
+      <label class="tr-mail tr-half">State<input name="state" autocomplete="address-level1" maxlength="2" placeholder="MD"></label>
+      <label class="tr-mail tr-half">ZIP code<input name="zip" autocomplete="postal-code" inputmode="numeric" maxlength="10"></label>
+      <label class="full">Anything else we should know? <span class="opt">(optional)</span><textarea name="notes" maxlength="500" rows="2"></textarea></label>
+    </fieldset>
+
+    <fieldset><legend>Release</legend>
+      <label class="tr-choice full"><input type="checkbox" name="consent"> <span class="tr-consent-text">I authorize Independent Baptist Academy to release this transcript as described above.</span></label>
+      <label class="full">Type your full name as your signature<input name="signature" autocomplete="name" maxlength="120"></label>
+    </fieldset>
+
+    <label class="hp" aria-hidden="true">Leave this field blank<input name="website" tabindex="-1" autocomplete="off"></label>
+    <div id="tr-status" role="status" aria-live="polite"></div>
+    <p><button class="btn" type="submit">Submit request</button></p>
+    <p class="lunch-fine">You’ll get an email with your request number.</p>
+    </div>
+  </form>
+  <div id="tr-done"></div>
+  <noscript><p class="notice">To request a transcript, please call the office at (301) 856-1616.</p></noscript>
+  <script src="../transcripts.js" defer></script>
+</div></section>
+
+</main>
+
+<footer class="site"><div class="wrap">
+  <div>
+    <img src="../img/logo-white.png" alt="" width="480" height="360" class="flogo">
+    <p><a href="https://maps.app.goo.gl/dgcb4vTr49T3JmRL7">9255 Piscataway Rd<br>Clinton, MD 20735</a><br>
+    <a href="tel:3018561616">(301) 856-1616</a><br>
+    <a href="mailto:iba@ibcministries.org">iba@ibcministries.org</a></p>
+  </div>
+  <div><h4>Resources</h4><ul>
+    <li><a href="https://ibcministries.org">Independent Baptist Church</a></li>
+    <li><a href="../stepping-stones-preschool/">Stepping Stones Preschool</a></li>
+    <li><a href="../summer-enrichment-program/">Summer Programs</a></li>
+    <li><a href="https://secure.gradelink.com/gradelink">Gradelink</a></li>
+    <li><a href="https://secure.anedot.com/ibc/academy-donations">Give</a></li></ul></div>
+  <div><h4>Connect</h4><ul>
+    <li><a href="../tour/">Book a Tour</a></li>
+    <li><a href="../request-info/">Request Info</a></li>
+    <li><a href="../transcripts/">Transcripts</a></li>
+    <li><a href="https://www.facebook.com/Independent-Baptist-Academy-of-Clinton-MD-1811035429120537/">Facebook</a></li></ul></div>
+  <div class="fine">© 2026 Independent Baptist Academy in Clinton, Maryland · <a href="../privacy-policy/">Privacy Policy</a></div>
+</div></footer>
+</body>
+</html>
