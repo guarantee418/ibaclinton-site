@@ -1,6 +1,7 @@
 name: Delete a TEST booking, lunch order or tour sign-up
 
-# Manual only. Removes a TEST row from the office workbook by its number: a tour sign-up (Tours tab,
+# Manual only. Removes a TEST row from the office workbook by its number: a transcript request
+# (Transcripts tab, only if its Student starts with "TEST"), a tour sign-up (Tours tab,
 # only if its Parent starts with "TEST"), a conference booking
 # (Conferences tab, only if its Student starts with "TEST") or a whole lunch order (Orders tab, only if
 # each of its rows has a Student or Parent starting with "TEST"). Real bookings and orders can't be removed.
@@ -10,7 +11,7 @@ on:
       kind:
         description: "What to delete"
         type: choice
-        options: [conference booking, lunch order, tour sign-up]
+        options: [conference booking, lunch order, tour sign-up, transcript request]
         default: conference booking
       id:
         description: "Its number (5 letters/digits, e.g. MBG7S)"
@@ -31,6 +32,7 @@ jobs:
         run: |
           action=delete_test_booking; [ "$KIND" = "lunch order" ] && action=delete_test_order
           [ "$KIND" = "tour sign-up" ] && action=delete_test_signup
+          [ "$KIND" = "transcript request" ] && action=delete_test_transcript
           body=$(jq -nc --arg a "$action" --arg id "$ID" '{action:$a,id:$id}')
           curl -fsS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" \
             -H "X-Setup-Key: $LUNCH_SETUP_KEY" -H "Content-Type: application/json" -d "$body"

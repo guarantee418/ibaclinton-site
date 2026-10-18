@@ -34,6 +34,12 @@ CONF_URL = "https://raw.githubusercontent.com/guarantee418/ibaclinton-site/main/
 TOUR_URL = "https://raw.githubusercontent.com/guarantee418/ibaclinton-site/main/site/tours/schedule.json"
 TOUR_NOTIFY = "iba@ibcministries.org"
 HOMEROOM_CC = "ibs@ibcministries.org"  # Cc on the Monday homeroom lunch lists
+# Transcript requests (src/transcripts.js): who hears about each one, the fees in dollars (0 = no fee) and
+# the PaySimple payment page alumni pay at (empty until the school has one: the office collects the fee).
+TRANSCRIPT_NOTIFY = "iba@ibcministries.org"
+TRANSCRIPT_FEE_ALUMNI = "10"
+TRANSCRIPT_FEE_STUDENT = "10"
+TRANSCRIPT_PAY_URL = ""
 # Filled in by the workflow from GitHub secrets (not secret, but kept out of this public repo):
 TENANT_ID = ""
 CLIENT_ID = ""

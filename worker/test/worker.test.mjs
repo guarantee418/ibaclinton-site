@@ -524,3 +524,95 @@ test("POST /tour: a second family at the same moment is asked to try again", asy
   assert.equal(busy.status, 409);
   assert.equal((await busy.json()).code, "busy");
 });
+
+// ------------------------------------------------------------------ transcript requests
+import { COLUMNS as TR_COLUMNS, validateRequest, requestRow, requesterMail, officeMail as trOfficeMail, startStatus } from "../src/transcripts.js";
+
+const TR = {
+  who: "alumni", student_first: "Pat", student_last: "Smith", former_name: "Pat Jones", birth_date: "1995-04-02",
+  class_year: "2013", email: "Pat@Example.com", phone: "301-555-0100", kind: "official", copies: "2",
+  reason: "College/University", delivery: "mail", send_to: "State University", attention: "Admissions",
+  street: "1 College Ave", city: "College Park", state: "md", zip: "20742", consent: true, signature: "Pat Smith",
+};
+const TRENV = { ...ENV0, TRANSCRIPT_NOTIFY: "office@school.test", TRANSCRIPT_FEE_ALUMNI: "10", TRANSCRIPT_FEE_STUDENT: "10", TRANSCRIPT_PAY_URL: "" };
+
+test("transcript requests are checked on the server", () => {
+  const ok = validateRequest(TR, BEFORE);
+  assert.equal(ok.error, undefined);
+  assert.equal(ok.request.state, "MD"); assert.equal(ok.request.copies, 2); assert.equal(ok.request.relation, "student");
+  assert.match(validateRequest({ ...TR, who: "" }, BEFORE).error, /current student or alumni/);
+  assert.match(validateRequest({ ...TR, birth_date: "2030-01-01" }, BEFORE).error, /date of birth/);
+  assert.match(validateRequest({ ...TR, class_year: "1900" }, BEFORE).error, /graduated/);
+  assert.match(validateRequest({ ...TR, zip: "" }, BEFORE).error, /mailing address/);
+  assert.match(validateRequest({ ...TR, delivery: "email" }, BEFORE).error, /email address the transcript/);
+  assert.equal(validateRequest({ ...TR, delivery: "pickup", send_to: "" }, BEFORE).error, undefined);
+  assert.match(validateRequest({ ...TR, consent: "yes" }, BEFORE).error, /release/);
+  assert.match(validateRequest({ ...TR, copies: "9" }, BEFORE).error, /copies/);
+  assert.match(validateRequest({ ...TR, reason: "Other" }, BEFORE).error, /reason/);
+  // A parent can ask for an enrolled student's transcript, not a former student's.
+  const kid = { ...TR, who: "student", grade: "11", relation: "parent", requester_name: "Lee Smith" };
+  assert.equal(validateRequest(kid, BEFORE).request.relation, "parent");
+  assert.equal(validateRequest({ ...TR, relation: "parent" }, BEFORE).request.relation, "student");
+  assert.match(validateRequest({ ...kid, requester_name: "" }, BEFORE).error, /your name/);
+  assert.match(validateRequest({ ...kid, grade: "13" }, BEFORE).error, /grade/);
+});
+
+test("transcript row, status and emails: formula-safe, escaped, payment told the right way", () => {
+  const q = validateRequest({ ...TR, notes: "=HYPERLINK(1)", student_first: "<b>" }, BEFORE).request;
+  const row = requestRow(q, "TRAN1", "1/5/2027 9:00 AM", TRENV);
+  assert.equal(row.length, TR_COLUMNS.length);
+  assert.deepEqual(row.slice(1, 5), ["TRAN1", "Waiting for payment", "$10.00", "Alumni"]);
+  assert.equal(row[7], "4/2/1995"); assert.equal(row[18], "1 College Ave, College Park, MD 20742");
+  assert.equal(row[TR_COLUMNS.indexOf("Notes")], "'=HYPERLINK(1)");
+  const mine = requesterMail(q, "TRAN1", TRENV).message;
+  assert.ok(mine.body.content.includes("&lt;b&gt;") && /office will contact you/.test(mine.body.content));
+  const paid = requesterMail(q, "TRAN1", { ...TRENV, TRANSCRIPT_PAY_URL: "https://pay.test/form" }).message.body.content;
+  assert.ok(paid.includes('href="https://pay.test/form"') && /pay the \$10\.00/.test(paid));
+  const kid = validateRequest({ ...TR, who: "student", grade: "11", relation: "parent", requester_name: "Lee Smith" }, BEFORE).request;
+  assert.equal(startStatus(kid, TRENV), "Fee to post in Gradelink");
+  assert.equal(startStatus(kid, { ...TRENV, TRANSCRIPT_FEE_STUDENT: "0" }), "New");
+  assert.ok(/Gradelink account/.test(requesterMail(kid, "TRAN2", TRENV).message.body.content));
+  const off = trOfficeMail(kid, "TRAN2", TRENV).message;
+  assert.equal(off.toRecipients[0].emailAddress.address, "office@school.test");
+  assert.equal(off.replyTo[0].emailAddress.address, "pat@example.com");
+  assert.ok(/Lee Smith \(parent\/guardian\)/.test(off.body.content) && /Post the \$10\.00/.test(off.body.content));
+});
+
+function fakeTranscripts({ table = true } = {}) {
+  const calls = [];
+  let made = false;
+  globalThis.fetch = async (url, init = {}) => {
+    url = String(url); calls.push({ url, init });
+    const ok = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
+    if (url.includes("/oauth2/v2.0/token")) return ok({ access_token: "at", refresh_token: "rt1", expires_in: 3600 });
+    if (url.includes("/workbook/tables/Requests/rows/add")) return table || made ? ok({}, 201) : ok({ error: "ItemNotFound" }, 404);
+    if (url.includes("/workbook/worksheets?")) return ok({ value: [{ name: "Orders" }] });
+    if (url.includes("/tables/add")) { made = true; return ok({ id: "{T3}" }); }
+    if (url.includes("/workbook/")) return ok({});
+    if (url.endsWith("/me/sendMail")) return new Response(null, { status: 202 });
+    return ok({ error: "unexpected " + url }, 500);
+  };
+  return calls;
+}
+const trpost = (body) => new Request("https://lunch.test/transcript", {
+  method: "POST", body: JSON.stringify(body),
+  headers: { "Content-Type": "application/json", Origin: "https://guarantee418.github.io", "CF-Connecting-IP": "9.9.9.9" },
+});
+
+test("POST /transcript end to end: saves the row (adding the tab), emails the requester and the office", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: BEFORE });
+  const calls = fakeTranscripts({ table: false });
+  const res = await worker.fetch(trpost(TR), { ...TRENV, LUNCH_KV: kv({ ms_refresh: "rt1" }) });
+  const out = await res.json();
+  assert.equal(res.status, 200, JSON.stringify(out));
+  assert.match(out.request_id, /^[A-Z0-9]{5}$/); assert.equal(out.fee_alumni, 10); assert.equal(out.pay_url, "");
+  assert.ok(calls.some((c) => c.url.includes("/worksheets/add")));
+  const mails = calls.filter((c) => c.url.endsWith("/me/sendMail")).map((c) => JSON.parse(c.init.body).message);
+  assert.deepEqual(mails.map((m) => m.toRecipients[0].emailAddress.address), ["pat@example.com", "office@school.test"]);
+  const bad = await worker.fetch(trpost({ ...TR, signature: "" }), { ...TRENV, LUNCH_KV: kv({ ms_refresh: "rt1" }) });
+  assert.equal(bad.status, 400);
+  const get = await worker.fetch(new Request("https://lunch.test/transcripts", { headers: { Origin: "https://guarantee418.github.io" } }), TRENV);
+  assert.deepEqual(await get.json(), { ok: true, fee_alumni: 10, fee_student: 10, pay_url: "" });
+  const stranger = await worker.fetch(new Request("https://lunch.test/transcripts", { headers: { Origin: "https://evil.test" } }), TRENV);
+  assert.equal(stranger.status, 403);
+});
