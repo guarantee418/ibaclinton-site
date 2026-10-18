@@ -484,7 +484,7 @@ async function callback(url, env) {
   }
   await env.LUNCH_KV.put("ms_refresh", tok.refresh_token);
   cached = { token: "", expires: 0 };
-  return page(`Connected. Hot lunch orders will be saved to ${escapeHtml(env.WORKBOOK_PATH)} and confirmations ` +
+  return page(`Connected. Orders and sign-ups will be saved to ${escapeHtml(env.WORKBOOK_PATH)} and confirmations ` +
     `sent from ${escapeHtml(env.MAILBOX)}. You can close this page.`);
 }
 

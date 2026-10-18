@@ -26,7 +26,7 @@ ALLOWED_ORIGINS = "https://guarantee418.github.io,https://ibaclinton.com,https:/
 MAILBOX = "ibs@ibaclinton.com"
 REPLY_TO = "ibs@ibcministries.org"
 SIGNATURE = "Mrs. Napierala\nIndependent Baptist Academy"  # \n = new line
-WORKBOOK_PATH = "Hot Lunch Orders.xlsx"
+WORKBOOK_PATH = "IBA Portal Forms.xlsx"
 TABLE = "Orders"
 # The published parent-teacher conference schedule, also read from GitHub (same reason).
 CONF_URL = "https://raw.githubusercontent.com/guarantee418/ibaclinton-site/main/site/conferences/schedule.json"
