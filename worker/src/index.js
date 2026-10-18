@@ -8,6 +8,8 @@
 //   GET  /tours        how many families have signed up for each tour (no names)
 //   POST /tour         a school tour sign-up (src/tours.js): checked against the published tours,
 //                   refused when the tour is full, added to the Tours tab of the office workbook, emailed
+//   POST /inquiry      a Request Info form (src/inquiries.js): added to the Inquiries tab of the office
+//                   workbook, emailed to the family (confirmation) and the office
 //   GET  /transcripts  the transcript fees and the payment link (no names)
 //   POST /transcript   a transcript request (src/transcripts.js): added to the Transcripts tab of the office
 //                   workbook, emailed to the requester and the office
@@ -22,7 +24,7 @@
 //                   student is "TEST..."; {"action":"delete_test_order","id":"ABCDE"} removes a lunch order
 //                   whose rows are all "TEST..." (Actions -> "Delete a TEST booking or lunch order");
 //                   {"action":"delete_test_transcript","id":"ABCDE"} removes one transcript request whose
-//                   student is "TEST..."
+//                   student is "TEST..."; {"action":"delete_test_inquiry","id":"ABCDE"} likewise one inquiry
 //   cron            Mondays 7:00 AM Eastern: homeroom lunch lists to teachers (src/homerooms.js)
 //
 // Microsoft 365 access is delegated: the Worker acts only as the mailbox in MAILBOX
@@ -33,6 +35,8 @@ import { TABLE as CONF_TABLE, bookingRow, conflict, deleteTestBooking, ensureCon
   teacherMail, validateBooking } from "./conferences.js";
 import { TABLE as TOUR_TABLE, deleteTestSignup, ensureTourTab, familyMail, officeMail, readSignups, signupRow, takenCounts,
   tourConflict, validateSignup } from "./tours.js";
+import { TABLE as INQUIRY_TABLE, deleteTestInquiry, ensureInquiryTab, familyMail as inquiryFamilyMail, inquiryRow,
+  officeMail as inquiryOfficeMail, validateInquiry } from "./inquiries.js";
 import { TABLE as TRANSCRIPT_TABLE, deleteTestRequest, ensureTranscriptTab, officeMail as transcriptOfficeMail, requestRow,
   requesterMail, settings as transcriptSettings, validateRequest } from "./transcripts.js";
 import { checkHomerooms, ensureTabs, fillTeacherEmails, weekCounts, homeroomMails, mondayToSend, readTeachers, readWeek } from "./homerooms.js";
@@ -58,6 +62,7 @@ export default {
       if (url.pathname === "/conference" && request.method === "POST") return await conference(request, env, cors);
       if (url.pathname === "/tours" && request.method === "GET") return await tours(env, cors);
       if (url.pathname === "/tour" && request.method === "POST") return await tour(request, env, cors);
+      if (url.pathname === "/inquiry" && request.method === "POST") return await inquiry(request, env, cors);
       if (url.pathname === "/transcripts" && request.method === "GET") return transcripts(env, cors);
       if (url.pathname === "/transcript" && request.method === "POST") return await transcript(request, env, cors);
       if (url.pathname === "/admin" && request.method === "POST") return await admin(request, env);
@@ -111,6 +116,7 @@ async function admin(request, env) {
     if (await ensureConferenceTab(call)) added.push("Conferences");
     if (await ensureTourTab(call)) added.push("Tours");
     if (await ensureTranscriptTab(call)) added.push("Transcripts");
+    if (await ensureInquiryTab(call)) added.push("Inquiries");
     const filled = body.teacher_emails ? await fillTeacherEmails(call, body.teacher_emails) : 0;
     return json({ ok: true, tabs_added: added, teacher_emails_filled: filled, homerooms_tab: await checkHomerooms(call) }, 200, {});
   }
@@ -154,6 +160,14 @@ async function admin(request, env) {
     const token = await accessToken(env);
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
     const r = await deleteTestRequest(workbook(token, env), id);
+    return json({ ok: r.deleted, id, ...r }, r.deleted ? 200 : 400, {});
+  }
+  if (body.action === "delete_test_inquiry") { // removes one Request Info inquiry whose student is "TEST..."
+    const id = String(body.id || "").trim().toUpperCase();
+    if (!/^[A-Z0-9]{5}$/.test(id)) return json({ ok: false, error: "id (the 5-letter request number) is required" }, 400, {});
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    const r = await deleteTestInquiry(workbook(token, env), id);
     return json({ ok: r.deleted, id, ...r }, r.deleted ? 200 : 400, {});
   }
   if (body.action === "delete_test_order") { // removes a lunch order whose rows are all "TEST..."
@@ -444,6 +458,43 @@ async function signupsOrTab(call) {
   if (rows) return rows;
   await ensureTourTab(call);
   return [];
+}
+
+// ------------------------------------------------------------------ Request Info inquiries
+async function inquiry(request, env, cors) {
+  if (!cors["Access-Control-Allow-Origin"]) return json({ ok: false, error: "Not allowed" }, 403, cors);
+  const text = await request.text();
+  if (text.length > 6000) return json({ ok: false, error: "Too large" }, 413, cors);
+  let body;
+  try { body = JSON.parse(text); } catch { return json({ ok: false, error: "Bad request" }, 400, cors); }
+  if (body.website) return json({ ok: true, request_id: "0", email_sent: true }, 200, cors); // spam trap
+
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  if (await tooMany(env, ip, "rlin")) {
+    return json({ ok: false, error: "Too many requests from this connection; please call the office" }, 429, cors);
+  }
+  const checked = validateInquiry(body, Date.now());
+  if (checked.error) return json({ ok: false, error: checked.error }, 400, cors);
+  const q = checked.inquiry;
+  const token = await accessToken(env);
+  if (!token) return json({ ok: false, error: "Online requests aren't connected yet" }, 503, cors);
+
+  const call = workbook(token, env);
+  const id = newOrderId();
+  const row = { index: null, values: [inquiryRow(q, id, eastern(new Date(), true))] };
+  let add = await call("POST", `/tables/${INQUIRY_TABLE}/rows/add`, row);
+  if (add.status === 404 && await ensureInquiryTab(call)) add = await call("POST", `/tables/${INQUIRY_TABLE}/rows/add`, row);
+  if (!add.ok) {
+    console.error("inquiry workbook", add.status, await add.text());
+    return json({ ok: false, error: "We couldn't save your request" }, 502, cors);
+  }
+  const mail = await graph(token, "POST", "/me/sendMail", inquiryFamilyMail(q, id, env));
+  if (!mail.ok) console.error("inquiry mail", mail.status, await mail.text());
+  if (env.INQUIRY_NOTIFY) {
+    const o = await graph(token, "POST", "/me/sendMail", inquiryOfficeMail(q, id, env));
+    if (!o.ok) console.error("inquiry office mail", o.status, await o.text());
+  }
+  return json({ ok: true, request_id: id, email_sent: mail.ok }, 200, cors);
 }
 
 // ------------------------------------------------------------------ transcript requests

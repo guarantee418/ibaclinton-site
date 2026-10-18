@@ -15,17 +15,14 @@ import conferences
 import lunch
 import tours
 
-# Formspree form ID for the Request Info form (the part after formspree.io/f/).
-# Leave empty until the form exists; the page then shows a "call or email us" notice.
-FORMSPREE_ID = "xaeqabaz"  # Formspree account: ggreene@ibcministries.org
-
 # The site's own domain. Leave empty while the site is only a preview at
 # guarantee418.github.io/ibaclinton-site/. Set to "ibaclinton.com" on go-live day and rebuild:
 # that writes site/CNAME, switches 404.html's links to "/", turns on Google Analytics and
 # lets search engines index the pages (the preview asks them not to).
 DOMAIN = "ibaclinton.com"
 
-# Address of the hot lunch order service (worker/, a Cloudflare Worker), for example
+# Address of the hot lunch order service (worker/, a Cloudflare Worker; it also takes the conference, tour,
+# transcript and Request Info forms), for example
 # "https://ibaclinton-lunch.<account>.workers.dev". Empty = no online ordering: the page shows
 # the menu and, if the office pasted one, the Microsoft Forms link instead.
 LUNCH_API = "https://ibaclinton-lunch.guarantee418.workers.dev"
@@ -157,13 +154,6 @@ def render(path, text, layout):
     body = body.replace("{{api}}", esc(LUNCH_API))
     if "{{parents}}" in body:
         body = body.replace("{{parents}}", parents_block(json.loads((CONTENT / "parents.json").read_text()), root))
-    if FORMSPREE_ID:
-        body = body.replace("{{formspree}}", f"https://formspree.io/f/{FORMSPREE_ID}").replace("{{form_notice}}", "")
-    else:
-        body = body.replace("{{formspree}}", "#").replace("{{form_notice}}",
-            '<p class="notice">This form is being set up. For now, please call '
-            '<a href="tel:3018561616">(301) 856-1616</a> or email '
-            '<a href="mailto:iba@ibcministries.org">iba@ibcministries.org</a>.</p>')
     tracking = ("This website uses Google Analytics to count visits and see which pages are used. "
         "Google Analytics sets cookies to do this; it does not tell us who you are. "
         "The site does not use advertising cookies."

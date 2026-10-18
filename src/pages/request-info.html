@@ -5,15 +5,13 @@ cta: no
 ---
 <section class="tight"><div class="wrap">
   <p class="lead">Tell us a little about your family and we’ll be in touch. You can also call <a href="tel:3018561616">(301) 856-1616</a> or <a href="{{root}}tour/">book a tour</a>.</p>
-  {{form_notice}}
   <div id="form-status" role="status" aria-live="polite"></div>
-  <form class="info" id="info-form" action="{{formspree}}" method="POST">
-    <input type="hidden" name="_subject" value="IBA website: information request">
+  <form class="info" id="info-form" data-api="{{api}}" novalidate hidden>
     <fieldset>
       <legend>Parent/Guardian</legend>
       <label>First name<input name="parent_first" autocomplete="given-name" required></label>
       <label>Last name<input name="parent_last" autocomplete="family-name" required></label>
-      <label class="full">Second parent/guardian <span class="opt">(optional)</span><input name="parent2_name"></label>
+      <label class="full">Second parent/guardian <span class="opt">(optional)</span><input name="parent2_name" maxlength="120"></label>
       <label>Email<input type="email" name="email" autocomplete="email" required></label>
       <label>Phone<input type="tel" name="phone" autocomplete="tel" required></label>
     </fieldset>
@@ -38,30 +36,42 @@ cta: no
       <label class="full">Name of school the student(s) are currently attending<textarea name="current_school" required></textarea></label>
       <label class="full">How did you hear about IBA?<textarea name="heard_about" required></textarea></label>
     </fieldset>
-    <label class="hp" aria-hidden="true">Leave this field blank<input name="_gotcha" tabindex="-1" autocomplete="off"></label>
+    <label class="hp" aria-hidden="true">Leave this field blank<input name="website" tabindex="-1" autocomplete="off"></label>
     <button class="btn" type="submit">Submit</button>
   </form>
+  <noscript><p class="notice">To request information, please call <a href="tel:3018561616">(301) 856-1616</a> or email <a href="mailto:iba@ibcministries.org">iba@ibcministries.org</a>.</p></noscript>
   <script>
-  // Send the form in the background so families stay on our site. Without JavaScript the
-  // form still posts normally and Formspree shows its own thank-you page.
+  // Sends the form to the school's request service (worker/src/inquiries.js), which checks it again,
+  // saves it for the office and emails the family a confirmation.
   (function () {
     var form = document.getElementById("info-form"), status = document.getElementById("form-status");
-    if (!window.fetch || form.getAttribute("action") === "#") return;
+    if (!form || !window.fetch) return;
+    form.hidden = false;
     function show(cls, html) { status.className = "notice " + cls; status.innerHTML = html; status.scrollIntoView({block: "center"}); }
     form.addEventListener("submit", function (e) {
       e.preventDefault();
+      var missing = Array.prototype.filter.call(form.querySelectorAll("[required]"), function (el) { return !el.value.trim(); });
+      if (missing.length || !form.checkValidity()) {
+        show("err", "Please fill in every field (only the second parent and other children are optional).");
+        (missing[0] || form.querySelector(":invalid")).focus();
+        return;
+      }
+      var b = {};
+      Array.prototype.forEach.call(form.elements, function (el) { if (el.name) b[el.name] = el.value.trim(); });
       var btn = form.querySelector("button[type=submit]");
       btn.disabled = true; btn.textContent = "Sending…";
-      fetch(form.action, {method: "POST", body: new FormData(form), headers: {Accept: "application/json"}})
-        .then(function (r) { return r.json().then(function (d) { return {ok: r.ok, data: d}; }); })
-        .then(function (r) {
-          if (!r.ok) throw new Error(((r.data.errors || [])[0] || {}).message || "");
+      fetch(form.getAttribute("data-api") + "/inquiry", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(b)})
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d.ok) throw new Error(d.error || "");
           form.reset(); form.hidden = true;
-          show("ok", "<b>Thank you!</b> We received your request and will be in touch soon.");
+          show("ok", "<b>Thank you!</b> We received your request and will be in touch soon. A confirmation email is on its way" +
+            (d.email_sent ? "." : " (if it doesn’t arrive, please call the office)."));
         })
         .catch(function (err) {
           btn.disabled = false; btn.textContent = "Submit";
-          show("err", "Sorry, your request didn’t go through" + (err.message ? " (" + err.message + ")" : "") +
+          var msg = String(err.message || "").replace(/[<>&]/g, "");
+          show("err", "Sorry, your request didn’t go through" + (msg ? " (" + msg + ")" : "") +
             ". Please try again, or call <a href=\"tel:3018561616\">(301) 856-1616</a> or email " +
             "<a href=\"mailto:iba@ibcministries.org\">iba@ibcministries.org</a>.");
         });
