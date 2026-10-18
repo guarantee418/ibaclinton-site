@@ -616,3 +616,70 @@ test("POST /transcript end to end: saves the row (adding the tab), emails the re
   const stranger = await worker.fetch(new Request("https://lunch.test/transcripts", { headers: { Origin: "https://evil.test" } }), TRENV);
   assert.equal(stranger.status, 403);
 });
+
+// ------------------------------------------------------------------ Request Info inquiries
+import { COLUMNS as IN_COLUMNS, validateInquiry, inquiryRow, familyMail as inFamilyMail, officeMail as inOfficeMail } from "../src/inquiries.js";
+
+const INQ = {
+  parent_first: "Pat", parent_last: "Smith", parent2_name: "", email: "Pat@Example.com", phone: "301-555-0100",
+  student_first: "Sam", student_last: "Smith", student_age: "8", student_grade: "3rd Grade", student_birthday: "2018-03-04",
+  other_students: "", current_school: "Clinton Elementary", heard_about: "A friend from church",
+};
+const INENV = { ...ENV0, INQUIRY_NOTIFY: "office@school.test, principal@school.test" };
+
+test("Request Info inquiries are checked on the server", () => {
+  const ok = validateInquiry(INQ, BEFORE);
+  assert.equal(ok.error, undefined);
+  assert.equal(ok.inquiry.email, "pat@example.com"); assert.equal(ok.inquiry.age, 8);
+  assert.match(validateInquiry({ ...INQ, parent_last: "" }, BEFORE).error, /your first and last name/);
+  assert.match(validateInquiry({ ...INQ, email: "nope" }, BEFORE).error, /email/);
+  assert.match(validateInquiry({ ...INQ, student_age: "40" }, BEFORE).error, /age/);
+  assert.match(validateInquiry({ ...INQ, student_grade: "13th" }, BEFORE).error, /grade/);
+  assert.match(validateInquiry({ ...INQ, student_birthday: "2030-01-01" }, BEFORE).error, /birthday/);
+  assert.match(validateInquiry({ ...INQ, current_school: " " }, BEFORE).error, /school/);
+  assert.match(validateInquiry({ ...INQ, heard_about: "" }, BEFORE).error, /heard/);
+});
+
+test("inquiry row and emails: formula-safe, escaped, office can reply to the family", () => {
+  const q = validateInquiry({ ...INQ, heard_about: "=cmd()", student_first: "<i>" }, BEFORE).inquiry;
+  const row = inquiryRow(q, "INQ01", "1/5/2027 9:00 AM");
+  assert.equal(row.length, IN_COLUMNS.length);
+  assert.deepEqual(row.slice(1, 3), ["INQ01", "New"]);
+  assert.equal(row[IN_COLUMNS.indexOf("Birthday")], "3/4/2018");
+  assert.equal(row[IN_COLUMNS.indexOf("Heard about IBA")], "'=cmd()");
+  const fam = inFamilyMail(q, "INQ01", INENV).message;
+  assert.ok(fam.body.content.includes("&lt;i&gt;") && fam.toRecipients[0].emailAddress.address === "pat@example.com");
+  const off = inOfficeMail(q, "INQ01", INENV).message;
+  assert.deepEqual(off.toRecipients.map((r) => r.emailAddress.address), ["office@school.test", "principal@school.test"]);
+  assert.equal(off.replyTo[0].emailAddress.address, "pat@example.com");
+});
+
+test("POST /inquiry end to end: saves the row (adding the tab), emails the family and the office", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: BEFORE });
+  const calls = [];
+  let made = false;
+  globalThis.fetch = async (url, init = {}) => {
+    url = String(url); calls.push({ url, init });
+    const ok = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
+    if (url.includes("/oauth2/v2.0/token")) return ok({ access_token: "at", refresh_token: "rt1", expires_in: 3600 });
+    if (url.includes("/workbook/tables/InfoRequests/rows/add")) return made ? ok({}, 201) : ok({ error: "ItemNotFound" }, 404);
+    if (url.includes("/workbook/worksheets?")) return ok({ value: [{ name: "Orders" }] });
+    if (url.includes("/tables/add")) { made = true; return ok({ id: "{T4}" }); }
+    if (url.includes("/workbook/")) return ok({});
+    if (url.endsWith("/me/sendMail")) return new Response(null, { status: 202 });
+    return ok({ error: "unexpected " + url }, 500);
+  };
+  const post = (body) => worker.fetch(new Request("https://lunch.test/inquiry", {
+    method: "POST", body: JSON.stringify(body),
+    headers: { "Content-Type": "application/json", Origin: "https://guarantee418.github.io", "CF-Connecting-IP": "8.8.8.8" },
+  }), { ...INENV, LUNCH_KV: kv({ ms_refresh: "rt1" }) });
+  const res = await post(INQ);
+  const out = await res.json();
+  assert.equal(res.status, 200, JSON.stringify(out));
+  assert.match(out.request_id, /^[A-Z0-9]{5}$/);
+  const mails = calls.filter((c) => c.url.endsWith("/me/sendMail")).map((c) => JSON.parse(c.init.body).message);
+  assert.deepEqual(mails.map((m) => m.toRecipients[0].emailAddress.address), ["pat@example.com", "office@school.test"]);
+  assert.equal((await post({ ...INQ, phone: "" })).status, 400);
+  const trap = await (await post({ ...INQ, website: "spam" })).json();
+  assert.equal(trap.request_id, "0");
+});

@@ -40,6 +40,8 @@ TRANSCRIPT_NOTIFY = "iba@ibcministries.org"
 TRANSCRIPT_FEE_ALUMNI = "10"
 TRANSCRIPT_FEE_STUDENT = "10"
 TRANSCRIPT_PAY_URL = ""
+# Who hears about each Request Info inquiry (src/inquiries.js); comma-separated.
+INQUIRY_NOTIFY = "iba@ibcministries.org,ggreene@ibcministries.org"
 # Filled in by the workflow from GitHub secrets (not secret, but kept out of this public repo):
 TENANT_ID = ""
 CLIENT_ID = ""

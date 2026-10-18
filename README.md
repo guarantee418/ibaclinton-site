@@ -10,8 +10,9 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
 - Publishing is manual: Actions tab → "Publish to GitHub Pages" → Run workflow **on `main`**. The
   github-pages environment only deploys from `main`, so merge the working branch into `main` first.
 - Staff photos: 480x600 JPEG, all metadata removed, named `last-first.jpg` in `site/img/staff/`.
-- Request Info form: Formspree form `xaeqabaz` (account and inbox: ggreene@ibcministries.org; free plan,
-  50 submissions a month). The form ID is public by nature, so it lives in `build.py`; no secret is needed.
+- Request Info form: since 2026-10-18 it goes to the same service as hot lunch (`POST /inquiry`,
+  `worker/src/inquiries.js`): a row on the Inquiries tab of the office workbook, a confirmation to the family
+  and the details to `INQUIRY_NOTIFY`. Formspree (form `xaeqabaz`) is no longer used.
 - `build.py` also writes `sitemap.xml` and `robots.txt`. While `DOMAIN` is empty the pages carry a
   `noindex` tag so the github.io preview stays out of search results.
 
