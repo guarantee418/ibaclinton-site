@@ -5,23 +5,22 @@
       "menu": [
         {
           "day": "Monday",
-          "meal": "hot dog"
+          "meal": "Hotdogs & Chips"
         },
         {
           "day": "Tuesday",
-          "meal": "pizza"
+          "meal": "Chicken Quesadillas & Spanish Rice"
         },
         {
           "day": "Wednesday",
-          "meal": "burger"
+          "meal": "Philly Cheesesteaks & Fries"
         },
         {
           "day": "Thursday",
-          "meal": "chicken tenders"
+          "meal": "Grilled Chicken & Potatoes"
         },
         {
-          "day": "Friday",
-          "meal": "chili"
+          "day": "Friday"
         }
       ]
     }
