@@ -74,7 +74,7 @@ export function colNumber(a) {
 // ------------------------------------------------------------------ organize
 // organize: tidies the workbook without touching what the website needs (file name, tab names, tables, column
 // headings, rows with anything in them): tabs in a fixed order, the "How to use" guide, a short reminder beside
-// each tab's table, frozen heading rows, the Kitchen week box, and empty rows left at the bottom of the tables
+// each tab's table, the Kitchen week box, and empty rows left at the bottom of the tables
 // after deletions (a table keeps at least one row). Safe to run again; it writes the same thing each time.
 
 const ORDER = ["How to use", "Orders", "Kitchen", "Homerooms", "Teachers", "Conferences", "Tours", "Transcripts", "Inquiries"];
@@ -227,7 +227,7 @@ export const GUIDE = [
 ];
 
 // One step per call: each stays under Cloudflare's limit on outside calls per request (50 on the free plan).
-export const STEPS = ["order", "guide", "notes", "freeze", "kitchen", "rows"];
+export const STEPS = ["order", "guide", "notes", "kitchen", "rows"];
 
 export async function organize(call, step) {
   const list = await call("GET", "/worksheets?$select=name,position");
@@ -260,12 +260,6 @@ export async function organize(call, step) {
     }
     // The old one-line reminder on the Kitchen tab is now part of the reminder at G1.
     if (have.has("Kitchen")) await call("POST", `${sheet("Kitchen")}/range(address='C3')/clear`, { applyTo: "Contents" });
-  } else if (step === "freeze") { // heading rows stay in view when scrolling
-    for (const name of ["Orders", "Teachers", "Conferences", "Tours", "Transcripts", "Inquiries"]) {
-      if (!have.has(name)) continue;
-      const r = await call("POST", `${sheet(name)}/freezePanes/freezeRows`, { count: 1 });
-      done.push(r.ok ? name : `${name}: ${r.status}`);
-    }
   } else if (step === "kitchen") { // with no orders yet the week box showed 1/0/1900; then show this week
     if (have.has("Kitchen")) {
       const b3 = await call("GET", `${sheet("Kitchen")}/range(address='B3')?$select=formulas`);
