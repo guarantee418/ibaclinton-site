@@ -47,6 +47,7 @@
     if (open && open !== d) open.close();
     if (!d.open) d.showModal();
     d.scrollTop = 0;
+    setTimeout(function () { d.scrollTop = 0; }, 0); // after the browser's own jump to the #section
     open = d;
     document.documentElement.classList.add("kc-lock");
     if (push) history.pushState({ kc: id }, "", location.pathname + location.search + "#" + id);

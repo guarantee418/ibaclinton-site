@@ -143,6 +143,42 @@ ARROW = ('<svg class="kc-arrow" width="22" height="22" viewBox="0 0 24 24" fill=
          'stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
          '<path d="M4 12h16"/><path d="M14 6l6 6-6 6"/></svg>')
 
+ABSENCE_GRADES = ["Preschool (K3)", "Preschool (K4)", "Kindergarten (K5)"] + [
+    f"{n}{'st' if n == 1 else 'nd' if n == 2 else 'rd' if n == 3 else 'th'} Grade" for n in range(1, 13)]
+ABSENCE_REASONS = ["Illness", "Medical or dental appointment", "Family matter", "Travel", "Other"]
+# Both lists match worker/src/absences.js (the grades are the Teachers tab's, so the homeroom teacher is found).
+
+def absence_form(root):
+    """Report Student Absence; reports go to the Absences tab of the office workbook (worker/src/absences.js)."""
+    grades = "".join(f"<option>{esc(g)}</option>" for g in ABSENCE_GRADES)
+    reasons = "".join(f"<option>{esc(r)}</option>" for r in ABSENCE_REASONS)
+    return (
+        '<div id="ab-status" role="status" aria-live="polite"></div>'
+        f'<form class="info ab-form" id="ab-form" data-api="{esc(LUNCH_API)}" novalidate hidden>'
+        '<fieldset><legend>Student</legend>'
+        '<label>First name<input name="student_first" maxlength="60" required></label>'
+        '<label>Last name<input name="student_last" maxlength="60" required></label>'
+        f'<label class="full">Grade<select name="grade" required><option value="">Choose…</option>{grades}</select></label>'
+        '</fieldset>'
+        '<fieldset><legend>Absence</legend>'
+        '<label>Day of absence<input type="date" name="first_day" required></label>'
+        '<label>Last day <span class="opt">(only if more than one day)</span><input type="date" name="last_day"></label>'
+        f'<label class="full">Reason<select name="reason" required><option value="">Choose…</option>{reasons}</select></label>'
+        '<label class="full">Details <span class="opt">(optional; required for Other)</span>'
+        '<textarea name="details" maxlength="500"></textarea></label>'
+        '</fieldset>'
+        '<fieldset><legend>Parent/Guardian</legend>'
+        '<label class="full">Your name<input name="parent_name" autocomplete="name" maxlength="120" required></label>'
+        '<label>Email<input type="email" name="email" autocomplete="email" maxlength="120" required></label>'
+        '<label>Phone<input type="tel" name="phone" autocomplete="tel" maxlength="30" required></label>'
+        '</fieldset>'
+        '<label class="hp" aria-hidden="true">Leave this field blank<input name="website" tabindex="-1" autocomplete="off"></label>'
+        '<button class="btn" type="submit">Report absence</button>'
+        '</form>'
+        '<noscript><p class="notice">To report an absence, please call the school office at (301) 856-1616 or email '
+        '<a href="mailto:iba@ibcministries.org">iba@ibcministries.org</a>.</p></noscript>'
+        f'<script src="{root}absence.js" defer></script>')
+
 def parents_block(data, root):
     """The Kings Corner (parents page): hero and tile grid; each tile opens its section in a pop-up (site/kings.js).
     All text comes from content/parents.json. Without JavaScript the sections show below the tiles instead."""
@@ -199,6 +235,8 @@ def parents_block(data, root):
             extra = lunch.lunch_block(json.loads((CONTENT / "lunch.json").read_text()), root, LUNCH_API)
         if s.get("show_feedback"):
             extra += feedback_form(root)
+        if s.get("show_absence"):
+            extra += absence_form(root)
         blocks.append(f'<div class="block" id="{s["_id"]}"><h2>{esc(s["title"])}</h2>'
                       f'{clean_html(s.get("text"))}{docs_list(s.get("links"), root)}{extra}</div>')
     back = f'Back to {esc(hero.get("title")) or "The Kings Corner"}'

@@ -110,14 +110,10 @@
     {
       "title": "Report Student Absence",
       "anchor": "absence",
-      "text": "<p>Advanced notice of your student’s absence for appointments, family events, etc. will help teachers prepare and keep students on track.</p>",
-      "links": [
-        {
-          "title": "Go to Absence Form",
-          "url": "https://forms.office.com/r/2qsnLG3R9y"
-        }
-      ],
-      "show_lunch": false
+      "text": "<p>Advance notice of your student’s absence for appointments, family events, illness, etc. helps teachers prepare and keep students on track. Fill out the form below; the school office and your child’s homeroom teacher will be told, and you’ll get a confirmation email.</p>",
+      "links": [],
+      "show_lunch": false,
+      "show_absence": true
     },
     {
       "title": "Student Handbooks",
