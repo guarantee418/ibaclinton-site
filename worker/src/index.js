@@ -1,6 +1,6 @@
 // Hot lunch order service for ibaclinton.com (Cloudflare Worker).
 //
-//   POST /order     an order from the Parent Portal form: checked against the published menu,
+//   POST /order     an order from The Kings Corner form: checked against the published menu,
 //                   added to the "Orders" table of the office workbook, confirmation emailed
 //   GET  /conferences  which conference times are taken, by teacher (no names)
 //   POST /conference   a parent-teacher conference booking (src/conferences.js): checked against the
@@ -12,7 +12,7 @@
 //                   workbook, emailed to the family (confirmation) and the office
 //   POST /absence      a Report Student Absence form (src/absences.js): added to the Absences tab of the office
 //                   workbook, emailed to the parent (confirmation) and the office, Cc the homeroom teacher
-//   POST /feedback     a Feedback for Administration form from the Parent Portal (src/feedback.js): added to
+//   POST /feedback     a Feedback for Administration form from The Kings Corner (src/feedback.js): added to
 //                   the Feedback tab of the office workbook (no email)
 //   GET  /transcripts  the transcript fees and the payment link (no names)
 //   POST /transcript   a transcript request (src/transcripts.js): added to the Transcripts tab of the office

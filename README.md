@@ -32,7 +32,7 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
 
 ## Hot lunch ordering
 
-- The Hot Lunch section of the Parent Portal comes from `content/lunch.json` via `lunch.py`: menu
+- The Hot Lunch section of The Kings Corner comes from `content/lunch.json` via `lunch.py`: menu
   table, prices, deadline (9:00 AM the Friday before the week, unless the office types another) and (when `LUNCH_API` in `build.py` is set) the online order form
   (`site/lunch.js`). `site/lunch/menu.json` is the published menu the order service checks against.
 - The office lists **several weeks** (`weeks` in `content/lunch.json`): each shows as its own card (banners alternate

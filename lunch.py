@@ -1,7 +1,7 @@
 """Hot lunch: the menu table, the online order form and the public menu file.
 
 The office edits content/lunch.json in the online editor (.pages.yml). build.py calls
-lunch_block() for the Parent Portal and menu_file() for site/lunch/menu.json, which the
+lunch_block() for The Kings Corner and menu_file() for site/lunch/menu.json, which the
 order service (worker/) reads to check every order: prices, open days and the deadline
 always come from that file, never from the parent's browser.
 """

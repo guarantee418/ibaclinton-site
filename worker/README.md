@@ -1,6 +1,6 @@
 # Hot lunch order service
 
-Families order hot lunch on the Parent Portal. This Cloudflare Worker receives each order,
+Families order hot lunch on The Kings Corner. This Cloudflare Worker receives each order,
 checks it against the published menu (`site/lunch/menu.json`, built from what the office types
 in the editor), adds one row per student to the **Orders** table of the office workbook, and
 emails the parent a confirmation. Lunch charges are still entered in Gradelink by hand from
