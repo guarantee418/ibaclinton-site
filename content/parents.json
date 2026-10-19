@@ -1,10 +1,90 @@
 {
-  "heading": "Welcome to the Parent Portal!",
-  "intro": "This is your hub for staying up-to-date on your child’s school life. You can find information about school events and resources. We’re here to make it easier for you to be involved in your child’s education. Thank you for being part of our school community.",
+  "hero": {
+    "script": "Welcome to",
+    "title": "The Kings Corner",
+    "text": "Your family's hub for everything happening at IBA: calendars, handbooks, lunch orders, conferences, and more.",
+    "button_text": "Log in to Gradelink",
+    "button_url": "https://secure.gradelink.com/lkg/Gradelink.xml"
+  },
+  "tiles_script": "Inside the Corner",
+  "tiles_heading": "Find what you need",
+  "tiles": [
+    {
+      "title": "Kings Calendar",
+      "description": "The 2026–2027 IBA & Stepping Stones school calendar.",
+      "section": "calendars",
+      "tag": ""
+    },
+    {
+      "title": "Meet the Teacher",
+      "description": "Sign up for a 15-minute conference on November 16.",
+      "section": "conferences",
+      "tag": ""
+    },
+    {
+      "title": "Gradelink",
+      "description": "Grades, assignments, due dates, and teacher files.",
+      "section": "gradelink",
+      "tag": "Login"
+    },
+    {
+      "title": "Handbooks",
+      "description": "Preschool, Elementary, and Jr & Sr High handbooks.",
+      "section": "handbooks",
+      "tag": ""
+    },
+    {
+      "title": "Hot Lunch",
+      "description": "Hot lunch menu, pricing, and order deadlines.",
+      "section": "hot-lunch",
+      "tag": ""
+    },
+    {
+      "title": "Report an Absence",
+      "description": "Give teachers advance notice so students stay on track.",
+      "section": "absence",
+      "tag": ""
+    },
+    {
+      "title": "Kings Athletics",
+      "description": "Team schedules for 6th–12th and elementary intramurals.",
+      "section": "athletics",
+      "tag": ""
+    },
+    {
+      "title": "Fine Arts",
+      "description": "Event categories and rules for grades 4–12.",
+      "section": "fine-arts",
+      "tag": ""
+    },
+    {
+      "title": "Spirit Days",
+      "description": "Spirit Day calendars for the Academy and Preschool.",
+      "section": "spirit-days",
+      "tag": ""
+    },
+    {
+      "title": "Supply Lists",
+      "description": "What to bring for the school year.",
+      "section": "supply-lists",
+      "tag": ""
+    },
+    {
+      "title": "Feedback for Administration",
+      "description": "Share a question, concern, suggestion, or word of thanks.",
+      "section": "feedback",
+      "tag": ""
+    },
+    {
+      "title": "Drop-off & Pickup",
+      "description": "Campus traffic patterns for Preschool and Academy.",
+      "section": "traffic",
+      "tag": ""
+    }
+  ],
   "sections": [
     {
       "title": "Parent-Teacher Conferences",
-      "menu_label": "Conferences",
       "anchor": "conferences",
       "text": "<p>Sign up for a 15-minute conference with your child’s teacher on Monday, November 16, between 9:00 AM and 1:00 PM. Families in 7th through 12th grade meet with all three high school teachers together.</p>",
       "links": [
@@ -17,7 +97,6 @@
     },
     {
       "title": "Calendars",
-      "menu_label": "Calendars",
       "anchor": "calendars",
       "text": "<p>Our school calendar is designed to balance academic rigor with well-deserved breaks, providing students and educators with optimal learning opportunities.</p>",
       "links": [
@@ -30,7 +109,6 @@
     },
     {
       "title": "Report Student Absence",
-      "menu_label": "Report Absence",
       "anchor": "absence",
       "text": "<p>Advanced notice of your student’s absence for appointments, family events, etc. will help teachers prepare and keep students on track.</p>",
       "links": [
@@ -43,7 +121,6 @@
     },
     {
       "title": "Student Handbooks",
-      "menu_label": "Handbooks",
       "anchor": "handbooks",
       "text": "",
       "links": [
@@ -64,7 +141,6 @@
     },
     {
       "title": "Athletics",
-      "menu_label": "Athletics",
       "anchor": "athletics",
       "text": "<p>6th–12th graders who are participating in our sports program will find practice and game schedules for each season below:</p>",
       "links": [
@@ -77,7 +153,6 @@
     },
     {
       "title": "Intramural Sports",
-      "menu_label": "Intramurals",
       "anchor": "intramurals",
       "text": "<p>Every year for the elementary grades we have intramural sports. They always enjoy getting to face off against their fellow classmates on the basketball court as well as on the soccer field. We create our own league within the school. All parents are welcome to come in and watch their student play just like any other sports game. This ensures that our elementary students benefit from playing sports without the added expense and time it takes to participate in a league.</p><p>Game schedules and team lists are sent home to families. Please contact the school office if you need a copy.</p>",
       "links": [],
@@ -85,7 +160,6 @@
     },
     {
       "title": "Hot Lunch",
-      "menu_label": "Hot Lunch",
       "anchor": "hot-lunch",
       "text": "",
       "links": [],
@@ -93,7 +167,6 @@
     },
     {
       "title": "Spirit Days",
-      "menu_label": "Spirit Days",
       "anchor": "spirit-days",
       "text": "<p>Throughout the year, we have Spirit Days when students and staff have the opportunity to show off their school spirit!</p>",
       "links": [
@@ -110,7 +183,6 @@
     },
     {
       "title": "Supply Lists",
-      "menu_label": "Supply Lists",
       "anchor": "supply-lists",
       "text": "<p><b>Academy:</b> For the IBA supplies, we now charge a $50 school supply fee which covers everything except a backpack, lunchbox, water bottle and King James Bible.</p>",
       "links": [
@@ -123,7 +195,6 @@
     },
     {
       "title": "Fine Arts",
-      "menu_label": "Fine Arts",
       "anchor": "fine-arts",
       "text": "<p>Every year our students from fourth grade to twelfth grade participate in Fine Arts. We are part of an association of Christian schools. We compete against each other in Regional and State competitions. These are competitions our students look forward to participating in every year. Details for the event categories are below:</p>",
       "links": [
@@ -184,7 +255,6 @@
     },
     {
       "title": "Traffic Patterns",
-      "menu_label": "Traffic Patterns",
       "anchor": "traffic",
       "text": "<p>To optimize student pickup and dropoff times, we have instituted the following traffic patterns for the Preschool and Academy.</p>",
       "links": [
@@ -197,7 +267,6 @@
     },
     {
       "title": "Feedback for Administration",
-      "menu_label": "Feedback for Administration",
       "anchor": "feedback",
       "text": "<p>We value good communication between parents and the school as we work together for our students. Use this form to share a question, concern, suggestion or word of thanks with the administration.</p>",
       "links": [],
@@ -206,7 +275,6 @@
     },
     {
       "title": "Gradelink",
-      "menu_label": "Gradelink",
       "anchor": "gradelink",
       "text": "<p>Gradelink makes it simple to maintain parent and school communication. The parent portal provides access to academic progress, making it easy to view class and assignment grades, due dates, upcoming homework, and more.</p><p>Parents and students can download file attachments posted by the teacher, including worksheets, permission slips, study guides, and the class syllabus.</p>",
       "links": [

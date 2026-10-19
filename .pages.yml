@@ -196,20 +196,71 @@ content:
             description: For a panel where several teachers meet each family together, list them with commas, for example Mr. Napierala, Mr. Damm, Mr. Greene. Each gets the booking email. Leave blank for one teacher.
 
   - name: parents
-    label: Parent Portal page
+    label: The Kings Corner (parents page)
     type: file
     path: content/parents.json
     format: json
     fields:
-      - name: heading
-        label: Welcome heading
+      - name: hero
+        label: Top of the page (purple banner)
+        type: object
+        fields:
+          - name: script
+            label: Small line above the title
+            type: string
+            description: For example "Welcome to". Leave blank to hide it.
+          - name: title
+            label: Title
+            type: string
+            required: true
+          - name: text
+            label: Text under the title
+            type: text
+          - name: button_text
+            label: Button text
+            type: string
+            description: Leave blank to hide the button.
+          - name: button_url
+            label: Button link
+            type: string
+            pattern:
+              regex: "^(https://.*)?$"
+              message: "Paste the full link, starting with https://"
+      - name: tiles_script
+        label: Small line above the tiles
         type: string
-      - name: intro
-        label: Welcome text
-        type: text
+        description: For example "Inside the Corner". Leave blank to hide it.
+      - name: tiles_heading
+        label: Heading above the tiles
+        type: string
+      - name: tiles
+        label: Tiles
+        description: The cards near the top of the page, in this order (drag to reorder). Each one jumps to a section further down.
+        type: object
+        list:
+          collapsible:
+            collapsed: true
+            summary: "{title}"
+        fields:
+          - name: title
+            label: Title
+            type: string
+            required: true
+          - name: description
+            label: One-line description
+            type: string
+          - name: section
+            label: Goes to section
+            type: string
+            required: true
+            description: The section's "Page link name" (shown at the bottom of each section below), for example hot-lunch, calendars or gradelink. A full https:// link also works. A tile whose section doesn't exist is not shown.
+          - name: tag
+            label: Small tag (optional)
+            type: string
+            description: For example "Login". Leave blank for none.
       - name: sections
         label: Sections
-        description: Shown on the page in this order (drag to reorder). The quick links at the top list them A to Z.
+        description: Shown on the page below the tiles, in this order (drag to reorder).
         type: object
         list:
           collapsible:
@@ -220,10 +271,6 @@ content:
             label: Heading
             type: string
             required: true
-          - name: menu_label
-            label: Quick link name
-            type: string
-            description: Short name for the quick links at the top, for example "Handbooks". Leave blank to use the heading.
           - name: text
             label: Text
             type: rich-text
@@ -259,4 +306,4 @@ content:
           - name: anchor
             label: Page link name (advanced)
             type: string
-            description: Used in links like ibaclinton.com/parents/#hot-lunch. Leave as is; for a new section leave blank.
+            description: Used in links like ibaclinton.com/parents/#hot-lunch and by the tiles ("Goes to section"). Leave as is; for a new section type a short name like field-trips, or leave blank.
