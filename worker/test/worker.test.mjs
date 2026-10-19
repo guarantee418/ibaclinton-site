@@ -726,8 +726,12 @@ test("organize: the Kitchen week box is fixed only while it still holds the orig
   await organize(b.call, "kitchen");
   assert.match(b.calls.find((c) => c.method === "PATCH").body.formulas[0][0], /^=IF\(COUNT\(Orders\[Week of\]\)=0,TODAY\(\)/);
   b = fakeBook({ b3: "10/26/2026" });
-  assert.deepEqual(await organize(b.call, "kitchen"), ["week box left as it is"]);
-  assert.equal(b.calls.filter((c) => c.method === "PATCH").length, 0);
+  assert.deepEqual(await organize(b.call, "kitchen"), ["week box left as it is", "choices table"]);
+  assert.equal(b.calls.filter((c) => c.method === "PATCH" && c.path.includes("B3")).length, 0);
+  // The Choices table goes below the day counts, with a formula per day (Monday at row 16).
+  const t = b.calls.find((c) => c.method === "PATCH" && c.path.includes("range(address='A14:E40')"));
+  assert.equal(t.body.formulas.length, 27);
+  assert.match(t.body.formulas[2][1], /Orders\[Mon\]/); assert.match(t.body.formulas[7][1], /Orders\[Tue\]/);
 });
 
 test("guide and reminders cover every tab", () => {
@@ -851,4 +855,40 @@ test("POST /absence end to end: saves the row (adding the tab), emails the paren
   assert.equal(mails[1].ccRecipients[0].emailAddress.address, "lundberg@school.test");
   assert.equal((await post({ ...ABS, phone: "" })).status, 400);
   assert.equal((await (await post({ ...ABS, website: "x" })).json()).absence_id, "0");
+});
+
+// ------------------------------------------------------------------ lunch choices (e.g. cheese or pepperoni pizza)
+import { choiceFormula } from "../src/guide.js";
+
+const CMENU = { ...MENU, days: [MENU.days[0], { ...MENU.days[1], meal: "Pizza", options: ["Cheese pizza", "Pepperoni pizza"] }] };
+const CORDER = { ...ORDER, children: [{ name: "Sam Smith", grade: "3", days: ["mon", "wed"], choices: { wed: "pepperoni PIZZA" } }] };
+
+test("a day with choices needs one of them; the sheet gets the choice, the email shows it", () => {
+  const ok = validateOrder(CORDER, CMENU, BEFORE);
+  assert.equal(ok.error, undefined);
+  assert.deepEqual(ok.order.children[0].choices, { wed: "Pepperoni pizza" });
+  assert.match(validateOrder({ ...CORDER, children: [{ ...CORDER.children[0], choices: {} }] }, CMENU, BEFORE).error, /Wednesday's lunch for Sam Smith/);
+  assert.match(validateOrder({ ...CORDER, children: [{ ...CORDER.children[0], choices: { wed: "Sushi" } }] }, CMENU, BEFORE).error, /Wednesday's lunch/);
+  // Monday has no choices, so nothing is asked for it.
+  assert.equal(validateOrder({ ...CORDER, children: [{ ...CORDER.children[0], days: ["mon"], choices: {} }] }, CMENU, BEFORE).error, undefined);
+  const row = orderRows(ok.order, CMENU, "ABCDE", new Date("2026-10-15T18:05:00Z"))[0];
+  assert.deepEqual(row.slice(10, 16), ["X", "", "Pepperoni pizza", "", "", '=COUNTIF(Orders[@[Mon]:[Fri]],"?*")']);
+  const mail = confirmationMail(ok.order, CMENU, "ABCDE", ENV0).message.body.content;
+  assert.match(mail, /Wednesday Oct 21: Pepperoni pizza/);
+});
+
+test("Kitchen choices formula counts each choice per day for the Kitchen's week", () => {
+  const f = choiceFormula("Wed");
+  assert.match(f, /^=IFERROR\(LET\(u,SORT\(UNIQUE\(FILTER\(Orders\[Wed\],/);
+  assert.match(f, /Orders\[Wed\]<>"X"/);
+  assert.match(f, /COUNTIFS\(Orders\[Week of\],\$B\$3,Orders\[Wed\],u,Orders\[Preschool\],"Yes"\)/);
+});
+
+test("homeroom lists show the lunch choice instead of a check mark", async () => {
+  const r = row(46321, "Sam", "3rd Grade", ["Mon"]); r[12] = "Pepperoni <pizza>";
+  const kids = await readWeek(fakeCall([HEAD, r]), "2026-10-26");
+  assert.deepEqual([...kids[0].days].sort(), ["Mon", "Wed"]);
+  assert.deepEqual(kids[0].choices, { Wed: "Pepperoni <pizza>" });
+  const html = homeroomMails(kids, TEACHERS, "2026-10-26", ENV0)[0].mail.message.body.content;
+  assert.ok(html.includes("Pepperoni &lt;pizza&gt;") && html.includes("&#10003;"));
 });

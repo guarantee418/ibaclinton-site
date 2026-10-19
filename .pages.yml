@@ -47,7 +47,13 @@ content:
           - name: meal
             label: Meal
             type: string
-            description: Leave blank for a day with no hot lunch.
+            description: Leave blank for a day with no hot lunch. With choices below, this is the day's title, for example Pizza (or leave it blank to list the choices).
+          - name: options
+            label: Choices (optional)
+            type: string
+            list:
+              max: 5
+            description: Only for a day with more than one option, for example Cheese pizza and Pepperoni pizza. Parents then pick one per student, and the Kitchen tab counts each choice. Leave empty for one meal.
       - name: price_regular
         label: Price per lunch (K5 to 12th)
         type: number

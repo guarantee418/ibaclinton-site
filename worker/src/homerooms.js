@@ -95,8 +95,14 @@ export async function readWeek(call, weekIso) {
     const name = String(r[col.Student] || "").trim(), grade = String(r[col.Grade] || "").trim();
     if (!name) continue;
     const key = `${grade}|${name.toLowerCase()}`;
-    const k = kids.get(key) || { name, grade, days: new Set() };
-    DAYS.forEach((d) => { if (String(r[col[d]] || "").trim().toUpperCase() === "X") k.days.add(d); });
+    const k = kids.get(key) || { name, grade, days: new Set(), choices: {} };
+    // A day's cell is "X", or the lunch choice the parent picked (e.g. "Pepperoni pizza").
+    DAYS.forEach((d) => {
+      const v = String(r[col[d]] || "").trim();
+      if (!v) return;
+      k.days.add(d);
+      if (v.toUpperCase() !== "X") k.choices[d] = v;
+    });
     kids.set(key, k);
   }
   return [...kids.values()].filter((k) => k.days.size);
@@ -179,7 +185,7 @@ export function homeroomMails(students, teachers, weekIso, env, testTo) {
     const two = g.grades.length > 1;
     const th = (x) => `<th style="text-align:left;padding:4px 10px;border-bottom:2px solid #1B2A4A">${x}</th>`;
     const td = (x, c) => `<td style="padding:4px 10px;border-bottom:1px solid #ddd${c ? ";text-align:center" : ""}">${x}</td>`;
-    const rows = kids.map((k) => `<tr>${td(e(k.name))}${two ? td(e(k.grade)) : ""}${DAYS.map((d) => td(k.days.has(d) ? "&#10003;" : "", true)).join("")}</tr>`).join("");
+    const rows = kids.map((k) => `<tr>${td(e(k.name))}${two ? td(e(k.grade)) : ""}${DAYS.map((d) => td(k.days.has(d) ? (k.choices && k.choices[d] ? e(k.choices[d]) : "&#10003;") : "", true)).join("")}</tr>`).join("");
     const totals = `<tr><td style="padding:4px 10px"><b>Lunches</b></td>${two ? "<td></td>" : ""}` +
       DAYS.map((d) => `<td style="padding:4px 10px;text-align:center"><b>${kids.filter((k) => k.days.has(d)).length}</b></td>`).join("") + "</tr>";
     const content =

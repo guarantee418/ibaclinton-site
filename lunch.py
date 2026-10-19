@@ -55,16 +55,32 @@ def _monday(day):
         return None
     return day + dt.timedelta(days=7 - day.weekday()) if day.weekday() >= 5 else day - dt.timedelta(days=day.weekday())
 
+MAX_OPTIONS = 5  # the Kitchen tab has room for this many choices per day
+
+def _options(value):
+    """A day's choices (e.g. Cheese pizza, Pepperoni pizza): each listed once, at most MAX_OPTIONS.
+    One choice alone is no choice, so it counts as none."""
+    seen, out = set(), []
+    for v in value if isinstance(value, list) else []:
+        v = " ".join(str(v or "").split())[:60]
+        if v and v.upper() != "X" and v.lower() not in seen:
+            seen.add(v.lower())
+            out.append(v)
+    return out[:MAX_OPTIONS] if len(out) > 1 else []
+
 def menu_data(data):
     """The week's menu as plain data, shared by the page, menu.json and the order service."""
     start = _monday(_date(data.get("week_start")))
     days = []
     for item in data.get("menu") or []:
         day, meal = str(item.get("day") or "").strip(), str(item.get("meal") or "").strip()
+        options = _options(item.get("options"))
+        if not meal and options:
+            meal = " or ".join(options)
         if not meal or day not in DAYS:
             continue
         date = start + dt.timedelta(days=DAYS.index(day)) if start else None
-        days.append({"key": day[:3].lower(), "day": day, "meal": meal,
+        days.append({"key": day[:3].lower(), "day": day, "meal": meal, "options": options,
                      "date": date.isoformat() if date else "",
                      "date_label": f"{date:%b} {date.day}" if date else ""})
     deadline = _deadline(data.get("order_deadline"), start)
@@ -108,7 +124,9 @@ def lunch_block(data, root, api):
     out.append('<table class="lunch"><tbody>' + "".join(
         f'<tr><th scope="row">{esc(d["day"])}'
         + (f' <span class="lunch-date">{esc(d["date_label"])}</span>' if d["date_label"] else "")
-        + f'</th><td>{esc(d["meal"])}</td></tr>' for d in menu["days"]) + "</tbody></table>")
+        + f'</th><td>{esc(d["meal"])}'
+        + (f'<span class="lunch-choices">Choice of: {esc(", ".join(d["options"]))}</span>' if d["options"] and d["meal"] != " or ".join(d["options"]) else "")
+        + '</td></tr>' for d in menu["days"]) + "</tbody></table>")
     out.append(price_line)
     if menu["note"]:
         out.append(f"<p>{esc(menu['note'])}</p>")
@@ -132,13 +150,20 @@ def _forms_link(form):
                 "Open the order form in a new window</a></p>")
     return f'<p><a class="btn" href="{esc(form)}">Order Hot Lunch</a></p>'
 
+def _day_box(d):
+    """One day on the order form: a checkbox, plus a list of the day's choices when it has any."""
+    box = (f'<label class="lunch-day"><input type="checkbox" name="days" value="{d["key"]}">'
+           f'<span><b>{esc(d["day"])}</b> {esc(d["date_label"])}<br>{esc(d["meal"])}</span></label>')
+    if not d["options"]:
+        return box
+    opts = '<option value="">Choose…</option>' + "".join(f"<option>{esc(o)}</option>" for o in d["options"])
+    return (f'<div class="lunch-pick">{box}<label class="lunch-choice">Choice for {esc(d["day"])}'
+            f'<select name="choice" data-day="{d["key"]}">{opts}</select></label></div>')
+
 def order_form(menu, root, api):
     grade_options = '<option value="">Choose…</option>' + "".join(
         f'<option value="{esc(g["value"])}">{esc(g["label"])}</option>' for g in menu["grades"] if not g.get("staff"))
-    day_boxes = "".join(
-        f'<label class="lunch-day"><input type="checkbox" name="days" value="{d["key"]}">'
-        f'<span><b>{esc(d["day"])}</b> {esc(d["date_label"])}<br>{esc(d["meal"])}</span></label>'
-        for d in menu["days"])
+    day_boxes = "".join(_day_box(d) for d in menu["days"])
     child = (f'<fieldset class="lunch-child"><legend>Student</legend>'
              f'<label>Student’s full name<input name="student" autocomplete="off" maxlength="80" required></label>'
              f'<label>Grade<select name="grade" required>{grade_options}</select></label>'

@@ -14,6 +14,7 @@
       "key": "mon",
       "day": "Monday",
       "meal": "hot dog",
+      "options": [],
       "date": "2026-10-19",
       "date_label": "Oct 19"
     },
@@ -21,6 +22,7 @@
       "key": "tue",
       "day": "Tuesday",
       "meal": "pizza",
+      "options": [],
       "date": "2026-10-20",
       "date_label": "Oct 20"
     },
@@ -28,6 +30,7 @@
       "key": "wed",
       "day": "Wednesday",
       "meal": "burger",
+      "options": [],
       "date": "2026-10-21",
       "date_label": "Oct 21"
     },
@@ -35,6 +38,7 @@
       "key": "thu",
       "day": "Thursday",
       "meal": "chicken tenders",
+      "options": [],
       "date": "2026-10-22",
       "date_label": "Oct 22"
     },
@@ -42,6 +46,7 @@
       "key": "fri",
       "day": "Friday",
       "meal": "chili",
+      "options": [],
       "date": "2026-10-23",
       "date_label": "Oct 23"
     }

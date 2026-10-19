@@ -315,11 +315,22 @@ export function validateOrder(body, menu, now) {
     if (!grade) return { error: `Please choose a grade for ${name}` };
     if (!days.length) return { error: `Please choose at least one day for ${name}` };
     if (days.some((d) => !open.has(d))) return { error: "That day isn't on this week's menu; please reload the page" };
+    // A day with choices (e.g. Cheese pizza or Pepperoni pizza) needs one of them, exactly as on the menu.
+    const picked = (k && typeof k.choices === "object" && k.choices) || {};
+    const choices = {};
+    for (const d of days) {
+      const opts = open.get(d).options || [];
+      if (!opts.length) continue;
+      const want = str(picked[d], 60).toLowerCase();
+      const hit = opts.find((o) => o.toLowerCase() === want);
+      if (!hit) return { error: `Please choose ${open.get(d).day}'s lunch for ${name}` };
+      choices[d] = hit;
+    }
     const price = grade.staff ? menu.prices.staff : grade.preschool ? menu.prices.preschool : menu.prices.regular;
     if (!(price > 0)) return { error: `Please choose a grade for ${name}` };
     const ordered = DAY_KEYS.filter((d) => days.includes(d));
     total += price * ordered.length;
-    children.push({ name, grade, price, days: ordered });
+    children.push({ name, grade, price, days: ordered, choices });
   }
   return { order: { parent, children, total: Math.round(total * 100) / 100 } };
 }
@@ -329,8 +340,8 @@ export function orderRows(order, menu, orderId, now) {
   return order.children.map((c) => [
     eastern(now, true), usDate(menu.week_start), orderId, parent, order.parent.email, order.parent.phone,
     c.name, c.grade.label, c.grade.preschool ? "Yes" : "No", c.price,
-    ...DAY_KEYS.map((d) => (c.days.includes(d) ? "X" : "")),
-    '=COUNTIF(Orders[@[Mon]:[Fri]],"X")', "=[@Lunches]*[@[Price per lunch]]", "",
+    ...DAY_KEYS.map((d) => (c.days.includes(d) ? (c.choices && c.choices[d]) || "X" : "")),
+    '=COUNTIF(Orders[@[Mon]:[Fri]],"?*")', "=[@Lunches]*[@[Price per lunch]]", "",
   ]);
 }
 
@@ -340,7 +351,7 @@ export function confirmationMail(order, menu, orderId, env) {
   const kids = order.children.map((c) => {
     const lines = c.days.map((d) => {
       const day = byKey.get(d);
-      return `<li>${e(day.day)} ${e(day.date_label)}: ${e(day.meal)}</li>`;
+      return `<li>${e(day.day)} ${e(day.date_label)}: ${e((c.choices && c.choices[d]) || day.meal)}</li>`;
     }).join("");
     return `<p style="margin:12px 0 4px"><b>${e(c.name)}</b> (${e(c.grade.label)}), ${c.days.length} lunch` +
       `${c.days.length === 1 ? "" : "es"} at ${money(c.price)}: ${money(c.price * c.days.length)}</p><ul style="margin:0">${lines}</ul>`;
