@@ -10,6 +10,8 @@
 //                   refused when the tour is full, added to the Tours tab of the office workbook, emailed
 //   POST /inquiry      a Request Info form (src/inquiries.js): added to the Inquiries tab of the office
 //                   workbook, emailed to the family (confirmation) and the office
+//   POST /absence      a Report Student Absence form (src/absences.js): added to the Absences tab of the office
+//                   workbook, emailed to the parent (confirmation) and the office, Cc the homeroom teacher
 //   POST /feedback     a Feedback for Administration form from the Parent Portal (src/feedback.js): added to
 //                   the Feedback tab of the office workbook (no email)
 //   GET  /transcripts  the transcript fees and the payment link (no names)
@@ -27,7 +29,8 @@
 //                   whose rows are all "TEST..." (Actions -> "Delete a TEST booking or lunch order");
 //                   {"action":"delete_test_transcript","id":"ABCDE"} removes one transcript request whose
 //                   student is "TEST..."; {"action":"delete_test_inquiry","id":"ABCDE"} likewise one inquiry;
-//                   {"action":"delete_test_feedback","id":"ABCDE"} one feedback response whose name is "TEST..."
+//                   {"action":"delete_test_feedback","id":"ABCDE"} one feedback response whose name is "TEST...";
+//                   {"action":"delete_test_absence","id":"ABCDE"} one absence report whose student is "TEST..."
 //   cron            Mondays 7:00 AM Eastern: homeroom lunch lists to teachers (src/homerooms.js)
 //
 // Microsoft 365 access is delegated: the Worker acts only as the mailbox in MAILBOX
@@ -40,6 +43,8 @@ import { TABLE as TOUR_TABLE, deleteTestSignup, ensureTourTab, familyMail, offic
   tourConflict, validateSignup } from "./tours.js";
 import { TABLE as INQUIRY_TABLE, deleteTestInquiry, ensureInquiryTab, familyMail as inquiryFamilyMail, inquiryRow,
   officeMail as inquiryOfficeMail, validateInquiry } from "./inquiries.js";
+import { TABLE as ABSENCE_TABLE, absenceRow, deleteTestAbsence, ensureAbsenceTab, homeroomFor, officeMail as absenceOfficeMail,
+  parentMail as absenceParentMail, validateAbsence } from "./absences.js";
 import { TABLE as FEEDBACK_TABLE, deleteTestFeedback, ensureFeedbackTab, feedbackRow, validateFeedback } from "./feedback.js";
 import { TABLE as TRANSCRIPT_TABLE, deleteTestRequest, ensureTranscriptTab, officeMail as transcriptOfficeMail, requestRow,
   requesterMail, settings as transcriptSettings, validateRequest } from "./transcripts.js";
@@ -68,6 +73,7 @@ export default {
       if (url.pathname === "/tours" && request.method === "GET") return await tours(env, cors);
       if (url.pathname === "/tour" && request.method === "POST") return await tour(request, env, cors);
       if (url.pathname === "/inquiry" && request.method === "POST") return await inquiry(request, env, cors);
+      if (url.pathname === "/absence" && request.method === "POST") return await absence(request, env, cors);
       if (url.pathname === "/feedback" && request.method === "POST") return await feedback(request, env, cors);
       if (url.pathname === "/transcripts" && request.method === "GET") return transcripts(env, cors);
       if (url.pathname === "/transcript" && request.method === "POST") return await transcript(request, env, cors);
@@ -124,6 +130,7 @@ async function admin(request, env) {
     if (await ensureTranscriptTab(call)) added.push("Transcripts");
     if (await ensureInquiryTab(call)) added.push("Inquiries");
     if (await ensureFeedbackTab(call)) added.push("Feedback");
+    if (await ensureAbsenceTab(call)) added.push("Absences");
     const filled = body.teacher_emails ? await fillTeacherEmails(call, body.teacher_emails) : 0;
     return json({ ok: true, tabs_added: added, teacher_emails_filled: filled, homerooms_tab: await checkHomerooms(call) }, 200, {});
   }
@@ -186,6 +193,14 @@ async function admin(request, env) {
     const token = await accessToken(env);
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
     const r = await deleteTestInquiry(workbook(token, env), id);
+    return json({ ok: r.deleted, id, ...r }, r.deleted ? 200 : 400, {});
+  }
+  if (body.action === "delete_test_absence") { // removes one absence report whose student is "TEST..."
+    const id = String(body.id || "").trim().toUpperCase();
+    if (!/^[A-Z0-9]{5}$/.test(id)) return json({ ok: false, error: "id (the 5-letter report number) is required" }, 400, {});
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    const r = await deleteTestAbsence(workbook(token, env), id);
     return json({ ok: r.deleted, id, ...r }, r.deleted ? 200 : 400, {});
   }
   if (body.action === "delete_test_feedback") { // removes one feedback response whose name is "TEST..."
@@ -521,6 +536,45 @@ async function inquiry(request, env, cors) {
     if (!o.ok) console.error("inquiry office mail", o.status, await o.text());
   }
   return json({ ok: true, request_id: id, email_sent: mail.ok }, 200, cors);
+}
+
+// ------------------------------------------------------------------ Report Student Absence
+async function absence(request, env, cors) {
+  if (!cors["Access-Control-Allow-Origin"]) return json({ ok: false, error: "Not allowed" }, 403, cors);
+  const text = await request.text();
+  if (text.length > 6000) return json({ ok: false, error: "Too large" }, 413, cors);
+  let body;
+  try { body = JSON.parse(text); } catch { return json({ ok: false, error: "Bad request" }, 400, cors); }
+  if (body.website) return json({ ok: true, absence_id: "0", email_sent: true }, 200, cors); // spam trap
+
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  if (await tooMany(env, ip, "rlab")) {
+    return json({ ok: false, error: "Too many reports from this connection; please call the office" }, 429, cors);
+  }
+  const checked = validateAbsence(body, Date.now());
+  if (checked.error) return json({ ok: false, error: checked.error }, 400, cors);
+  const q = checked.absence;
+  const token = await accessToken(env);
+  if (!token) return json({ ok: false, error: "Online absence reports aren't connected yet" }, 503, cors);
+
+  const call = workbook(token, env);
+  let teacher = null;
+  try { teacher = homeroomFor(await readTeachers(call), q.grade); } catch (err) { console.error("absence teachers", err); }
+  const id = newOrderId();
+  const row = { index: null, values: [absenceRow(q, id, eastern(new Date(), true), teacher)] };
+  let add = await call("POST", `/tables/${ABSENCE_TABLE}/rows/add`, row);
+  if (add.status === 404 && await ensureAbsenceTab(call)) add = await call("POST", `/tables/${ABSENCE_TABLE}/rows/add`, row);
+  if (!add.ok) {
+    console.error("absence workbook", add.status, await add.text());
+    return json({ ok: false, error: "We couldn't save your report" }, 502, cors);
+  }
+  const mail = await graph(token, "POST", "/me/sendMail", absenceParentMail(q, id, env));
+  if (!mail.ok) console.error("absence mail", mail.status, await mail.text());
+  if (env.ABSENCE_NOTIFY) {
+    const o = await graph(token, "POST", "/me/sendMail", absenceOfficeMail(q, id, env, teacher));
+    if (!o.ok) console.error("absence office mail", o.status, await o.text());
+  }
+  return json({ ok: true, absence_id: id, email_sent: mail.ok }, 200, cors);
 }
 
 // ------------------------------------------------------------------ Feedback for Administration

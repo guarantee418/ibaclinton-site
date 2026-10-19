@@ -299,6 +299,10 @@ content:
             label: Show the hot lunch menu and order form here
             type: boolean
             description: Turn on for the Hot Lunch section only. The menu itself is edited under Hot Lunch.
+          - name: show_absence
+            label: Show the Report Student Absence form here
+            type: boolean
+            description: Turn on for the Report Student Absence section only. Reports go to the Absences tab of the office workbook.
           - name: show_feedback
             label: Show the Feedback for Administration form here
             type: boolean

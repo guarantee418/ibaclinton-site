@@ -689,7 +689,7 @@ import { organize, inspect, STEPS, GUIDE, NOTES } from "../src/guide.js";
 
 function fakeBook({ orders = [], b3 = "=MAX(Orders[Week of])" } = {}) {
   const calls = [];
-  const sheets = ["Orders", "Homerooms", "Kitchen", "How to use", "Teachers", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback"];
+  const sheets = ["Orders", "Homerooms", "Kitchen", "How to use", "Teachers", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"];
   const ok = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
   const call = async (method, path, body) => {
     calls.push({ method, path, body });
@@ -732,11 +732,11 @@ test("organize: the Kitchen week box is fixed only while it still holds the orig
 
 test("guide and reminders cover every tab", () => {
   const tabs = GUIDE.filter(([k]) => k === "tab").map(([, a]) => a);
-  assert.deepEqual(tabs, ["Orders", "Kitchen", "Homerooms", "Teachers", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback"]);
+  assert.deepEqual(tabs, ["Orders", "Kitchen", "Homerooms", "Teachers", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"]);
   assert.deepEqual(Object.keys(NOTES).sort(), [...tabs].sort());
-  // Reminders start to the right of each table (Orders A:R, Conferences A:J, Tours A:I, Transcripts A:V, Inquiries A:N, Feedback A:J).
-  assert.deepEqual([NOTES.Orders[0], NOTES.Conferences[0], NOTES.Tours[0], NOTES.Transcripts[0], NOTES.Inquiries[0], NOTES.Feedback[0]],
-    ["T1", "L1", "K1", "X1", "P1", "L1"]);
+  // Reminders start to the right of each table (Orders A:R, Conferences A:J, Tours A:I, Transcripts A:V, Inquiries A:N, Feedback A:J, Absences A:M).
+  assert.deepEqual([NOTES.Orders[0], NOTES.Conferences[0], NOTES.Tours[0], NOTES.Transcripts[0], NOTES.Inquiries[0], NOTES.Feedback[0],
+    NOTES.Absences[0]], ["T1", "L1", "K1", "X1", "P1", "L1", "O1"]);
 });
 
 // ------------------------------------------------------------------ Feedback for Administration
@@ -783,4 +783,72 @@ test("POST /feedback end to end: saves the row (adding the tab), sends no email"
   assert.equal(JSON.parse(added.init.body).values[0][7], "Suggestion");
   assert.equal((await post({ ...FB, message: "" })).status, 400);
   assert.equal((await (await post({ ...FB, website: "spam" })).json()).feedback_id, "0");
+});
+
+// ------------------------------------------------------------------ Report Student Absence
+import { COLUMNS as AB_COLUMNS, validateAbsence, absenceRow, homeroomFor, officeMail as abOfficeMail } from "../src/absences.js";
+
+const ABS = { student_first: "Sam", student_last: "Smith", grade: "3rd Grade", first_day: "2026-10-16", last_day: "",
+  reason: "Illness", details: "", parent_name: "Pat Smith", email: "Pat@Example.com", phone: "301-555-0100" };
+const AB_TEACHERS = [{ grade: "3rd Grade", teacher: "Mrs. Lundberg", email: "lundberg@school.test" }, { grade: "4th Grade", teacher: "Mrs. Kirby", email: "" }];
+
+test("absence reports are checked on the server", () => {
+  const ok = validateAbsence(ABS, BEFORE);
+  assert.equal(ok.error, undefined); assert.equal(ok.absence.email, "pat@example.com"); assert.equal(ok.absence.to, "");
+  assert.match(validateAbsence({ ...ABS, student_last: "" }, BEFORE).error, /first and last name/);
+  assert.match(validateAbsence({ ...ABS, grade: "13th Grade" }, BEFORE).error, /grade/);
+  assert.match(validateAbsence({ ...ABS, first_day: "2026-09-01" }, BEFORE).error, /day of the absence/);
+  assert.match(validateAbsence({ ...ABS, last_day: "2026-10-14" }, BEFORE).error, /last day/);
+  assert.equal(validateAbsence({ ...ABS, last_day: "2026-10-20" }, BEFORE).absence.to, "2026-10-20");
+  assert.equal(validateAbsence({ ...ABS, last_day: "2026-10-16" }, BEFORE).absence.to, "");
+  assert.match(validateAbsence({ ...ABS, reason: "Other" }, BEFORE).error, /reason/);
+  assert.match(validateAbsence({ ...ABS, email: "nope" }, BEFORE).error, /email/);
+});
+
+test("absence row and office email: homeroom teacher by grade, formula-safe", () => {
+  const q = validateAbsence({ ...ABS, details: "=cmd()", last_day: "2026-10-19" }, BEFORE).absence;
+  const t = homeroomFor(AB_TEACHERS, q.grade);
+  assert.deepEqual(t, { teacher: "Mrs. Lundberg", email: "lundberg@school.test" });
+  assert.equal(homeroomFor(AB_TEACHERS, "4th Grade"), null);
+  const row = absenceRow(q, "AB001", "10/15/2026 8:00 AM", t);
+  assert.equal(row.length, AB_COLUMNS.length);
+  assert.deepEqual(row.slice(2, 8), ["10/16/2026", "10/19/2026", "Sam Smith", "3rd Grade", "Illness", "'=cmd()"]);
+  assert.equal(row[11], "Mrs. Lundberg");
+  const m = abOfficeMail(q, "AB001", { ABSENCE_NOTIFY: "office@school.test" }, t).message;
+  assert.equal(m.toRecipients[0].emailAddress.address, "office@school.test");
+  assert.equal(m.ccRecipients[0].emailAddress.address, "lundberg@school.test");
+  assert.equal(m.replyTo[0].emailAddress.address, "pat@example.com");
+  assert.match(m.subject, /Friday, October 16, 2026 through Monday, October 19, 2026/);
+  assert.equal(abOfficeMail(q, "AB001", { ABSENCE_NOTIFY: "o@s.test" }, null).message.ccRecipients, undefined);
+});
+
+test("POST /absence end to end: saves the row (adding the tab), emails the parent and the office Cc the teacher", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: BEFORE });
+  const calls = [];
+  let made = false;
+  globalThis.fetch = async (url, init = {}) => {
+    url = String(url); calls.push({ url, init });
+    const ok = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
+    if (url.includes("/oauth2/v2.0/token")) return ok({ access_token: "at", refresh_token: "rt1", expires_in: 3600 });
+    if (url.includes("/worksheets/Teachers/usedRange")) return ok({ values: [["Grade", "Teacher", "Email"], ["3rd Grade", "Mrs. Lundberg", "lundberg@school.test"]] });
+    if (url.includes("/workbook/tables/Reports/rows/add")) return made ? ok({}, 201) : ok({ error: "ItemNotFound" }, 404);
+    if (url.includes("/workbook/worksheets?")) return ok({ value: [{ name: "Orders" }] });
+    if (url.includes("/tables/add")) { made = true; return ok({ id: "{T6}" }); }
+    if (url.includes("/workbook/")) return ok({});
+    if (url.endsWith("/me/sendMail")) return new Response(null, { status: 202 });
+    return ok({ error: "unexpected " + url }, 500);
+  };
+  const post = (body) => worker.fetch(new Request("https://lunch.test/absence", {
+    method: "POST", body: JSON.stringify(body),
+    headers: { "Content-Type": "application/json", Origin: "https://guarantee418.github.io", "CF-Connecting-IP": "9.9.9.9" },
+  }), { ...ENV0, ABSENCE_NOTIFY: "office@school.test", LUNCH_KV: kv({ ms_refresh: "rt1" }) });
+  const res = await post(ABS);
+  const out = await res.json();
+  assert.equal(res.status, 200, JSON.stringify(out));
+  assert.match(out.absence_id, /^[A-Z0-9]{5}$/);
+  const mails = calls.filter((c) => c.url.endsWith("/me/sendMail")).map((c) => JSON.parse(c.init.body).message);
+  assert.deepEqual(mails.map((m) => m.toRecipients[0].emailAddress.address), ["pat@example.com", "office@school.test"]);
+  assert.equal(mails[1].ccRecipients[0].emailAddress.address, "lundberg@school.test");
+  assert.equal((await post({ ...ABS, phone: "" })).status, 400);
+  assert.equal((await (await post({ ...ABS, website: "x" })).json()).absence_id, "0");
 });

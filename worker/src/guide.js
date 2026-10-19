@@ -77,7 +77,7 @@ export function colNumber(a) {
 // each tab's table, the Kitchen week box, and empty rows left at the bottom of the tables
 // after deletions (a table keeps at least one row). Safe to run again; it writes the same thing each time.
 
-const ORDER = ["How to use", "Orders", "Kitchen", "Homerooms", "Teachers", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback"];
+const ORDER = ["How to use", "Orders", "Kitchen", "Homerooms", "Teachers", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"];
 const NAVY = "#1B2A4A";
 const MONDAY = "TODAY()-WEEKDAY(TODAY(),3)+IF(WEEKDAY(TODAY(),2)>5,7,0)";
 
@@ -90,6 +90,7 @@ const TABLES = [
   { sheet: "Transcripts", table: "Requests", formulas: [] },
   { sheet: "Inquiries", table: "InfoRequests", formulas: [] },
   { sheet: "Feedback", table: "Responses", formulas: [] },
+  { sheet: "Absences", table: "Reports", formulas: [] },
 ];
 
 // The reminder beside each tab's table: [cell where it starts, lines].
@@ -158,13 +159,19 @@ export const NOTES = {
     "• Name, email and phone are optional: '(no name)' means the parent didn't sign.",
     "• Change Status as you go (for example Read, Answered) and use Notes for what was done.",
   ]],
+  Absences: ["O1", [
+    "How to use this tab (full steps: How to use tab)",
+    "• Each absence reported on the website adds one row. The office gets an email; the homeroom teacher is Cc'd.",
+    "• 'Teacher told' names the teacher who was Cc'd; 'No email on Teachers tab' means tell them yourself.",
+    "• Sort by First day to see who is out on a given day. Use Notes for anything worth remembering.",
+  ]],
 };
 
 // The "How to use" tab: [kind, column A, column B]. Kinds: title, text, head (a section), tab (a row of the
 // tabs-at-a-glance list), step (a numbered step), gap.
 export const GUIDE = [
   ["title", "IBA Portal Forms: how to use this workbook"],
-  ["text", "Everything families fill out on ibaclinton.com lands in this workbook by itself: hot lunch orders, parent-teacher conferences, school tours, transcript requests, Request Info inquiries and parents' feedback for administration."],
+  ["text", "Everything families fill out on ibaclinton.com lands in this workbook by itself: hot lunch orders, parent-teacher conferences, school tours, transcript requests, Request Info inquiries, parents' feedback for administration and absence reports."],
   ["text", "The website adds each new entry as a row at the bottom of the table on its tab. You can read, sort, filter, edit and delete rows. Each tab also has a short reminder to the right of its table. Please follow the rules at the bottom of this page so the website keeps working."],
   ["gap"],
   ["head", "The tabs at a glance"],
@@ -177,6 +184,7 @@ export const GUIDE = [
   ["tab", "Transcripts", "Transcript requests from current students and alumni, with the $10 fee status."],
   ["tab", "Inquiries", "Request Info forms from families interested in enrolling."],
   ["tab", "Feedback", "Feedback for Administration from the Parent Portal, one row per response."],
+  ["tab", "Absences", "Absences parents report on the website, one row per report."],
   ["gap"],
   ["head", "Hot lunch: Orders tab"],
   ["step", "1", "Parents order on the Parent Portal page of the website. Each order adds one row per student: Week of (that Monday), the parent's contact, grade, price per lunch and an X under each day ordered. Lunches and Total add themselves up."],
@@ -229,6 +237,11 @@ export const GUIDE = [
   ["step", "1", "Parents send feedback from the Parent Portal page (the 'Feedback for Administration' section). Each response adds a row with Status 'New', a topic and the message. No email is sent, so check this tab regularly."],
   ["step", "2", "Name, email and phone are optional. A row that says '(no name)' was sent without a name; it can't be answered directly."],
   ["step", "3", "Pass anything that needs Mr. Greene's attention to him. Change Status as you go (for example Read, Answered) and type what was done in Notes."],
+  ["gap"],
+  ["head", "Absence reports: Absences tab"],
+  ["step", "1", "Parents report an absence in The Kings Corner on the website (Report an Absence). Each report adds a row: first and last day, student, grade, reason, parent and contact. The parent gets a confirmation; iba@ gets the details, with the homeroom teacher Cc'd."],
+  ["step", "2", "The homeroom teacher comes from the Teachers tab (matched by grade). 'Teacher told' shows who was Cc'd; 'No email on Teachers tab' means the teacher wasn't told, so please pass it on."],
+  ["step", "3", "To see who is out on a day, sort or filter the First day column. Use Notes for anything worth remembering (called in, doctor's note received, and so on)."],
   ["gap"],
   ["head", "Rules that keep the website working"],
   ["step", "•", "Don't rename this file or move it out of the main folder of the OneDrive."],
