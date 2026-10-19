@@ -7,7 +7,7 @@
 
 export const STAFF_SHEET = "Staff Families";
 const HEAD = ["Family (last name)", "Parent email (optional)", "Notes"];
-const START = [["Kirby", "", ""], ["Buck", "", ""]]; // Garrett's list, 2026-10-19
+const START = [["Kirby", "", ""], ["Buck", "", ""], ["Mora", "", "Andy Mora"]]; // Garrett's list, 2026-10-19
 
 export async function ensureStaffTab(call) {
   const r = await call("GET", "/worksheets?$select=name");
