@@ -683,3 +683,57 @@ test("POST /inquiry end to end: saves the row (adding the tab), emails the famil
   const trap = await (await post({ ...INQ, website: "spam" })).json();
   assert.equal(trap.request_id, "0");
 });
+
+// ------------------------------------------------------------------ workbook layout (admin)
+import { organize, inspect, STEPS, GUIDE, NOTES } from "../src/guide.js";
+
+function fakeBook({ orders = [], b3 = "=MAX(Orders[Week of])" } = {}) {
+  const calls = [];
+  const sheets = ["Orders", "Homerooms", "Kitchen", "How to use", "Teachers", "Conferences", "Tours", "Transcripts", "Inquiries"];
+  const ok = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
+  const call = async (method, path, body) => {
+    calls.push({ method, path, body });
+    if (path.startsWith("/worksheets?")) return ok({ value: sheets.map((name, position) => ({ name, position, visibility: "Visible" })) });
+    if (path === "/tables/Orders/range?$select=values") return ok({ values: [["Order #", "Student", "Lunches", "Total"], ...orders] });
+    if (path.startsWith("/tables/") && path.endsWith("range?$select=values")) return ok({ values: [["A", "B"], ["", ""]] });
+    if (path.includes("range(address='B3')?$select=formulas")) return ok({ formulas: [[b3]] });
+    return ok({});
+  };
+  return { call, calls };
+}
+
+test("organize: every step stays under Cloudflare's 50 outside calls and never touches a table's rows with data", async () => {
+  for (const step of STEPS) {
+    const { call, calls } = fakeBook({ orders: [["ABCDE", "Sam", 2, 16], ["", "", 0, 0], ["", "", 0, 0]] });
+    const done = await organize(call, step);
+    assert.ok(calls.length < 48, `${step}: ${calls.length} calls`);
+    assert.ok(!calls.some((c) => c.method === "PATCH" && /\/tables\/[^/]+\/range|headerRowRange/.test(c.path)), step);
+    if (step === "rows") {
+      // Orders: the two empty rows go (bottom first), the real one stays; other tables keep their only row.
+      const del = calls.filter((c) => c.method === "DELETE").map((c) => c.path);
+      assert.deepEqual(del, ["/tables/Orders/rows/itemAt(index=2)", "/tables/Orders/rows/itemAt(index=1)"]);
+      assert.ok(done.includes("Orders: 2 removed"));
+    }
+    if (step === "order") {
+      const moves = calls.filter((c) => c.method === "PATCH").map((c) => [decodeURIComponent(c.path.slice(12)), c.body.position]);
+      assert.deepEqual(moves[0], ["How to use", 0]); assert.deepEqual(moves[1], ["Orders", 1]);
+    }
+  }
+});
+
+test("organize: the Kitchen week box is fixed only while it still holds the original formula", async () => {
+  let b = fakeBook();
+  await organize(b.call, "kitchen");
+  assert.match(b.calls.find((c) => c.method === "PATCH").body.formulas[0][0], /^=IF\(COUNT\(Orders\[Week of\]\)=0,TODAY\(\)/);
+  b = fakeBook({ b3: "10/26/2026" });
+  assert.deepEqual(await organize(b.call, "kitchen"), ["week box left as it is"]);
+  assert.equal(b.calls.filter((c) => c.method === "PATCH").length, 0);
+});
+
+test("guide and reminders cover every tab", () => {
+  const tabs = GUIDE.filter(([k]) => k === "tab").map(([, a]) => a);
+  assert.deepEqual(tabs, ["Orders", "Kitchen", "Homerooms", "Teachers", "Conferences", "Tours", "Transcripts", "Inquiries"]);
+  assert.deepEqual(Object.keys(NOTES).sort(), [...tabs].sort());
+  // Reminders start to the right of each table (Orders A:R, Conferences A:J, Tours A:I, Transcripts A:V, Inquiries A:N).
+  assert.deepEqual([NOTES.Orders[0], NOTES.Conferences[0], NOTES.Tours[0], NOTES.Transcripts[0], NOTES.Inquiries[0]], ["T1", "L1", "K1", "X1", "P1"]);
+});
