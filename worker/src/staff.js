@@ -1,7 +1,7 @@
 // Staff families: children of IBA staff pay the staff price for hot lunch (Garrett, 2026-10-19).
 //
 // The list lives on the "Staff Families" tab of the office workbook (one family per row: last name and, if
-// known, the parent's email), so names stay out of this public repo and the office keeps it up to date. An
+// known, the parent's email), so the office keeps it up to date; START only fills a new tab once. An
 // order is a staff family's when the parent's email is listed, or the parent's or a child's last name is.
 // The website never shows the staff price, so those orders show no prices or total.
 
