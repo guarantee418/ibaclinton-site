@@ -2,7 +2,8 @@ name: Deploy hot lunch order service
 
 # Manual only. Installs or updates the Cloudflare Worker in worker/ (see worker/README.md).
 # Needs these repository secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID,
-# MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET, LUNCH_SETUP_KEY.
+# MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET, LUNCH_SETUP_KEY. Optional: MONDAY_TOKEN (copies tour sign-ups,
+# info requests and transcript requests to Monday.com boards; the last step makes the boards).
 on:
   workflow_dispatch:
 
@@ -26,6 +27,7 @@ jobs:
       MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
       MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
       LUNCH_SETUP_KEY: ${{ secrets.LUNCH_SETUP_KEY }}
+      MONDAY_TOKEN: ${{ secrets.MONDAY_TOKEN }}
       WRANGLER: npx --yes wrangler@3.114.0
     steps:
       - uses: actions/checkout@v4
@@ -54,6 +56,7 @@ jobs:
         run: |
           printf '%s' "$MS_CLIENT_SECRET" | $WRANGLER secret put CLIENT_SECRET
           printf '%s' "$LUNCH_SETUP_KEY" | $WRANGLER secret put SETUP_KEY
+          if [ -n "$MONDAY_TOKEN" ]; then printf '%s' "$MONDAY_TOKEN" | $WRANGLER secret put MONDAY_TOKEN; fi
       - name: Check it answers
         run: curl -fsS "$(cat url.txt)/health"
       - name: Make sure the workbook has its Teachers and Homerooms tabs
@@ -66,3 +69,12 @@ jobs:
           curl -sS -X POST "$(cat url.txt)/admin" -H "X-Setup-Key: $LUNCH_SETUP_KEY" \
             -H "Content-Type: application/json" -d "$body" || true
           echo
+      - name: Make the Monday.com boards (only with the MONDAY_TOKEN secret)
+        # One board per call; makes only what is missing and prints the board ids.
+        if: env.MONDAY_TOKEN != ''
+        run: |
+          for b in inquiry tour transcript; do
+            curl -sS -X POST "$(cat url.txt)/admin" -H "X-Setup-Key: $LUNCH_SETUP_KEY" \
+              -H "Content-Type: application/json" -d "{\"action\":\"monday\",\"board\":\"$b\"}" || true
+            echo
+          done

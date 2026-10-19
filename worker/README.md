@@ -87,3 +87,18 @@ the workbook (the office handles call-in changes and exceptions first).
   isn't connected yet": repeat step 6.
 - When the site moves to ibaclinton.com, change `MENU_URL` in `wrangler.toml` and redeploy.
 - Tests: `node --test worker/test/worker.test.mjs` (no network; Microsoft is faked).
+
+## Monday.com copies (tours, info requests, transcripts)
+
+Each tour sign-up, Request Info inquiry and transcript request is also added as an item on a Monday.com
+board (`src/monday.js`), after the workbook row and the emails. The workbook stays the record; Monday is a
+copy (changes on Monday don't flow back), and a Monday problem never stops a form (it is only logged).
+
+1. In Monday: profile picture -> Developers -> API token -> Copy. Items show as made by that person.
+2. GitHub: repo Settings -> Secrets and variables -> Actions -> New repository secret, name `MONDAY_TOKEN`.
+3. Run "Deploy hot lunch order service". Its last step makes the boards if missing ("Website: Info Requests",
+   "Website: Tour Sign-ups", "Website: Transcript Requests"; `MONDAY_BOARD_KIND` in `wrangler.toml`, private
+   by default: share them in Monday) and any missing column. Columns are matched by title, so renaming the
+   board or adding columns is fine; renaming a column means it is no longer filled.
+   Each run also adds the `MONDAY_SHARE` people to every board (only those with a Monday login).
+4. The TEST cleanup workflow also deletes the matching Monday item for those three kinds.
