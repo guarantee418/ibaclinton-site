@@ -10,7 +10,7 @@
     {
       "key": "mon",
       "day": "Monday",
-      "meal": "hot dog",
+      "meal": "Hotdogs & Chips",
       "options": [],
       "date": "2026-10-26",
       "date_label": "Oct 26"
@@ -18,7 +18,7 @@
     {
       "key": "tue",
       "day": "Tuesday",
-      "meal": "pizza",
+      "meal": "Chicken Quesadillas & Spanish Rice",
       "options": [],
       "date": "2026-10-27",
       "date_label": "Oct 27"
@@ -26,7 +26,7 @@
     {
       "key": "wed",
       "day": "Wednesday",
-      "meal": "burger",
+      "meal": "Philly Cheesesteaks & Fries",
       "options": [],
       "date": "2026-10-28",
       "date_label": "Oct 28"
@@ -34,18 +34,10 @@
     {
       "key": "thu",
       "day": "Thursday",
-      "meal": "chicken tenders",
+      "meal": "Grilled Chicken & Potatoes",
       "options": [],
       "date": "2026-10-29",
       "date_label": "Oct 29"
-    },
-    {
-      "key": "fri",
-      "day": "Friday",
-      "meal": "chili",
-      "options": [],
-      "date": "2026-10-30",
-      "date_label": "Oct 30"
     }
   ],
   "prices": {
@@ -149,7 +141,7 @@
         {
           "key": "mon",
           "day": "Monday",
-          "meal": "hot dog",
+          "meal": "Hotdogs & Chips",
           "options": [],
           "date": "2026-10-26",
           "date_label": "Oct 26"
@@ -157,7 +149,7 @@
         {
           "key": "tue",
           "day": "Tuesday",
-          "meal": "pizza",
+          "meal": "Chicken Quesadillas & Spanish Rice",
           "options": [],
           "date": "2026-10-27",
           "date_label": "Oct 27"
@@ -165,7 +157,7 @@
         {
           "key": "wed",
           "day": "Wednesday",
-          "meal": "burger",
+          "meal": "Philly Cheesesteaks & Fries",
           "options": [],
           "date": "2026-10-28",
           "date_label": "Oct 28"
@@ -173,18 +165,10 @@
         {
           "key": "thu",
           "day": "Thursday",
-          "meal": "chicken tenders",
+          "meal": "Grilled Chicken & Potatoes",
           "options": [],
           "date": "2026-10-29",
           "date_label": "Oct 29"
-        },
-        {
-          "key": "fri",
-          "day": "Friday",
-          "meal": "chili",
-          "options": [],
-          "date": "2026-10-30",
-          "date_label": "Oct 30"
         }
       ]
     }
