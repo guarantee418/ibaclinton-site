@@ -86,7 +86,7 @@ content:
       - name: price_staff
         label: Price per lunch (staff)
         type: number
-        description: Not shown on the website. Staff order with the link ibaclinton.com/parents/?staff#hot-lunch, which adds a "Staff" choice under Grade.
+        description: Staff order on the same form by choosing "Staff" under Grade; this is their price per lunch. Children of staff families (Staff Families tab of the office workbook) pay it too.
         options:
           min: 0
       - name: order_form_url

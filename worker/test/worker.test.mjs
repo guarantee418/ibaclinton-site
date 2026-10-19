@@ -736,7 +736,7 @@ test("organize: the Kitchen week box is fixed only while it still holds the orig
 
 test("guide and reminders cover every tab", () => {
   const tabs = GUIDE.filter(([k]) => k === "tab").map(([, a]) => a);
-  assert.deepEqual(tabs, ["Orders", "Kitchen", "Homerooms", "Teachers", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"]);
+  assert.deepEqual(tabs, ["Orders", "Kitchen", "Homerooms", "Teachers", "Staff Families", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"]);
   assert.deepEqual(Object.keys(NOTES).sort(), [...tabs].sort());
   // Reminders start to the right of each table (Orders A:R, Conferences A:J, Tours A:I, Transcripts A:V, Inquiries A:N, Feedback A:J, Absences A:M).
   assert.deepEqual([NOTES.Orders[0], NOTES.Conferences[0], NOTES.Tours[0], NOTES.Transcripts[0], NOTES.Inquiries[0], NOTES.Feedback[0],
@@ -914,4 +914,33 @@ test("an order is checked against the week the parent picked", () => {
   assert.match(validateOrder({ ...ORDER, week_start: "2026-11-02" }, pickWeek(menu, "2026-11-02"), BEFORE).error, /menu changed/);
   // Past its deadline a week is closed even if a later one is open.
   assert.match(validateOrder(order, picked, Date.parse("2026-10-24T12:00:00Z")).error, /closed/);
+});
+
+test("staff lunches: the confirmation email has their prices and total", () => {
+  const menu = { ...MENU, grades: [...MENU.grades, { value: "STAFF", label: "Staff", preschool: false, staff: true }], prices: { ...MENU.prices, staff: 4 } };
+  const ok = validateOrder({ ...ORDER, children: [{ name: "Mr. T", grade: "STAFF", days: ["mon", "wed"] }] }, menu, BEFORE);
+  assert.equal(ok.error, undefined); assert.equal(ok.order.total, 8);
+  const html = confirmationMail(ok.order, menu, "ABCDE", ENV0).message.body.content;
+  assert.match(html, /Mr\. T<\/b> \(Staff\), 2 lunches at \$4\.00: \$8\.00<\/p>/);
+  assert.match(html, /Total: \$8\.00<\/b> \(order number ABCDE\)/);
+  assert.match(confirmationMail(validateOrder(ORDER, menu, BEFORE).order, menu, "ABCDE", ENV0).message.body.content, /Total: \$/);
+});
+
+// ------------------------------------------------------------------ staff families (Staff Families tab)
+import { isStaffFamily } from "../src/staff.js";
+
+test("staff families: matched by parent or child last name or email; every child at the staff price, total in the email", () => {
+  const fams = [{ name: "kirby", email: "" }, { name: "buck", email: "mom@buck.test" }];
+  assert.ok(isStaffFamily(fams, { last: "Kirby", email: "x@y.z" }, []));
+  assert.ok(isStaffFamily(fams, { last: "Smith", email: "x@y.z" }, ["Levi Buck"]));
+  assert.ok(isStaffFamily(fams, { last: "Smith", email: "MOM@buck.test" }, ["Sam Smith"]));
+  assert.ok(!isStaffFamily(fams, { last: "Smith", email: "x@y.z" }, ["Sam Smith"]));
+  assert.ok(!isStaffFamily([], { last: "Kirby", email: "" }, []));
+  const menu = { ...MENU, prices: { ...MENU.prices, staff: 4 } };
+  const ok = validateOrder(ORDER, menu, BEFORE, true);
+  assert.deepEqual(ok.order.children.map((c) => c.price), [4, 4]); // 3rd grade and K4 alike
+  assert.equal(ok.order.total, 12); assert.ok(ok.order.staffPrice);
+  const rows = orderRows(ok.order, menu, "ABCDE", new Date(BEFORE));
+  assert.equal(rows[0][9], 4); assert.equal(rows[0][17], "Staff family price");
+  assert.match(confirmationMail(ok.order, menu, "ABCDE", ENV0).message.body.content, /Total: \$12\.00/);
 });
