@@ -43,7 +43,9 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
 - Orders go to the Cloudflare Worker in `worker/` (setup and upkeep in `worker/README.md`), which
   writes them to the office's Excel workbook and emails the parent a confirmation.
 - **Staff lunches** ($4, `price_staff`): staff order on the same form by choosing "Staff" under Grade (shown to
-  everyone since 2026-10-19; the old `?staff` link still works). The row's
+  everyone since 2026-10-19; the old `?staff` link still works). **Staff families** pay it for every child: the
+  Worker checks the workbook's Staff Families tab (last name or parent email; `worker/src/staff.js`) and their rows
+  say "Staff family price" in Notes. Staff prices are never shown on the site or in emails. The row's
   Grade says Staff (counted with K5-12th on the Kitchen tab).
 - With `LUNCH_API` empty, the page shows the menu and the backup Microsoft Forms link, if any.
 

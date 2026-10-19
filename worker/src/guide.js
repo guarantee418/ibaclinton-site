@@ -77,7 +77,7 @@ export function colNumber(a) {
 // each tab's table, the Kitchen week box, and empty rows left at the bottom of the tables
 // after deletions (a table keeps at least one row). Safe to run again; it writes the same thing each time.
 
-const ORDER = ["How to use", "Orders", "Kitchen", "Homerooms", "Teachers", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"];
+const ORDER = ["How to use", "Orders", "Kitchen", "Homerooms", "Teachers", "Staff Families", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"];
 const NAVY = "#1B2A4A";
 const MONDAY = "TODAY()-WEEKDAY(TODAY(),3)+IF(WEEKDAY(TODAY(),2)>5,7,0)";
 
@@ -123,6 +123,12 @@ export const NOTES = {
     "• Conference booking notices also go to the teachers listed here (matched by name).",
     "• When a teacher changes, type the new name and email on that grade's row. A grade with no email gets no list.",
     "• Keep the Grade column exactly as it is. Check this tab at the start of each school year.",
+  ]],
+  "Staff Families": ["E1", [
+    "How to use this tab (full steps: How to use tab)",
+    "• Children of IBA staff pay the staff price for hot lunch. List each staff family here, one per row.",
+    "• An order counts as a staff family's when the parent's or a child's last name matches, or the parent's email does.",
+    "• Those orders show no prices on the website; their rows on the Orders tab say 'Staff family price' in Notes.",
   ]],
   Conferences: ["L1", [
     "How to use this tab (full steps: How to use tab)",
@@ -180,6 +186,7 @@ export const GUIDE = [
   ["tab", "Kitchen", "Lunch counts per day for one week (K5–12th and Preschool) and the week's charges. Formulas only."],
   ["tab", "Homerooms", "This week's lunches by grade. Formulas only. Teachers get the same list by email every Monday."],
   ["tab", "Teachers", "Each grade's homeroom teacher and email. Kept up to date by the office."],
+  ["tab", "Staff Families", "Staff families whose children get the staff hot lunch price. Kept up to date by the office."],
   ["tab", "Conferences", "Parent-teacher conference bookings, one row per booking."],
   ["tab", "Tours", "School tour sign-ups, one row per family."],
   ["tab", "Transcripts", "Transcript requests from current students and alumni, with the $10 fee status."],
@@ -210,6 +217,11 @@ export const GUIDE = [
   ["step", "1", "One row per grade: Grade, Teacher and Email. The Monday lunch lists and the conference booking notices use it."],
   ["step", "2", "When a teacher changes, type the new name and email on that grade's row. A grade with no email gets no Monday list."],
   ["step", "3", "Keep the Grade column exactly as it is. Check this tab at the start of each school year."],
+  ["gap"],
+  ["head", "Staff Families tab"],
+  ["step", "1", "Children of IBA staff pay the staff price for hot lunch (the same as a staff lunch). List each staff family here: the family's last name, and the parent's email if their children have a different last name."],
+  ["step", "2", "When a parent orders, the website checks this list: if the parent's last name, a child's last name or the parent's email matches, every child on that order gets the staff price. The website shows them no prices, and the order's rows say 'Staff family price' in Notes."],
+  ["step", "3", "Add or remove families as staff change; check it at the start of each school year."],
   ["gap"],
   ["head", "Parent-teacher conferences: Conferences tab"],
   ["step", "1", "Parents sign up on the website (ibaclinton.com/conferences). Each booking adds a row: date, time, teacher, student, parent, contact and booking number. The parent and the teacher both get an email."],

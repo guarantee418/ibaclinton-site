@@ -45,6 +45,7 @@ import { TABLE as INQUIRY_TABLE, deleteTestInquiry, ensureInquiryTab, familyMail
   officeMail as inquiryOfficeMail, validateInquiry } from "./inquiries.js";
 import { TABLE as ABSENCE_TABLE, absenceRow, deleteTestAbsence, ensureAbsenceTab, homeroomFor, officeMail as absenceOfficeMail,
   parentMail as absenceParentMail, validateAbsence } from "./absences.js";
+import { ensureStaffTab, isStaffFamily, readStaffFamilies } from "./staff.js";
 import { TABLE as FEEDBACK_TABLE, deleteTestFeedback, ensureFeedbackTab, feedbackRow, validateFeedback } from "./feedback.js";
 import { TABLE as TRANSCRIPT_TABLE, deleteTestRequest, ensureTranscriptTab, officeMail as transcriptOfficeMail, requestRow,
   requesterMail, settings as transcriptSettings, validateRequest } from "./transcripts.js";
@@ -131,6 +132,7 @@ async function admin(request, env) {
     if (await ensureInquiryTab(call)) added.push("Inquiries");
     if (await ensureFeedbackTab(call)) added.push("Feedback");
     if (await ensureAbsenceTab(call)) added.push("Absences");
+    if (await ensureStaffTab(call)) added.push("Staff Families");
     const filled = body.teacher_emails ? await fillTeacherEmails(call, body.teacher_emails) : 0;
     return json({ ok: true, tabs_added: added, teacher_emails_filled: filled, homerooms_tab: await checkHomerooms(call) }, 200, {});
   }
@@ -264,12 +266,20 @@ async function order(request, env, cors) {
     return json({ ok: false, error: "Too many orders from this connection; please call the office" }, 429, cors);
   }
   const menu = pickWeek(await loadMenu(env), body.week_start);
-  const checked = validateOrder(body, menu, Date.now());
+  const first = validateOrder(body, menu, Date.now());
+  if (first.error) return json({ ok: false, error: first.error }, 400, cors);
+  const token = await accessToken(env);
+  if (!token) return json({ ok: false, error: "Online ordering isn't connected yet" }, 503, cors);
+  // Staff families (Staff Families tab of the workbook) pay the staff price for every child.
+  let staffFamily = false;
+  try {
+    const kids = Array.isArray(body.children) ? body.children.map((k) => k && k.name) : [];
+    staffFamily = isStaffFamily(await readStaffFamilies(workbook(token, env)), { last: body.parent_last, email: body.email }, kids);
+  } catch (err) { console.error("staff families", err); }
+  const checked = validateOrder(body, menu, Date.now(), staffFamily);
   if (checked.error) return json({ ok: false, error: checked.error }, 400, cors);
 
   const orderId = newOrderId();
-  const token = await accessToken(env);
-  if (!token) return json({ ok: false, error: "Online ordering isn't connected yet" }, 503, cors);
 
   const rows = orderRows(checked.order, menu, orderId, new Date());
   const add = await graph(token, "POST",
@@ -281,7 +291,8 @@ async function order(request, env, cors) {
   }
   const mail = await graph(token, "POST", "/me/sendMail", confirmationMail(checked.order, menu, orderId, env));
   if (!mail.ok) console.error("mail", mail.status, await mail.text());
-  return json({ ok: true, order_id: orderId, total: checked.order.total, email_sent: mail.ok }, 200, cors);
+  const hidePrice = checked.order.staffPrice;
+  return json({ ok: true, order_id: orderId, total: hidePrice ? null : checked.order.total, email_sent: mail.ok }, 200, cors);
 }
 
 // menu.json lists every upcoming week under "weeks" (its top level is the first open week): the order is for
@@ -292,7 +303,7 @@ export function pickWeek(menu, weekStart) {
   return w ? { ...menu, ...w } : menu;
 }
 
-export function validateOrder(body, menu, now) {
+export function validateOrder(body, menu, now, staffFamily = false) {
   if (!menu || !menu.week_start || !menu.deadline || !menu.days || !menu.days.length) {
     return { error: "Online ordering isn't open right now" };
   }
@@ -334,13 +345,15 @@ export function validateOrder(body, menu, now) {
       if (!hit) return { error: `Please choose ${open.get(d).day}'s lunch for ${name}` };
       choices[d] = hit;
     }
-    const price = grade.staff ? menu.prices.staff : grade.preschool ? menu.prices.preschool : menu.prices.regular;
+    const price = grade.staff || staffFamily ? menu.prices.staff : grade.preschool ? menu.prices.preschool : menu.prices.regular;
     if (!(price > 0)) return { error: `Please choose a grade for ${name}` };
     const ordered = DAY_KEYS.filter((d) => days.includes(d));
     total += price * ordered.length;
     children.push({ name, grade, price, days: ordered, choices });
   }
-  return { order: { parent, children, total: Math.round(total * 100) / 100 } };
+  // Staff prices are never shown (Garrett): staff and staff-family orders get no prices or total.
+  const staffPrice = staffFamily || children.some((c) => c.grade.staff);
+  return { order: { parent, children, total: Math.round(total * 100) / 100, staffFamily, staffPrice } };
 }
 
 export function orderRows(order, menu, orderId, now) {
@@ -349,7 +362,8 @@ export function orderRows(order, menu, orderId, now) {
     eastern(now, true), usDate(menu.week_start), orderId, parent, order.parent.email, order.parent.phone,
     c.name, c.grade.label, c.grade.preschool ? "Yes" : "No", c.price,
     ...DAY_KEYS.map((d) => (c.days.includes(d) ? (c.choices && c.choices[d]) || "X" : "")),
-    '=COUNTIF(Orders[@[Mon]:[Fri]],"?*")', "=[@Lunches]*[@[Price per lunch]]", "",
+    '=COUNTIF(Orders[@[Mon]:[Fri]],"?*")', "=[@Lunches]*[@[Price per lunch]]",
+    order.staffFamily && !c.grade.staff ? "Staff family price" : "",
   ]);
 }
 
@@ -363,14 +377,14 @@ export function confirmationMail(order, menu, orderId, env) {
     }).join("");
     const count = `${c.days.length} lunch${c.days.length === 1 ? "" : "es"}`;
     return `<p style="margin:12px 0 4px"><b>${e(c.name)}</b> (${e(c.grade.label)}), ${count}` +
-      `${c.grade.staff ? "" : ` at ${money(c.price)}: ${money(c.price * c.days.length)}`}</p><ul style="margin:0">${lines}</ul>`;
+      `${order.staffPrice ? "" : ` at ${money(c.price)}: ${money(c.price * c.days.length)}`}</p><ul style="margin:0">${lines}</ul>`;
   }).join("");
   const content =
     `<p>Dear ${e(order.parent.first)} ${e(order.parent.last)},</p>` +
     `<p>Thank you for your hot lunch order for the week of ${e(menu.week_label)}. Here is what we received:</p>` +
     kids +
     // Staff prices aren't shown anywhere (Garrett): no total when the order has a staff lunch.
-    (order.children.some((c) => c.grade.staff) ? `<p style="margin-top:14px">Order number ${e(orderId)}</p>`
+    (order.staffPrice ? `<p style="margin-top:14px">Order number ${e(orderId)}</p>`
       : `<p style="margin-top:14px"><b>Total: ${money(order.total)}</b> (order number ${e(orderId)})</p>`) +
     `<p>Lunch charges are added to your Gradelink account. To change or cancel this order, please call the ` +
     `school office at (301) 856-1616 or reply to this email.</p>` +

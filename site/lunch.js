@@ -130,7 +130,7 @@
         var p = document.createElement("div");
         p.className = "notice ok"; p.setAttribute("role", "status");
         p.innerHTML = "<b>Thank you! Your order is placed.</b> Order number " + r.data.order_id +
-          (order.children.some(function (k) { return k.grade === "STAFF"; }) ? "" : ", total " + money(r.data.total)) +
+          (r.data.total == null || order.children.some(function (k) { return k.grade === "STAFF"; }) ? "" : ", total " + money(r.data.total)) +
           ". " + (r.data.email_sent
             ? "A confirmation has been emailed to you."
             : "We couldn’t send the confirmation email, but your order was received.") +
