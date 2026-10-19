@@ -1,4 +1,4 @@
-// Feedback for Administration (the Parent Portal section that used to link to the town hall Microsoft Form),
+// Feedback for Administration (The Kings Corner section that used to link to the town hall Microsoft Form),
 // on the same service and workbook as hot lunch, conferences, tours, transcripts and Request Info.
 //
 // Each response is one row of the "Responses" table on the Feedback tab of the office workbook (the service adds
@@ -30,7 +30,7 @@ export async function ensureFeedbackTab(call) {
   await call("PATCH", `${s}/range(address='I:I')/format`, { wrapText: true });
   const note = String.fromCharCode(66 + COLUMNS.length);
   await call("PATCH", `${s}/range(address='${note}1:${note}3')`, {
-    values: [["Feedback from the Parent Portal's 'Feedback for Administration' form lands here, one row per response."],
+    values: [["Feedback from The Kings Corner's 'Feedback for Administration' form lands here, one row per response."],
       ["Change Status as you go (for example Read, Answered)."],
       ["Keep the column names as they are."]],
   });
