@@ -235,7 +235,7 @@ content:
         type: string
       - name: tiles
         label: Tiles
-        description: The cards near the top of the page, in this order (drag to reorder). Each one jumps to a section further down.
+        description: The cards on the page, in this order (drag to reorder). Each one opens a section (below) in a pop-up with back buttons. A section that no tile opens gets a plain tile at the end.
         type: object
         list:
           collapsible:
@@ -260,7 +260,7 @@ content:
             description: For example "Login". Leave blank for none.
       - name: sections
         label: Sections
-        description: Shown on the page below the tiles, in this order (drag to reorder).
+        description: What each tile opens. A section shows in a pop-up when its tile is clicked, not on the page itself.
         type: object
         list:
           collapsible:
@@ -306,4 +306,4 @@ content:
           - name: anchor
             label: Page link name (advanced)
             type: string
-            description: Used in links like ibaclinton.com/parents/#hot-lunch and by the tiles ("Goes to section"). Leave as is; for a new section type a short name like field-trips, or leave blank.
+            description: Used in links like ibaclinton.com/parents/#hot-lunch (opens that pop-up) and by the tiles ("Goes to section"). Leave as is; for a new section type a short name like field-trips, or leave blank.

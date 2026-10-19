@@ -20,7 +20,7 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
 
 - Mrs. Mora and Mrs. Napierala edit the **Hot Lunch** menu (`content/lunch.json`) and the whole
   **Kings Corner** parents page (`content/parents.json`: the purple banner's text and button, the tiles (title,
-  description, which section each opens, optional tag), every section's heading, text, links and PDFs, tile and
+  description, which section each opens in a pop-up (`site/kings.js`), optional tag), every section's heading, text, links and PDFs, tile and
   section order; PDFs uploaded to `site/files/`) at app.pagescms.org
   (`ibaclinton.com/admin/` links there). They are invited by email as collaborators, no GitHub account.
 - `.pages.yml` defines what they can edit. Collaborators can't change it; changing it needs Garrett's OK.
