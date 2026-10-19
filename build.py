@@ -105,6 +105,34 @@ def clean_html(value):
 def slug(value):
     return re.sub(r"[^a-z0-9]+", "-", str(value or "").lower()).strip("-")
 
+FEEDBACK_TOPICS = ["Academics", "Communication", "Discipline", "Activities & athletics", "Hot lunch",
+                   "Facilities & safety", "Suggestion", "Praise", "Other"]  # same list as worker/src/feedback.js
+
+def feedback_form(root):
+    """The Feedback for Administration form; responses go to the Feedback tab of the office workbook."""
+    topics = "".join(f"<option>{esc(t)}</option>" for t in FEEDBACK_TOPICS)
+    return (
+        '<div id="fb-status" role="status" aria-live="polite"></div>'
+        f'<form class="info fb-form" id="fb-form" data-api="{esc(LUNCH_API)}" novalidate hidden>'
+        '<fieldset><legend>Your feedback</legend>'
+        f'<label class="full">Topic<select name="topic" required><option value="">Choose…</option>{topics}</select></label>'
+        '<label class="full">Feedback<textarea name="message" maxlength="4000" required></textarea></label>'
+        '</fieldset>'
+        '<fieldset><legend>About you <span class="opt">(optional)</span></legend>'
+        '<p class="full fb-note">Leave these blank to send your feedback without your name. '
+        'Add your email or phone if you would like a reply.</p>'
+        '<label>Name<input name="name" autocomplete="name" maxlength="120"></label>'
+        '<label>Child’s grade(s)<input name="grades" maxlength="60" placeholder="for example 3rd and 7th"></label>'
+        '<label>Email<input type="email" name="email" autocomplete="email" maxlength="120"></label>'
+        '<label>Phone<input type="tel" name="phone" autocomplete="tel" maxlength="30"></label>'
+        '</fieldset>'
+        '<label class="hp" aria-hidden="true">Leave this field blank<input name="website" tabindex="-1" autocomplete="off"></label>'
+        '<button class="btn" type="submit">Send feedback</button>'
+        '</form>'
+        '<noscript><p class="notice">To share feedback, please email '
+        '<a href="mailto:iba@ibcministries.org">iba@ibcministries.org</a> or call (301) 856-1616.</p></noscript>'
+        f'<script src="{root}feedback.js" defer></script>')
+
 def parents_block(data, root):
     sections = [s for s in data.get("sections") or [] if str(s.get("title") or "").strip()]
     for s in sections:
@@ -117,6 +145,8 @@ def parents_block(data, root):
         extra = ""
         if s.get("show_lunch"):
             extra = lunch.lunch_block(json.loads((CONTENT / "lunch.json").read_text()), root, LUNCH_API)
+        if s.get("show_feedback"):
+            extra += feedback_form(root)
         blocks.append(f'<div class="block" id="{s["_id"]}"><h2>{esc(s["title"])}</h2>'
                       f'{clean_html(s.get("text"))}{docs_list(s.get("links"), root)}{extra}</div>')
     return (f'<h2>{esc(data.get("heading"))}</h2>'

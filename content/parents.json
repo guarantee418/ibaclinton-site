@@ -16,19 +16,6 @@
       "show_lunch": false
     },
     {
-      "title": "Gradelink",
-      "menu_label": "Gradelink",
-      "anchor": "gradelink",
-      "text": "<p>Gradelink makes it simple to maintain parent and school communication. The parent portal provides access to academic progress, making it easy to view class and assignment grades, due dates, upcoming homework, and more.</p><p>Parents and students can download file attachments posted by the teacher, including worksheets, permission slips, study guides, and the class syllabus.</p>",
-      "links": [
-        {
-          "title": "Log in to Gradelink",
-          "url": "https://secure.gradelink.com/lkg/Gradelink.xml"
-        }
-      ],
-      "show_lunch": false
-    },
-    {
       "title": "Calendars",
       "menu_label": "Calendars",
       "anchor": "calendars",
@@ -196,19 +183,6 @@
       "show_lunch": false
     },
     {
-      "title": "Parent Teacher Town Halls",
-      "menu_label": "Town Halls",
-      "anchor": "town-halls",
-      "text": "<p>We host these town hall meetings to maintain good communication and healthy interaction between parents and educators as we work together for our students.</p>",
-      "links": [
-        {
-          "title": "Submit Your Question",
-          "url": "https://forms.office.com/r/cjba2SWYgR"
-        }
-      ],
-      "show_lunch": false
-    },
-    {
       "title": "Traffic Patterns",
       "menu_label": "Traffic Patterns",
       "anchor": "traffic",
@@ -217,6 +191,28 @@
         {
           "title": "Traffic Patterns",
           "file": "files/Traffic-Patterns.pdf"
+        }
+      ],
+      "show_lunch": false
+    },
+    {
+      "title": "Feedback for Administration",
+      "menu_label": "Feedback for Administration",
+      "anchor": "feedback",
+      "text": "<p>We value good communication between parents and the school as we work together for our students. Use this form to share a question, concern, suggestion or word of thanks with the administration.</p>",
+      "links": [],
+      "show_lunch": false,
+      "show_feedback": true
+    },
+    {
+      "title": "Gradelink",
+      "menu_label": "Gradelink",
+      "anchor": "gradelink",
+      "text": "<p>Gradelink makes it simple to maintain parent and school communication. The parent portal provides access to academic progress, making it easy to view class and assignment grades, due dates, upcoming homework, and more.</p><p>Parents and students can download file attachments posted by the teacher, including worksheets, permission slips, study guides, and the class syllabus.</p>",
+      "links": [
+        {
+          "title": "Log in to Gradelink",
+          "url": "https://secure.gradelink.com/lkg/Gradelink.xml"
         }
       ],
       "show_lunch": false

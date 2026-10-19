@@ -252,6 +252,10 @@ content:
             label: Show the hot lunch menu and order form here
             type: boolean
             description: Turn on for the Hot Lunch section only. The menu itself is edited under Hot Lunch.
+          - name: show_feedback
+            label: Show the Feedback for Administration form here
+            type: boolean
+            description: Turn on for the Feedback for Administration section only. Responses go to the Feedback tab of the office workbook.
           - name: anchor
             label: Page link name (advanced)
             type: string

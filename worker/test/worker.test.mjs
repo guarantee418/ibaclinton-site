@@ -689,7 +689,7 @@ import { organize, inspect, STEPS, GUIDE, NOTES } from "../src/guide.js";
 
 function fakeBook({ orders = [], b3 = "=MAX(Orders[Week of])" } = {}) {
   const calls = [];
-  const sheets = ["Orders", "Homerooms", "Kitchen", "How to use", "Teachers", "Conferences", "Tours", "Transcripts", "Inquiries"];
+  const sheets = ["Orders", "Homerooms", "Kitchen", "How to use", "Teachers", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback"];
   const ok = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
   const call = async (method, path, body) => {
     calls.push({ method, path, body });
@@ -732,8 +732,55 @@ test("organize: the Kitchen week box is fixed only while it still holds the orig
 
 test("guide and reminders cover every tab", () => {
   const tabs = GUIDE.filter(([k]) => k === "tab").map(([, a]) => a);
-  assert.deepEqual(tabs, ["Orders", "Kitchen", "Homerooms", "Teachers", "Conferences", "Tours", "Transcripts", "Inquiries"]);
+  assert.deepEqual(tabs, ["Orders", "Kitchen", "Homerooms", "Teachers", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback"]);
   assert.deepEqual(Object.keys(NOTES).sort(), [...tabs].sort());
-  // Reminders start to the right of each table (Orders A:R, Conferences A:J, Tours A:I, Transcripts A:V, Inquiries A:N).
-  assert.deepEqual([NOTES.Orders[0], NOTES.Conferences[0], NOTES.Tours[0], NOTES.Transcripts[0], NOTES.Inquiries[0]], ["T1", "L1", "K1", "X1", "P1"]);
+  // Reminders start to the right of each table (Orders A:R, Conferences A:J, Tours A:I, Transcripts A:V, Inquiries A:N, Feedback A:J).
+  assert.deepEqual([NOTES.Orders[0], NOTES.Conferences[0], NOTES.Tours[0], NOTES.Transcripts[0], NOTES.Inquiries[0], NOTES.Feedback[0]],
+    ["T1", "L1", "K1", "X1", "P1", "L1"]);
+});
+
+// ------------------------------------------------------------------ Feedback for Administration
+import { COLUMNS as FB_COLUMNS, validateFeedback, feedbackRow } from "../src/feedback.js";
+
+const FB = { name: "", email: "", phone: "", grades: "3rd", topic: "Suggestion", message: "More field trips, please.\nThank you!" };
+
+test("feedback is checked on the server; name and contact are optional", () => {
+  const ok = validateFeedback(FB);
+  assert.equal(ok.error, undefined);
+  assert.equal(ok.feedback.message, "More field trips, please.\nThank you!");
+  assert.match(validateFeedback({ ...FB, email: "nope" }).error, /email/);
+  assert.match(validateFeedback({ ...FB, topic: "Gossip" }).error, /topic/);
+  assert.match(validateFeedback({ ...FB, message: "  " }).error, /feedback/);
+  const row = feedbackRow(validateFeedback({ ...FB, message: "=HYPERLINK(1)" }).feedback, "FB001", "1/5/2027 9:00 AM");
+  assert.equal(row.length, FB_COLUMNS.length);
+  assert.equal(row[3], "(no name)"); assert.equal(row[2], "New"); assert.equal(row[8], "'=HYPERLINK(1)");
+});
+
+test("POST /feedback end to end: saves the row (adding the tab), sends no email", async () => {
+  const calls = [];
+  let made = false;
+  globalThis.fetch = async (url, init = {}) => {
+    url = String(url); calls.push({ url, init });
+    const ok = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
+    if (url.includes("/oauth2/v2.0/token")) return ok({ access_token: "at", refresh_token: "rt1", expires_in: 3600 });
+    if (url.includes("/workbook/tables/Responses/rows/add")) return made ? ok({}, 201) : ok({ error: "ItemNotFound" }, 404);
+    if (url.includes("/workbook/worksheets?")) return ok({ value: [{ name: "Orders" }] });
+    if (url.includes("/tables/add")) { made = true; return ok({ id: "{T5}" }); }
+    if (url.includes("/workbook/")) return ok({});
+    return ok({ error: "unexpected " + url }, 500);
+  };
+  const post = (body) => worker.fetch(new Request("https://lunch.test/feedback", {
+    method: "POST", body: JSON.stringify(body),
+    headers: { "Content-Type": "application/json", Origin: "https://guarantee418.github.io", "CF-Connecting-IP": "8.8.4.4" },
+  }), { ...ENV0, LUNCH_KV: kv({ ms_refresh: "rt1" }) });
+  const res = await post(FB);
+  const out = await res.json();
+  assert.equal(res.status, 200, JSON.stringify(out));
+  assert.match(out.feedback_id, /^[A-Z0-9]{5}$/);
+  assert.ok(made);
+  assert.ok(!calls.some((c) => c.url.endsWith("/me/sendMail")));
+  const added = calls.filter((c) => c.url.includes("/tables/Responses/rows/add")).pop();
+  assert.equal(JSON.parse(added.init.body).values[0][7], "Suggestion");
+  assert.equal((await post({ ...FB, message: "" })).status, 400);
+  assert.equal((await (await post({ ...FB, website: "spam" })).json()).feedback_id, "0");
 });
