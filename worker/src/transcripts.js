@@ -144,6 +144,8 @@ export function requesterMail(q, id, env) {
     `<p style="margin:12px 0">${e(q.official)} transcript, ${q.copies} ${q.copies === 1 ? "copy" : "copies"}<br>` +
     `${e(deliveryText(q))}</p>` +
     payment(q, env).map((p) => `<p>${e(p)}</p>`).join("") + link +
+    `<p>Please note: we can only release a transcript when the student's account is in good financial standing ` +
+    `with the school. Any past-due balance must be paid first.</p>` +
     `<p>Please allow at least 3 business days for processing. If you have questions, reply to this email or call ` +
     `the school office at (301) 856-1616.</p>` +
     `<p>Gratefully,<br>${e(env.SIGNATURE || "Independent Baptist Academy").replace(/\n/g, "<br>")}</p>`;
