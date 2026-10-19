@@ -3,7 +3,8 @@
 //
 // Each report is one row of the "Reports" table on the Absences tab of the office workbook (the service adds that
 // tab when it is missing). The parent gets a confirmation; ABSENCE_NOTIFY (the office) gets the details, with the
-// student's homeroom teacher (Teachers tab, matched by grade) Cc'd when the tab has an email for that grade.
+// student's homeroom teacher (Teachers tab, matched by grade) Cc'd when the tab has an email for that grade, and
+// ABSENCE_CC (the ibs@ office) Cc'd on every one.
 
 import { GRADES as HOMEROOM_GRADES } from "./homerooms.js";
 
@@ -34,7 +35,7 @@ export async function ensureAbsenceTab(call) {
   const note = String.fromCharCode(66 + COLUMNS.length);
   await call("PATCH", `${s}/range(address='${note}1:${note}3')`, {
     values: [["Absence reports from the website land here by themselves, one row per report."],
-      ["The office gets an email for each one; the homeroom teacher is Cc'd when the Teachers tab has their email."],
+      ["The office gets an email for each one (ibs@ Cc'd); the homeroom teacher is Cc'd when the Teachers tab has their email."],
       ["Keep the column names as they are."]],
   });
   return true;
@@ -112,7 +113,10 @@ export function officeMail(q, id, env, teacher) {
     toRecipients: String(env.ABSENCE_NOTIFY).split(",").map((a) => ({ emailAddress: { address: a.trim() } })),
     replyTo: [{ emailAddress: { address: q.email, name: q.parent } }],
   };
-  if (teacher) message.ccRecipients = [{ emailAddress: { address: teacher.email, name: teacher.teacher } }];
+  const cc = String(env.ABSENCE_CC || "").split(",").map((a) => a.trim()).filter(Boolean)
+    .map((address) => ({ emailAddress: { address } }));
+  if (teacher) cc.unshift({ emailAddress: { address: teacher.email, name: teacher.teacher } });
+  if (cc.length) message.ccRecipients = cc;
   return { message, saveToSentItems: true };
 }
 
