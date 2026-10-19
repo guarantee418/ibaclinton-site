@@ -144,7 +144,8 @@ ARROW = ('<svg class="kc-arrow" width="22" height="22" viewBox="0 0 24 24" fill=
          '<path d="M4 12h16"/><path d="M14 6l6 6-6 6"/></svg>')
 
 def parents_block(data, root):
-    """The Kings Corner (parents page): hero, tile grid, then the sections. All text comes from content/parents.json."""
+    """The Kings Corner (parents page): hero and tile grid; each tile opens its section in a pop-up (site/kings.js).
+    All text comes from content/parents.json. Without JavaScript the sections show below the tiles instead."""
     sections = [s for s in data.get("sections") or [] if str(s.get("title") or "").strip()]
     for s in sections:
         s["_id"] = slug(s.get("anchor")) or slug(s.get("title"))
@@ -163,9 +164,10 @@ def parents_block(data, root):
         f'<img class="kc-crest" src="{root}img/kings-crest.png" alt="Independent Baptist Academy Kings crest" width="600" height="450">'
         '</div></div>')
 
-    # A tile links to a section on this page (its page link name) or to a full https:// address.
-    # A tile whose section no longer exists is left out, so no tile is a dead link.
-    cards = []
+    # A tile opens a section (its page link name) or goes to a full https:// address.
+    # A tile whose section no longer exists is left out, so no tile is a dead link; a section that no tile opens
+    # gets a plain tile at the end, so every section can be reached.
+    cards, used = [], set()
     for t in data.get("tiles") or []:
         title, target = esc(t.get("title")), str(t.get("section") or "").strip()
         href = esc(safe_url(target)) or (f"#{slug(target)}" if slug(target) in ids else "")
@@ -173,10 +175,15 @@ def parents_block(data, root):
             if title:
                 print(f"  tile {title!r} left out: no section {target!r}")
             continue
+        used.add(slug(target))
         tag = f'<span class="kc-tag">{esc(t.get("tag"))}</span>' if esc(t.get("tag")) else ""
         desc = f'<span class="kc-desc">{esc(t.get("description"))}</span>' if esc(t.get("description")) else ""
         cards.append(f'<li><a class="kc-tile" href="{href}"><span class="kc-tile-top"><span class="kc-tile-title">{title}</span>'
                      f'{tag}</span>{desc}{ARROW}</a></li>')
+    for s in sections:
+        if s["_id"] not in used:
+            cards.append(f'<li><a class="kc-tile" href="#{s["_id"]}"><span class="kc-tile-top"><span class="kc-tile-title">'
+                         f'{esc(s["title"])}</span></span>{ARROW}</a></li>')
     tiles_html = ""
     if cards:
         tiles_html = (
@@ -194,8 +201,10 @@ def parents_block(data, root):
             extra += feedback_form(root)
         blocks.append(f'<div class="block" id="{s["_id"]}"><h2>{esc(s["title"])}</h2>'
                       f'{clean_html(s.get("text"))}{docs_list(s.get("links"), root)}{extra}</div>')
-    return (f'<div class="kc">{hero_html}{tiles_html}'
-            f'\n<div class="kc-in kc-sections"><div class="blocks">\n{"\n".join(blocks)}\n</div></div>\n</div>')
+    back = f'Back to {esc(hero.get("title")) or "The Kings Corner"}'
+    return (f'<div class="kc" data-back="{back}">{hero_html}{tiles_html}'
+            f'\n<div class="kc-in kc-sections"><div class="blocks">\n{"\n".join(blocks)}\n</div></div>\n</div>'
+            f'\n<script src="{root}kings.js" defer></script>')
 
 def render(path, text, layout):
     head, body = text.split("\n---\n", 1)
