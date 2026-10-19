@@ -46,14 +46,16 @@
     return 0;
   }
   function refresh() {
-    var kids = children(), total = 0;
+    var kids = children(), total = 0, staff = false;
     kids.forEach(function (c, i) {
       c.querySelector("legend").textContent = kids.length > 1 ? "Student " + (i + 1) : "Student";
       c.querySelector(".lunch-remove").hidden = kids.length < 2;
       var g = daysOf(c);
+      if (c.querySelector("[name=grade]").value === "STAFF") staff = true;
       total += g ? price(c.querySelector("[name=grade]").value) * g.querySelectorAll("[name=days]:checked").length : 0;
     });
     totalEl.textContent = money(total);
+    totalEl.parentNode.hidden = staff; // staff prices aren't shown on the site
     addBtn.hidden = kids.length >= MAX;
   }
   function close() {
@@ -128,7 +130,8 @@
         var p = document.createElement("div");
         p.className = "notice ok"; p.setAttribute("role", "status");
         p.innerHTML = "<b>Thank you! Your order is placed.</b> Order number " + r.data.order_id +
-          ", total " + money(r.data.total) + ". " + (r.data.email_sent
+          (order.children.some(function (k) { return k.grade === "STAFF"; }) ? "" : ", total " + money(r.data.total)) +
+          ". " + (r.data.email_sent
             ? "A confirmation has been emailed to you."
             : "We couldn’t send the confirmation email, but your order was received.") +
           " To change it, please call the office at <a href=\"tel:3018561616\">(301) 856-1616</a>.";

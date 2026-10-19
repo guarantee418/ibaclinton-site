@@ -915,3 +915,14 @@ test("an order is checked against the week the parent picked", () => {
   // Past its deadline a week is closed even if a later one is open.
   assert.match(validateOrder(order, picked, Date.parse("2026-10-24T12:00:00Z")).error, /closed/);
 });
+
+test("staff lunches: no prices or total in the confirmation email", () => {
+  const menu = { ...MENU, grades: [...MENU.grades, { value: "STAFF", label: "Staff", preschool: false, staff: true }], prices: { ...MENU.prices, staff: 4 } };
+  const ok = validateOrder({ ...ORDER, children: [{ name: "Mr. T", grade: "STAFF", days: ["mon", "wed"] }] }, menu, BEFORE);
+  assert.equal(ok.error, undefined); assert.equal(ok.order.total, 8);
+  const html = confirmationMail(ok.order, menu, "ABCDE", ENV0).message.body.content;
+  assert.ok(!html.includes("$") , html);
+  assert.match(html, /Mr\. T<\/b> \(Staff\), 2 lunches<\/p>/);
+  assert.match(html, /Order number ABCDE/);
+  assert.match(confirmationMail(validateOrder(ORDER, menu, BEFORE).order, menu, "ABCDE", ENV0).message.body.content, /Total: \$/);
+});

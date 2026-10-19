@@ -361,14 +361,17 @@ export function confirmationMail(order, menu, orderId, env) {
       const day = byKey.get(d);
       return `<li>${e(day.day)} ${e(day.date_label)}: ${e((c.choices && c.choices[d]) || day.meal)}</li>`;
     }).join("");
-    return `<p style="margin:12px 0 4px"><b>${e(c.name)}</b> (${e(c.grade.label)}), ${c.days.length} lunch` +
-      `${c.days.length === 1 ? "" : "es"} at ${money(c.price)}: ${money(c.price * c.days.length)}</p><ul style="margin:0">${lines}</ul>`;
+    const count = `${c.days.length} lunch${c.days.length === 1 ? "" : "es"}`;
+    return `<p style="margin:12px 0 4px"><b>${e(c.name)}</b> (${e(c.grade.label)}), ${count}` +
+      `${c.grade.staff ? "" : ` at ${money(c.price)}: ${money(c.price * c.days.length)}`}</p><ul style="margin:0">${lines}</ul>`;
   }).join("");
   const content =
     `<p>Dear ${e(order.parent.first)} ${e(order.parent.last)},</p>` +
     `<p>Thank you for your hot lunch order for the week of ${e(menu.week_label)}. Here is what we received:</p>` +
     kids +
-    `<p style="margin-top:14px"><b>Total: ${money(order.total)}</b> (order number ${e(orderId)})</p>` +
+    // Staff prices aren't shown anywhere (Garrett): no total when the order has a staff lunch.
+    (order.children.some((c) => c.grade.staff) ? `<p style="margin-top:14px">Order number ${e(orderId)}</p>`
+      : `<p style="margin-top:14px"><b>Total: ${money(order.total)}</b> (order number ${e(orderId)})</p>`) +
     `<p>Lunch charges are added to your Gradelink account. To change or cancel this order, please call the ` +
     `school office at (301) 856-1616 or reply to this email.</p>` +
     `<p>Gratefully,<br>${e(env.SIGNATURE || "Independent Baptist Academy").replace(/\n/g, "<br>")}</p>`;
