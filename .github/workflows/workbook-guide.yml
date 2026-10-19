@@ -1,8 +1,9 @@
 name: Office workbook layout
 
 # Manual only. "inspect" prints the office workbook's tabs, tables (headings and row counts) and notes;
-# no rows, so no family details. "organize" puts the tabs in order and writes the how-to guide and the
-# notes on each tab (src/guide.js); it never changes a table, a column heading or any row.
+# no rows, so no family details. "organize" puts the tabs in order, writes the how-to guide and the notes
+# on each tab, fixes the Kitchen week box and removes empty table rows (src/guide.js); it never changes a
+# table's columns or headings, or any row with something in it.
 on:
   workflow_dispatch:
     inputs:
@@ -24,6 +25,12 @@ jobs:
     steps:
       - name: Run
         run: |
-          body=$(jq -nc --arg a "$ACTION" '{action:$a}')
-          curl -fsS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" \
-            -H "X-Setup-Key: $LUNCH_SETUP_KEY" -H "Content-Type: application/json" -d "$body" | jq .
+          post() { curl -fsS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" \
+            -H "X-Setup-Key: $LUNCH_SETUP_KEY" -H "Content-Type: application/json" -d "$1" | jq -c .; }
+          if [ "$ACTION" = organize ]; then
+            # One step per request (src/guide.js STEPS), so each stays under Cloudflare's per-request limit.
+            for step in order guide notes kitchen rows; do post "$(jq -nc --arg s "$step" '{action:"organize",step:$s}')"; done
+          else
+            curl -fsS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" \
+              -H "X-Setup-Key: $LUNCH_SETUP_KEY" -H "Content-Type: application/json" -d '{"action":"inspect"}' | jq .
+          fi
