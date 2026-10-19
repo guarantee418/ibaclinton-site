@@ -263,7 +263,7 @@ async function order(request, env, cors) {
   if (await tooMany(env, ip)) {
     return json({ ok: false, error: "Too many orders from this connection; please call the office" }, 429, cors);
   }
-  const menu = await loadMenu(env);
+  const menu = pickWeek(await loadMenu(env), body.week_start);
   const checked = validateOrder(body, menu, Date.now());
   if (checked.error) return json({ ok: false, error: checked.error }, 400, cors);
 
@@ -282,6 +282,14 @@ async function order(request, env, cors) {
   const mail = await graph(token, "POST", "/me/sendMail", confirmationMail(checked.order, menu, orderId, env));
   if (!mail.ok) console.error("mail", mail.status, await mail.text());
   return json({ ok: true, order_id: orderId, total: checked.order.total, email_sent: mail.ok }, 200, cors);
+}
+
+// menu.json lists every upcoming week under "weeks" (its top level is the first open week): the order is for
+// the week the parent picked. An older menu.json without "weeks" is used as it is.
+export function pickWeek(menu, weekStart) {
+  if (!menu || !Array.isArray(menu.weeks) || !weekStart) return menu;
+  const w = menu.weeks.find((x) => x.week_start === weekStart);
+  return w ? { ...menu, ...w } : menu;
 }
 
 export function validateOrder(body, menu, now) {

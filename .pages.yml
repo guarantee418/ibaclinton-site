@@ -6,7 +6,7 @@
 media:
   input: site/files
   output: /files
-  categories: [document]
+  categories: [document, image]
   rename: safe
 
 content:
@@ -16,44 +16,63 @@ content:
     path: content/lunch.json
     format: json
     fields:
-      - name: week_start
-        label: Week starts (Monday)
-        type: date
-        default: ""
-        description: The Monday of the lunch week (a Saturday or Sunday counts as the Monday after it). Leave the meals blank to show the general hot lunch text instead.
-        options:
-          format: yyyy-MM-dd
-      - name: order_deadline
-        label: Order deadline (only if different)
-        type: date
-        default: ""
-        description: Leave blank for the usual deadline, 9:00 AM on the Friday before the lunch week. Fill in only for a different date or time (Eastern), for example when that Friday is a day off.
-        options:
-          time: true
-          format: yyyy-MM-dd'T'HH:mm
-      - name: menu
-        label: Menu
+      - name: weeks
+        label: Weeks
+        description: List as many weeks as you like; each shows on the website as its own card with its dates, and weeks that are over drop off by themselves. Parents can order online for any week with a typed menu until its deadline.
         type: object
         list:
           collapsible:
-            collapsed: false
-            summary: "{day}: {meal}"
+            collapsed: true
+            summary: "Week of {week_start}"
         fields:
-          - name: day
-            label: Day
-            type: select
+          - name: week_start
+            label: Week starts (Monday)
+            type: date
+            required: true
+            description: The Monday of the lunch week (a Saturday or Sunday counts as the Monday after it).
             options:
-              values: [Monday, Tuesday, Wednesday, Thursday, Friday]
-          - name: meal
-            label: Meal
-            type: string
-            description: Leave blank for a day with no hot lunch. With choices below, this is the day's title, for example Pizza (or leave it blank to list the choices).
-          - name: options
-            label: Choices (optional)
-            type: string
+              format: yyyy-MM-dd
+          - name: graphic
+            label: Menu graphic (optional)
+            type: file
+            description: A picture of the week's menu (JPG or PNG, for example from Canva). Shown on the week's card; tap to see it full size. To take orders online, also type the meals below.
+            options:
+              extensions: [jpg, jpeg, png, gif, webp]
+          - name: menu
+            label: Menu
+            type: object
             list:
-              max: 5
-            description: Only for a day with more than one option, for example Cheese pizza and Pepperoni pizza. Parents then pick one per student, and the Kitchen tab counts each choice. Leave empty for one meal.
+              collapsible:
+                collapsed: false
+                summary: "{day}: {meal}"
+            fields:
+              - name: day
+                label: Day
+                type: select
+                options:
+                  values: [Monday, Tuesday, Wednesday, Thursday, Friday]
+              - name: meal
+                label: Meal
+                type: string
+                description: Leave blank for a day with no hot lunch. With choices below, this is the day's title, for example Pizza (or leave it blank to list the choices).
+              - name: options
+                label: Choices (optional)
+                type: string
+                list:
+                  max: 5
+                description: Only for a day with more than one option, for example Cheese pizza and Pepperoni pizza. Parents then pick one per student, and the Kitchen tab counts each choice. Leave empty for one meal.
+          - name: order_deadline
+            label: Order deadline (only if different)
+            type: date
+            default: ""
+            description: Leave blank for the usual deadline, 9:00 AM on the Friday before the lunch week. Fill in only for a different date or time (Eastern), for example when that Friday is a day off.
+            options:
+              time: true
+              format: yyyy-MM-dd'T'HH:mm
+          - name: note
+            label: Note
+            type: text
+            description: Optional line for this week, for example a half day or a schedule change.
       - name: price_regular
         label: Price per lunch (K5 to 12th)
         type: number
@@ -70,10 +89,6 @@ content:
         description: Not shown on the website. Staff order with the link ibaclinton.com/parents/?staff#hot-lunch, which adds a "Staff" choice under Grade.
         options:
           min: 0
-      - name: note
-        label: Note
-        type: text
-        description: Optional extra line, for example a schedule change.
       - name: order_form_url
         label: Backup order form link
         type: string

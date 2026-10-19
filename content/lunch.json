@@ -1,25 +1,29 @@
 {
-  "week_start": "2026-10-26",
-  "menu": [
+  "weeks": [
     {
-      "day": "Monday",
-      "meal": "hot dog"
-    },
-    {
-      "day": "Tuesday",
-      "meal": "pizza"
-    },
-    {
-      "day": "Wednesday",
-      "meal": "burger"
-    },
-    {
-      "day": "Thursday",
-      "meal": "chicken tenders"
-    },
-    {
-      "day": "Friday",
-      "meal": "chili"
+      "week_start": "2026-10-26",
+      "menu": [
+        {
+          "day": "Monday",
+          "meal": "hot dog"
+        },
+        {
+          "day": "Tuesday",
+          "meal": "pizza"
+        },
+        {
+          "day": "Wednesday",
+          "meal": "burger"
+        },
+        {
+          "day": "Thursday",
+          "meal": "chicken tenders"
+        },
+        {
+          "day": "Friday",
+          "meal": "chili"
+        }
+      ]
     }
   ],
   "price_regular": 8,

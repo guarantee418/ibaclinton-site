@@ -35,6 +35,11 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
 - The Hot Lunch section of the Parent Portal comes from `content/lunch.json` via `lunch.py`: menu
   table, prices, deadline (9:00 AM the Friday before the week, unless the office types another) and (when `LUNCH_API` in `build.py` is set) the online order form
   (`site/lunch.js`). `site/lunch/menu.json` is the published menu the order service checks against.
+- The office lists **several weeks** (`weeks` in `content/lunch.json`): each shows as its own card (banners alternate
+  purple/gold and are tagged This week / Next week / Coming up; weeks that are over drop off), with an optional menu
+  graphic (uploaded to `site/files/`) and/or a typed menu. Only a typed menu can be ordered online; parents pick the
+  week on the form. `menu.json` lists every week under `weeks` (its top level is the first open week), and the
+  service checks each order against the week picked.
 - Orders go to the Cloudflare Worker in `worker/` (setup and upkeep in `worker/README.md`), which
   writes them to the office's Excel workbook and emails the parent a confirmation.
 - **Staff lunches** ($4, `price_staff`, not shown anywhere on the site): staff order on the same form
