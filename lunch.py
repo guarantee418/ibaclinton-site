@@ -18,8 +18,7 @@ DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 GRADES = [("K3", "Preschool (K3)", True), ("K4", "Preschool (K4)", True), ("K5", "Kindergarten (K5)", False)] + [
     (str(n), f"{n}{'st' if n == 1 else 'nd' if n == 2 else 'rd' if n == 3 else 'th'} Grade", False)
     for n in range(1, 13)]
-# Staff can order too, at the staff price. The choice isn't on the public form: lunch.js adds it
-# only when the page is opened with ?staff (ibaclinton.com/parents/?staff#hot-lunch).
+# Staff order on the same form, at the staff price: "Staff" is the last choice under Grade (Garrett, 2026-10-19).
 STAFF = {"value": "STAFF", "label": "Staff", "preschool": False, "staff": True}
 
 def esc(value):
@@ -210,7 +209,7 @@ def _day_box(d):
 
 def order_form(menu, weeks, root, api):
     grade_options = '<option value="">Choose…</option>' + "".join(
-        f'<option value="{esc(g["value"])}">{esc(g["label"])}</option>' for g in menu["grades"] if not g.get("staff"))
+        f'<option value="{esc(g["value"])}">{esc(g["label"])}</option>' for g in menu["grades"])
     # One set of day boxes per open week; lunch.js shows the week picked under "Week".
     day_sets = "".join(
         f'<div class="lunch-days" role="group" aria-label="Lunch days, week of {esc(w["week_label"])}" '

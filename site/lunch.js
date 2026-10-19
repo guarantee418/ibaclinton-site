@@ -19,11 +19,6 @@
   var status = document.getElementById("lunch-status");
   var totalEl = document.getElementById("lunch-total");
   var addBtn = document.getElementById("lunch-add");
-  // Staff order from ?staff (not linked on the site): add a "Staff" choice to the grade list.
-  if (/[?&]staff\b/.test(location.search)) {
-    var opt = document.createElement("option"); opt.value = "STAFF"; opt.textContent = "Staff";
-    list.querySelector("[name=grade]").appendChild(opt);
-  }
   var weekSel = form.elements.week;
   // Weeks whose order deadline has passed can't be picked any more.
   Array.prototype.slice.call(weekSel.options).forEach(function (o) {
