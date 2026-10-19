@@ -148,7 +148,7 @@ table.lunch{border-collapse:collapse;width:100%;margin:.6rem 0 1rem}table.lunch 
 .lunch-order{margin-top:1.4rem}.lunch-order h3{margin:0;font-size:1.3rem;color:var(--navy)}
 .lunch-days{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem}
 form.info label.lunch-day{flex-direction:row;align-items:flex-start;gap:.5rem;font-weight:400;border:1px solid var(--line);border-radius:4px;padding:.6rem .7rem;cursor:pointer}
-.lunch-day input{margin-top:.25rem}.lunch-day:has(input:checked){border-color:var(--gold);background:#fff7e0}
+.lunch-day input{margin-top:.25rem}.lunch-pick{border:1px solid var(--line);border-radius:4px;padding:.6rem .7rem;display:flex;flex-direction:column;gap:.5rem}.lunch-pick:has(input:checked){border-color:var(--gold);background:#fff7e0}form.info .lunch-pick label.lunch-day,form.info .lunch-pick label.lunch-day:has(input:checked){border:0;padding:0;background:none}form.info label.lunch-choice{font-size:.85rem;font-weight:600;gap:.2rem}form.info label.lunch-choice select{padding:.4rem .5rem}.lunch-choices{display:block;color:var(--muted);font-size:.9rem}.lunch-day:has(input:checked){border-color:var(--gold);background:#fff7e0}
 .lunch-remove{grid-column:1/-1;justify-self:start;background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font:inherit;padding:0}
 .lunch-total{font-size:1.15rem;margin:0}.lunch-fine{color:var(--muted);font-size:.9rem}
 /* Parent-teacher conferences (conferences.py, conferences.js) */

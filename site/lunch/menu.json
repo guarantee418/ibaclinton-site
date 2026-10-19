@@ -1,15 +1,56 @@
 {
-  "week_start": "",
-  "week_label": "",
-  "deadline": "",
-  "deadline_label": "",
+  "week_start": "2026-10-26",
+  "week_label": "October 26 \u2013 30",
+  "deadline": "2026-10-23T13:00:00+00:00",
+  "deadline_label": "Friday, October 23 at 9:00 AM",
   "prices": {
     "regular": 8.0,
     "preschool": 5.0,
     "staff": 4.0
   },
   "note": "",
-  "days": [],
+  "days": [
+    {
+      "key": "mon",
+      "day": "Monday",
+      "meal": "hot dog",
+      "options": [],
+      "date": "2026-10-26",
+      "date_label": "Oct 26"
+    },
+    {
+      "key": "tue",
+      "day": "Tuesday",
+      "meal": "pizza",
+      "options": [],
+      "date": "2026-10-27",
+      "date_label": "Oct 27"
+    },
+    {
+      "key": "wed",
+      "day": "Wednesday",
+      "meal": "burger",
+      "options": [],
+      "date": "2026-10-28",
+      "date_label": "Oct 28"
+    },
+    {
+      "key": "thu",
+      "day": "Thursday",
+      "meal": "chicken tenders",
+      "options": [],
+      "date": "2026-10-29",
+      "date_label": "Oct 29"
+    },
+    {
+      "key": "fri",
+      "day": "Friday",
+      "meal": "chili",
+      "options": [],
+      "date": "2026-10-30",
+      "date_label": "Oct 30"
+    }
+  ],
   "grades": [
     {
       "value": "K3",

@@ -47,7 +47,16 @@
   list.addEventListener("click", function (e) {
     if (e.target.classList.contains("lunch-remove")) { e.target.closest(".lunch-child").remove(); refresh(); }
   });
-  form.addEventListener("change", refresh);
+  form.addEventListener("change", function (e) {
+    // Picking a choice ticks that day; unticking a day clears its choice.
+    var pick = e.target.closest && e.target.closest(".lunch-pick");
+    if (pick) {
+      var box = pick.querySelector("[name=days]"), sel = pick.querySelector("[name=choice]");
+      if (e.target === sel && sel.value) box.checked = true;
+      if (e.target === box && !box.checked) sel.value = "";
+    }
+    refresh();
+  });
   form.addEventListener("input", function () {
     if (status.classList.contains("err")) { status.className = ""; status.innerHTML = ""; }
   });
@@ -70,11 +79,19 @@
     if (!order.phone) problems.push("a phone number");
     children().forEach(function (c, i) {
       var days = Array.prototype.map.call(c.querySelectorAll("[name=days]:checked"), function (x) { return x.value; });
-      var kid = {name: c.querySelector("[name=student]").value.trim(), grade: c.querySelector("[name=grade]").value, days: days};
+      var choices = {}, unpicked = [];
+      Array.prototype.forEach.call(c.querySelectorAll("[name=choice]"), function (s) {
+        var d = s.getAttribute("data-day");
+        if (days.indexOf(d) < 0) return;
+        if (s.value) choices[d] = s.value; else unpicked.push(s.closest(".lunch-pick").querySelector("b").textContent);
+      });
+      var kid = {name: c.querySelector("[name=student]").value.trim(), grade: c.querySelector("[name=grade]").value,
+                 days: days, choices: choices};
       var who = children().length > 1 ? "student " + (i + 1) : "the student";
       if (!kid.name) problems.push("the name of " + who);
       if (!kid.grade) problems.push("the grade of " + who);
       if (!days.length) problems.push("at least one day for " + (kid.name || who));
+      if (unpicked.length) problems.push("a choice for " + unpicked.join(" and ") + " for " + (kid.name || who));
       order.children.push(kid);
     });
     if (problems.length) { show("err", "Please add " + problems.join(", ") + "."); return; }

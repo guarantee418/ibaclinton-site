@@ -97,15 +97,16 @@ const TABLES = [
 export const NOTES = {
   Orders: ["T1", [
     "How to use this tab (full steps: How to use tab)",
-    "• Each hot lunch order from the website adds one row per student, with an X under each day ordered.",
+    "• Each hot lunch order from the website adds one row per student, with an X (or the choice, e.g. Cheese pizza) under each day ordered.",
     "• Billing: filter 'Week of' to one Monday, then charge each student's Total in Gradelink.",
-    "• Phone change: type or delete an X under a day. Cancel a student's whole week: delete the row.",
+    "• Phone change: type an X (or the choice) under a day, or delete it. Cancel a student's whole week: delete the row.",
     "• Use Notes for anything worth remembering. Order # is the number in the parent's email.",
     "• Don't rename, add, remove or move the columns of this table: the website fills them.",
   ]],
   Kitchen: ["G1", [
     "How to use this tab (full steps: How to use tab)",
     "• Shows lunches per day for one week: K5–12th (staff included) and Preschool.",
+    "• Days with choices (e.g. cheese or pepperoni pizza) are counted per choice in the Choices table below.",
     "• It shows the newest week with orders. To see another week, type its Monday (like 10/26/2026) in the yellow box.",
     "• Everything else is a formula: nothing to type.",
   ]],
@@ -187,17 +188,18 @@ export const GUIDE = [
   ["tab", "Absences", "Absences parents report on the website, one row per report."],
   ["gap"],
   ["head", "Hot lunch: Orders tab"],
-  ["step", "1", "Parents order on the Parent Portal page of the website. Each order adds one row per student: Week of (that Monday), the parent's contact, grade, price per lunch and an X under each day ordered. Lunches and Total add themselves up."],
+  ["step", "1", "Parents order on the Parent Portal page of the website. Each order adds one row per student: Week of (that Monday), the parent's contact, grade, price per lunch and an X under each day ordered; on a day with choices the cell says which one (for example Pepperoni pizza). Lunches and Total add themselves up."],
   ["step", "2", "Prices: Preschool (K3 and K4) $5 a lunch, K5–12th $8, Staff $4 (staff rows say Grade 'Staff'). Orders close at 9:00 AM on the Friday before the lunch week unless the menu says otherwise."],
   ["step", "3", "Billing, each week after orders close: click the arrow on the 'Week of' heading, choose only that Monday, then charge each student's Total in Gradelink. Clear the filter afterwards."],
-  ["step", "4", "Changes by phone: type an X under a day to add a lunch, or delete the X to remove one; the totals update. To cancel a student's whole week, right-click the row number and choose Delete."],
+  ["step", "4", "Changes by phone: type an X under a day to add a lunch (on a day with choices, type the choice exactly as on the menu), or clear the cell to remove one; the totals update. To cancel a student's whole week, right-click the row number and choose Delete."],
   ["step", "5", "Use the Notes column for anything worth remembering (paid in cash, called to change, and so on)."],
   ["step", "6", "To find an order, press Ctrl+F (Cmd+F on a Mac) and type the Order # from the parent's email, or the student's name."],
   ["gap"],
   ["head", "Hot lunch: Kitchen tab"],
   ["step", "1", "Shows how many lunches to make each day of one week: K5–12th (staff are counted here), Preschool and Total, plus the week total and the week's charges."],
   ["step", "2", "It shows the newest week that has orders. To see a different week, type that week's Monday (like 10/26/2026) in the yellow box next to 'Week of (Monday)'."],
-  ["step", "3", "Everything else on this tab is a formula: please don't type over it."],
+  ["step", "3", "When a day has choices (for example cheese or pepperoni pizza), the Choices table below the day counts shows how many of each to make, K5–12th and Preschool."],
+  ["step", "4", "Everything else on this tab is a formula: please don't type over it."],
   ["gap"],
   ["head", "Hot lunch: Homerooms tab"],
   ["step", "1", "Shows this week's lunches grouped by grade, youngest first, taken from the Orders tab. The week changes by itself every Monday; on Saturday and Sunday it shows the coming week."],
@@ -297,6 +299,7 @@ export async function organize(call, step) {
       } else {
         done.push("week box left as it is");
       }
+      done.push(...await kitchenChoices(call, sheet("Kitchen")));
     }
   } else if (step === "rows") { // empty rows left in the tables after deletions
     for (const t of TABLES) {
@@ -306,6 +309,44 @@ export async function organize(call, step) {
   } else {
     throw new Error(`unknown step ${step}`);
   }
+  return done;
+}
+
+// Days can have choices (the Orders cell then holds e.g. "Pepperoni pizza" instead of "X"): the day counts
+// count any filled cell, and a Choices table below them counts each choice per day for the Kitchen's week.
+const KDAYS = [["Monday", "Mon"], ["Tuesday", "Tue"], ["Wednesday", "Wed"], ["Thursday", "Thu"], ["Friday", "Fri"]];
+const CHOICE_ROWS = 5; // room per day; lunch.py MAX_OPTIONS
+export const CHOICES_TOP = 14;
+
+export function choiceFormula(col) {
+  const c = `Orders[${col}]`, w = "Orders[Week of],$B$3";
+  return `=IFERROR(LET(u,SORT(UNIQUE(FILTER(${c},(Orders[Week of]=$B$3)*(${c}<>"")*(${c}<>"X")))),` +
+    `HSTACK(u,COUNTIFS(${w},${c},u,Orders[Preschool],"No"),COUNTIFS(${w},${c},u,Orders[Preschool],"Yes"),` +
+    `COUNTIFS(${w},${c},u))),"")`;
+}
+
+async function kitchenChoices(call, s) {
+  const done = [];
+  const f = await call("GET", `${s}/range(address='C6:D10')?$select=formulas`);
+  const old = f.ok ? (await f.json()).formulas || [] : [];
+  if (old.length === 5 && old.every((r) => r.every((x) => /,"X",Orders\[Preschool\]/.test(String(x))))) {
+    await must(call("PATCH", `${s}/range(address='C6:D10')`, {
+      formulas: old.map((r) => r.map((x) => String(x).replace(',"X",Orders[Preschool]', ',"<>",Orders[Preschool]'))) }));
+    done.push("day counts include choices");
+  }
+  const top = CHOICES_TOP, last = top + 1 + KDAYS.length * CHOICE_ROWS;
+  await call("POST", `${s}/range(address='A${top}:E${last}')/clear`, { applyTo: "All" });
+  const rows = [["Choices (days with more than one option)", "", "", "", ""], ["Day", "Choice", "K5–12th", "Preschool", "Total"]];
+  KDAYS.forEach(([day, col]) => {
+    rows.push([day, choiceFormula(col), "", "", ""]);
+    for (let i = 1; i < CHOICE_ROWS; i++) rows.push(["", "", "", "", ""]);
+  });
+  await must(call("PATCH", `${s}/range(address='A${top}:E${last}')`, { formulas: rows }));
+  await call("PATCH", `${s}/range(address='A${top}')/format/font`, { bold: true, color: NAVY });
+  await call("PATCH", `${s}/range(address='A${top + 1}:E${top + 1}')/format/font`, { bold: true, color: "#FFFFFF" });
+  await call("PATCH", `${s}/range(address='A${top + 1}:E${top + 1}')/format/fill`, { color: NAVY });
+  await call("PATCH", `${s}/range(address='B:B')/format`, { columnWidth: 150 });
+  done.push("choices table");
   return done;
 }
 
