@@ -162,7 +162,7 @@ export const NOTES = {
   ]],
   Absences: ["O1", [
     "How to use this tab (full steps: How to use tab)",
-    "• Each absence reported on the website adds one row. The office gets an email; the homeroom teacher is Cc'd.",
+    "• Each absence reported on the website adds one row. The office gets an email; ibs@ and the homeroom teacher are Cc'd.",
     "• 'Teacher told' names the teacher who was Cc'd; 'No email on Teachers tab' means tell them yourself.",
     "• Sort by First day to see who is out on a given day. Use Notes for anything worth remembering.",
   ]],
@@ -241,7 +241,7 @@ export const GUIDE = [
   ["step", "3", "Pass anything that needs Mr. Greene's attention to him. Change Status as you go (for example Read, Answered) and type what was done in Notes."],
   ["gap"],
   ["head", "Absence reports: Absences tab"],
-  ["step", "1", "Parents report an absence in The Kings Corner on the website (Report an Absence). Each report adds a row: first and last day, student, grade, reason, parent and contact. The parent gets a confirmation; iba@ gets the details, with the homeroom teacher Cc'd."],
+  ["step", "1", "Parents report an absence in The Kings Corner on the website (Report an Absence). Each report adds a row: first and last day, student, grade, reason, parent and contact. The parent gets a confirmation; iba@ gets the details, with ibs@ and the homeroom teacher Cc'd."],
   ["step", "2", "The homeroom teacher comes from the Teachers tab (matched by grade). 'Teacher told' shows who was Cc'd; 'No email on Teachers tab' means the teacher wasn't told, so please pass it on."],
   ["step", "3", "To see who is out on a day, sort or filter the First day column. Use Notes for anything worth remembering (called in, doctor's note received, and so on)."],
   ["gap"],

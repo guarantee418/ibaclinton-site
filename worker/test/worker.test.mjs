@@ -824,6 +824,10 @@ test("absence row and office email: homeroom teacher by grade, formula-safe", ()
   assert.equal(m.replyTo[0].emailAddress.address, "pat@example.com");
   assert.match(m.subject, /Friday, October 16, 2026 through Monday, October 19, 2026/);
   assert.equal(abOfficeMail(q, "AB001", { ABSENCE_NOTIFY: "o@s.test" }, null).message.ccRecipients, undefined);
+  const cc = abOfficeMail(q, "AB001", { ABSENCE_NOTIFY: "o@s.test", ABSENCE_CC: "ibs@school.test" }, t).message.ccRecipients;
+  assert.deepEqual(cc.map((r) => r.emailAddress.address), ["lundberg@school.test", "ibs@school.test"]);
+  assert.deepEqual(abOfficeMail(q, "AB001", { ABSENCE_NOTIFY: "o@s.test", ABSENCE_CC: "ibs@school.test" }, null)
+    .message.ccRecipients.map((r) => r.emailAddress.address), ["ibs@school.test"]);
 });
 
 test("POST /absence end to end: saves the row (adding the tab), emails the parent and the office Cc the teacher", async (t) => {
