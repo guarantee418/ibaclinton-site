@@ -50,6 +50,8 @@ ABSENCE_CC = "ibs@ibcministries.org"
 # MONDAY_TOKEN secret). "private" boards are seen only by the token's owner until shared; "public" = everyone
 # on the Monday account. Only used when the boards are first made.
 MONDAY_BOARD_KIND = "private"
+# Monday users added to each board (by their Monday login email; someone not on the Monday account is skipped).
+MONDAY_SHARE = "iba@ibcministries.org,ibs@ibcministries.org,ibs@ibaclinton.com"
 # Filled in by the workflow from GitHub secrets (not secret, but kept out of this public repo):
 TENANT_ID = ""
 CLIENT_ID = ""

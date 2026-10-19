@@ -967,14 +967,19 @@ test("monday setup makes a board once and only the missing columns", async () =>
     const ok = (data) => new Response(JSON.stringify({ data }), { status: 200 });
     if (q.query.includes("create_board")) return ok({ create_board: { id: 77 } });
     if (q.query.includes("create_column")) return ok({ create_column: { id: "c" } });
+    if (q.query.includes("users(emails")) return ok({ users: [{ id: 5, email: "IBA@school.test" }] });
+    if (q.query.includes("add_users_to_board")) return ok({ add_users_to_board: [{ id: 5 }] });
     if (q.query.includes("boards(ids")) return ok({ boards: [{ id: "77", columns: [{ id: "status", title: "Status", type: "status" }] }] });
     return new Response("{}", { status: 500 });
   };
-  const env = { MONDAY_TOKEN: "tok", LUNCH_KV: kv() };
+  const env = { MONDAY_TOKEN: "tok", MONDAY_SHARE: "iba@school.test, ibs@school.test", LUNCH_KV: kv() };
   const made1 = await setupMonday(env, "inquiry");
   assert.equal(made1.board, "77");
   assert.equal(made1.columns_added, BOARDS.inquiry.columns.length - 2); // not the name or the board's own Status
   assert.ok(calls.length < 50); // a Worker may make only 50 outside requests at a time
+  assert.deepEqual(made1.shared_with, ["iba@school.test"]);
+  assert.deepEqual(made1.not_on_monday, ["ibs@school.test"]);
+  assert.deepEqual(calls.find((c) => c.query.includes("add_users_to_board")).variables.u, ["5"]);
   assert.equal(calls.filter((c) => c.query.includes("create_board")).length, 1);
   const made = calls.filter((c) => c.query.includes("create_column")).map((c) => c.variables.t);
   assert.ok(!made.includes("Status") && !made.includes("Parent") && made.includes("Heard about IBA"));

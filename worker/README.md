@@ -100,4 +100,5 @@ copy (changes on Monday don't flow back), and a Monday problem never stops a for
    "Website: Tour Sign-ups", "Website: Transcript Requests"; `MONDAY_BOARD_KIND` in `wrangler.toml`, private
    by default: share them in Monday) and any missing column. Columns are matched by title, so renaming the
    board or adding columns is fine; renaming a column means it is no longer filled.
+   Each run also adds the `MONDAY_SHARE` people to every board (only those with a Monday login).
 4. The TEST cleanup workflow also deletes the matching Monday item for those three kinds.

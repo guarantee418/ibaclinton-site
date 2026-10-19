@@ -71,7 +71,21 @@ export async function setupMonday(env, kind) {
       { b: board, t: title, c: columnType(form, title) });
     added++;
   }
-  return { board, columns_added: added };
+  return { board, columns_added: added, ...(await share(env, board)) };
+}
+
+// Adds the people in MONDAY_SHARE (Monday account emails, comma-separated) to the board as members.
+async function share(env, board) {
+  const emails = String(env.MONDAY_SHARE || "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+  if (!emails.length) return {};
+  const d = await api(env, "query ($e: [String]) { users(emails: $e) { id email } }", { e: emails });
+  const users = (d.users || []).filter((u) => emails.includes(String(u.email).toLowerCase()));
+  if (users.length) {
+    await api(env, "mutation ($b: ID!, $u: [ID!]!) { add_users_to_board(board_id: $b, user_ids: $u, kind: subscriber) { id } }",
+      { b: board, u: users.map((u) => String(u.id)) });
+  }
+  const found = users.map((u) => String(u.email).toLowerCase());
+  return { shared_with: found, not_on_monday: emails.filter((e) => !found.includes(e)) };
 }
 
 // The item for one workbook row (the same values, in the workbook's column order).
