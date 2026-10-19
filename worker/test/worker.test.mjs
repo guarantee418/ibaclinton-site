@@ -971,14 +971,16 @@ test("monday setup makes a board once and only the missing columns", async () =>
     return new Response("{}", { status: 500 });
   };
   const env = { MONDAY_TOKEN: "tok", LUNCH_KV: kv() };
-  const boards = await setupMonday(env);
-  assert.deepEqual(boards, { inquiry: "77", tour: "77", transcript: "77" });
-  assert.equal(calls.filter((c) => c.query.includes("create_board")).length, 3);
+  const made1 = await setupMonday(env, "inquiry");
+  assert.equal(made1.board, "77");
+  assert.equal(made1.columns_added, BOARDS.inquiry.columns.length - 2); // not the name or the board's own Status
+  assert.ok(calls.length < 50); // a Worker may make only 50 outside requests at a time
+  assert.equal(calls.filter((c) => c.query.includes("create_board")).length, 1);
   const made = calls.filter((c) => c.query.includes("create_column")).map((c) => c.variables.t);
   assert.ok(!made.includes("Status") && !made.includes("Parent") && made.includes("Heard about IBA"));
   assert.equal(calls.find((c) => c.variables.t === "Heard about IBA").variables.c, "long_text");
   calls.length = 0;
-  await setupMonday(env);
+  await setupMonday(env, "inquiry");
   assert.equal(calls.filter((c) => c.query.includes("create_board")).length, 0);
 });
 

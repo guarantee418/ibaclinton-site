@@ -32,7 +32,8 @@
 //                   {"action":"delete_test_feedback","id":"ABCDE"} one feedback response whose name is "TEST...";
 //                   {"action":"delete_test_absence","id":"ABCDE"} one absence report whose student is "TEST..."
 //   Tour sign-ups, inquiries and transcript requests are also copied to Monday.com boards when the
-//   MONDAY_TOKEN secret is set (src/monday.js); the setup action makes the boards.
+//   MONDAY_TOKEN secret is set (src/monday.js); {"action":"monday","board":"tour"} makes a board (one per call:
+//   a Worker may make only 50 outside requests at a time).
 //   cron            Mondays 7:00 AM Eastern: homeroom lunch lists to teachers (src/homerooms.js)
 //
 // Microsoft 365 access is delegated: the Worker acts only as the mailbox in MAILBOX
@@ -51,7 +52,7 @@ import { ensureStaffTab, isStaffFamily, readStaffFamilies } from "./staff.js";
 import { TABLE as FEEDBACK_TABLE, deleteTestFeedback, ensureFeedbackTab, feedbackRow, validateFeedback } from "./feedback.js";
 import { TABLE as TRANSCRIPT_TABLE, deleteTestRequest, ensureTranscriptTab, officeMail as transcriptOfficeMail, requestRow,
   requesterMail, settings as transcriptSettings, validateRequest } from "./transcripts.js";
-import { addToMonday, deleteFromMonday, setupMonday } from "./monday.js";
+import { BOARDS as MONDAY_BOARDS, addToMonday, deleteFromMonday, setupMonday } from "./monday.js";
 import { STEPS as ORGANIZE_STEPS, inspect as inspectWorkbook, organize as organizeWorkbook } from "./guide.js";
 import { checkHomerooms, ensureTabs, fillTeacherEmails, weekCounts, homeroomMails, mondayToSend, readTeachers, readWeek } from "./homerooms.js";
 
@@ -137,11 +138,13 @@ async function admin(request, env) {
     if (await ensureAbsenceTab(call)) added.push("Absences");
     if (await ensureStaffTab(call)) added.push("Staff Families");
     const filled = body.teacher_emails ? await fillTeacherEmails(call, body.teacher_emails) : 0;
-    let monday = "no MONDAY_TOKEN";
-    if (env.MONDAY_TOKEN) {
-      try { monday = { boards: await setupMonday(env) }; } catch (err) { monday = { error: String(err && err.message || err) }; }
-    }
-    return json({ ok: true, tabs_added: added, teacher_emails_filled: filled, homerooms_tab: await checkHomerooms(call), monday }, 200, {});
+    return json({ ok: true, tabs_added: added, teacher_emails_filled: filled, homerooms_tab: await checkHomerooms(call) }, 200, {});
+  }
+  if (body.action === "monday") { // makes one Monday.com board ("board": inquiry, tour, transcript) and its columns if missing
+    if (!env.MONDAY_TOKEN) return json({ ok: false, error: "no MONDAY_TOKEN" }, 400, {});
+    if (!MONDAY_BOARDS[body.board]) return json({ ok: false, error: `board must be one of ${Object.keys(MONDAY_BOARDS).join(", ")}` }, 400, {});
+    try { return json({ ok: true, ...(await setupMonday(env, body.board)) }, 200, {}); }
+    catch (err) { return json({ ok: false, error: String(err && err.message || err) }, 502, {}); }
   }
   if (body.action === "weeks") { // how many order rows per week (no names), for checking the workbook
     const token = await accessToken(env);

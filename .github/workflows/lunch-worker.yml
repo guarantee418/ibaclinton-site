@@ -62,7 +62,6 @@ jobs:
       - name: Make sure the workbook has its Teachers and Homerooms tabs
         # Adds them only if missing, and fills blank teacher emails from the TEACHER_EMAILS secret
         # ("K3=a@x.org,K4=...,1=...,12=..."); emails typed in the tab win. Prints counts only.
-        # With MONDAY_TOKEN it also makes the Monday.com boards and columns that are missing (prints board ids).
         env:
           TEACHER_EMAILS: ${{ secrets.TEACHER_EMAILS }}
         run: |
@@ -70,3 +69,12 @@ jobs:
           curl -sS -X POST "$(cat url.txt)/admin" -H "X-Setup-Key: $LUNCH_SETUP_KEY" \
             -H "Content-Type: application/json" -d "$body" || true
           echo
+      - name: Make the Monday.com boards (only with the MONDAY_TOKEN secret)
+        # One board per call; makes only what is missing and prints the board ids.
+        if: env.MONDAY_TOKEN != ''
+        run: |
+          for b in inquiry tour transcript; do
+            curl -sS -X POST "$(cat url.txt)/admin" -H "X-Setup-Key: $LUNCH_SETUP_KEY" \
+              -H "Content-Type: application/json" -d "{\"action\":\"monday\",\"board\":\"$b\"}" || true
+            echo
+          done

@@ -4,9 +4,10 @@
 // already has their answer, so Monday being down or misconfigured never stops a form. It is one way only:
 // changes made on Monday don't reach the workbook.
 //
-// Needs the MONDAY_TOKEN secret (a Monday personal API token; items show as made by its owner). The setup
-// action makes one board per form when missing (MONDAY_BOARD_KIND, "private" by default: only the token's
+// Needs the MONDAY_TOKEN secret (a Monday personal API token; items show as made by its owner). The "monday"
+// admin action makes one board per form when missing (MONDAY_BOARD_KIND, "private" by default: only the token's
 // owner sees it until they share it) and adds any missing column; the board ids are kept in KV.
+// The deploy calls it once per board: a Worker may make only 50 outside requests per call.
 // Columns are matched by title, so the office can add their own columns or rename the board.
 
 import { COLUMNS as INQUIRY_COLUMNS } from "./inquiries.js";
@@ -50,28 +51,27 @@ async function columns(env, board) {
   return b ? b.columns : null;
 }
 
-// Makes the boards and columns that are missing; returns {inquiry: "123", ...}.
-export async function setupMonday(env) {
-  const out = {};
-  for (const [kind, form] of Object.entries(BOARDS)) {
-    let board = await env.LUNCH_KV.get(`monday:board:${kind}`);
-    let have = board ? await columns(env, board) : null;
-    if (!have) {
-      const d = await api(env, "mutation ($n: String!, $k: BoardKind!) { create_board(board_name: $n, board_kind: $k, empty: true) { id } }",
-        { n: form.name, k: env.MONDAY_BOARD_KIND || "private" });
-      board = String(d.create_board.id);
-      await env.LUNCH_KV.put(`monday:board:${kind}`, board);
-      have = (await columns(env, board)) || [];
-    }
-    const titles = new Set(have.map((c) => c.title));
-    for (const title of form.columns) {
-      if (title === form.title || titles.has(title)) continue;
-      await api(env, "mutation ($b: ID!, $t: String!, $c: ColumnType!) { create_column(board_id: $b, title: $t, column_type: $c) { id } }",
-        { b: board, t: title, c: columnType(form, title) });
-    }
-    out[kind] = board;
+// Makes one form's board and the columns it is missing; returns {board: "123", columns_added: n}.
+export async function setupMonday(env, kind) {
+  const form = BOARDS[kind];
+  let board = await env.LUNCH_KV.get(`monday:board:${kind}`);
+  let have = board ? await columns(env, board) : null;
+  if (!have) {
+    const d = await api(env, "mutation ($n: String!, $k: BoardKind!) { create_board(board_name: $n, board_kind: $k, empty: true) { id } }",
+      { n: form.name, k: env.MONDAY_BOARD_KIND || "private" });
+    board = String(d.create_board.id);
+    await env.LUNCH_KV.put(`monday:board:${kind}`, board);
+    have = (await columns(env, board)) || [];
   }
-  return out;
+  const titles = new Set(have.map((c) => c.title));
+  let added = 0;
+  for (const title of form.columns) {
+    if (title === form.title || titles.has(title)) continue;
+    await api(env, "mutation ($b: ID!, $t: String!, $c: ColumnType!) { create_column(board_id: $b, title: $t, column_type: $c) { id } }",
+      { b: board, t: title, c: columnType(form, title) });
+    added++;
+  }
+  return { board, columns_added: added };
 }
 
 // The item for one workbook row (the same values, in the workbook's column order).
