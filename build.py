@@ -6,7 +6,9 @@ committed, so what is in git is exactly what gets published.
 
 Each page file starts with a few `key: value` lines, then a line with `---`, then the HTML body.
 Keys: title, description, nav (which menu item to highlight), cta (no = hide the
-"Explore the Possibilities" band), hero (image file in img/ for the page banner).
+"Explore the Possibilities" band), hero (image file in img/ for the page banner), banner (no = no banner),
+fulltitle (the browser tab title, instead of "<title> | Independent Baptist Academy"), fonts (Google Fonts
+families for this page only).
 """
 import html, json, pathlib, re
 from html.parser import HTMLParser
@@ -67,7 +69,8 @@ def docs_list(items, root):
             lis.append(f'<li><a href="{url}">{title}</a></li>')
     return '<ul class="docs">' + "".join(lis) + "</ul>" if lis else ""
 
-# Parent Portal (content/parents.json): the office edits every section in the online editor.
+# The Kings Corner (parents page, content/parents.json): the office edits the hero, the tiles and every section
+# in the online editor.
 # Section text is rich text (HTML) from the editor; only simple formatting tags and https,
 # mailto and tel links are kept.
 ALLOWED_TAGS = {"p", "br", "b", "strong", "i", "em", "u", "ul", "ol", "li", "a", "h3", "h4", "blockquote"}
@@ -133,13 +136,52 @@ def feedback_form(root):
         '<a href="mailto:iba@ibcministries.org">iba@ibcministries.org</a> or call (301) 856-1616.</p></noscript>'
         f'<script src="{root}feedback.js" defer></script>')
 
+ARROW = ('<svg class="kc-arrow" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+         'stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+         '<path d="M4 12h16"/><path d="M14 6l6 6-6 6"/></svg>')
+
 def parents_block(data, root):
+    """The Kings Corner (parents page): hero, tile grid, then the sections. All text comes from content/parents.json."""
     sections = [s for s in data.get("sections") or [] if str(s.get("title") or "").strip()]
     for s in sections:
-        s["_id"] = slug(s.get("anchor")) or slug(s.get("menu_label")) or slug(s.get("title"))
-        s["_label"] = str(s.get("menu_label") or "").strip() or str(s["title"]).strip()
-    jump = "".join(f'<li><a href="#{s["_id"]}">{esc(s["_label"])}</a></li>'
-                   for s in sorted(sections, key=lambda s: s["_label"].lower()))
+        s["_id"] = slug(s.get("anchor")) or slug(s.get("title"))
+    ids = {s["_id"] for s in sections}
+
+    hero = data.get("hero") or {}
+    button = ""
+    if esc(hero.get("button_text")) and safe_url(hero.get("button_url")):
+        button = f'<a class="kc-btn" href="{esc(safe_url(hero["button_url"]))}">{esc(hero["button_text"])}</a>'
+    hero_html = (
+        '<div class="kc-hero"><div class="kc-in kc-hero-in"><div class="kc-hero-text">'
+        + (f'<p class="kc-script">{esc(hero.get("script"))}</p>' if esc(hero.get("script")) else "")
+        + f'<h1>{esc(hero.get("title")) or "The Kings Corner"}</h1>'
+        + (f'<p class="kc-lead">{esc(hero.get("text"))}</p>' if esc(hero.get("text")) else "")
+        + button + '</div>'
+        f'<img class="kc-crest" src="{root}img/kings-crest.png" alt="Independent Baptist Academy Kings crest" width="600" height="450">'
+        '</div></div>')
+
+    # A tile links to a section on this page (its page link name) or to a full https:// address.
+    # A tile whose section no longer exists is left out, so no tile is a dead link.
+    cards = []
+    for t in data.get("tiles") or []:
+        title, target = esc(t.get("title")), str(t.get("section") or "").strip()
+        href = esc(safe_url(target)) or (f"#{slug(target)}" if slug(target) in ids else "")
+        if not title or not href:
+            if title:
+                print(f"  tile {title!r} left out: no section {target!r}")
+            continue
+        tag = f'<span class="kc-tag">{esc(t.get("tag"))}</span>' if esc(t.get("tag")) else ""
+        desc = f'<span class="kc-desc">{esc(t.get("description"))}</span>' if esc(t.get("description")) else ""
+        cards.append(f'<li><a class="kc-tile" href="{href}"><span class="kc-tile-top"><span class="kc-tile-title">{title}</span>'
+                     f'{tag}</span>{desc}{ARROW}</a></li>')
+    tiles_html = ""
+    if cards:
+        tiles_html = (
+            '<div class="kc-in kc-find">'
+            + (f'<p class="kc-script kc-eyebrow">{esc(data.get("tiles_script"))}</p>' if esc(data.get("tiles_script")) else "")
+            + (f'<h2 class="kc-h2">{esc(data.get("tiles_heading"))}</h2>' if esc(data.get("tiles_heading")) else "")
+            + f'<ul class="kc-tiles">{"".join(cards)}</ul></div>')
+
     blocks = []
     for s in sections:
         extra = ""
@@ -149,10 +191,8 @@ def parents_block(data, root):
             extra += feedback_form(root)
         blocks.append(f'<div class="block" id="{s["_id"]}"><h2>{esc(s["title"])}</h2>'
                       f'{clean_html(s.get("text"))}{docs_list(s.get("links"), root)}{extra}</div>')
-    return (f'<h2>{esc(data.get("heading"))}</h2>'
-            + (f'<p class="lead">{esc(data.get("intro"))}</p>' if str(data.get("intro") or "").strip() else "")
-            + (f'<ul class="jump">{jump}</ul>' if jump else "")
-            + f'\n<div class="blocks">\n{"\n".join(blocks)}\n</div>')
+    return (f'<div class="kc">{hero_html}{tiles_html}'
+            f'\n<div class="kc-in kc-sections"><div class="blocks">\n{"\n".join(blocks)}\n</div></div>\n</div>')
 
 def render(path, text, layout):
     head, body = text.split("\n---\n", 1)
@@ -190,6 +230,10 @@ def render(path, text, layout):
         if DOMAIN and GA_ID else "This website does not use advertising or tracking cookies of its own.")
     body = body.replace("{{tracking}}", tracking)
     head_extra = GTAG if DOMAIN and GA_ID else '<meta name="robots" content="noindex">'
+    if meta.get("fonts"):  # Google Fonts for this page only, e.g. "fonts: Yellowtail&family=Nunito+Sans"
+        head_extra += ('\n<link rel="preconnect" href="https://fonts.googleapis.com">'
+                       '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
+                       f'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family={esc(meta["fonts"])}&display=swap">')
     html = (layout.replace("{{title}}", title).replace("{{head}}", head_extra).replace("{{description}}", meta["description"])
             .replace("{{nav}}", nav).replace("{{banner}}", banner)
             .replace("{{content}}", body.strip()).replace("{{cta}}", cta))
