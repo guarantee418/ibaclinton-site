@@ -351,7 +351,8 @@ export function validateOrder(body, menu, now, staffFamily = false) {
     total += price * ordered.length;
     children.push({ name, grade, price, days: ordered, choices });
   }
-  // Staff prices are never shown (Garrett): staff and staff-family orders get no prices or total.
+  // Staff prices aren't shown on the website (Garrett): staff and staff-family orders get no total there,
+  // but their confirmation email has it.
   const staffPrice = staffFamily || children.some((c) => c.grade.staff);
   return { order: { parent, children, total: Math.round(total * 100) / 100, staffFamily, staffPrice } };
 }
@@ -377,15 +378,14 @@ export function confirmationMail(order, menu, orderId, env) {
     }).join("");
     const count = `${c.days.length} lunch${c.days.length === 1 ? "" : "es"}`;
     return `<p style="margin:12px 0 4px"><b>${e(c.name)}</b> (${e(c.grade.label)}), ${count}` +
-      `${order.staffPrice ? "" : ` at ${money(c.price)}: ${money(c.price * c.days.length)}`}</p><ul style="margin:0">${lines}</ul>`;
+      ` at ${money(c.price)}: ${money(c.price * c.days.length)}</p><ul style="margin:0">${lines}</ul>`;
   }).join("");
   const content =
     `<p>Dear ${e(order.parent.first)} ${e(order.parent.last)},</p>` +
     `<p>Thank you for your hot lunch order for the week of ${e(menu.week_label)}. Here is what we received:</p>` +
     kids +
-    // Staff prices aren't shown anywhere (Garrett): no total when the order has a staff lunch.
-    (order.staffPrice ? `<p style="margin-top:14px">Order number ${e(orderId)}</p>`
-      : `<p style="margin-top:14px"><b>Total: ${money(order.total)}</b> (order number ${e(orderId)})</p>`) +
+    // The email always has the prices and total, staff orders too (Garrett); only the website hides staff prices.
+    `<p style="margin-top:14px"><b>Total: ${money(order.total)}</b> (order number ${e(orderId)})</p>` +
     `<p>Lunch charges are added to your Gradelink account. To change or cancel this order, please call the ` +
     `school office at (301) 856-1616 or reply to this email.</p>` +
     `<p>Gratefully,<br>${e(env.SIGNATURE || "Independent Baptist Academy").replace(/\n/g, "<br>")}</p>`;

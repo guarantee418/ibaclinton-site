@@ -916,21 +916,20 @@ test("an order is checked against the week the parent picked", () => {
   assert.match(validateOrder(order, picked, Date.parse("2026-10-24T12:00:00Z")).error, /closed/);
 });
 
-test("staff lunches: no prices or total in the confirmation email", () => {
+test("staff lunches: the confirmation email has their prices and total", () => {
   const menu = { ...MENU, grades: [...MENU.grades, { value: "STAFF", label: "Staff", preschool: false, staff: true }], prices: { ...MENU.prices, staff: 4 } };
   const ok = validateOrder({ ...ORDER, children: [{ name: "Mr. T", grade: "STAFF", days: ["mon", "wed"] }] }, menu, BEFORE);
   assert.equal(ok.error, undefined); assert.equal(ok.order.total, 8);
   const html = confirmationMail(ok.order, menu, "ABCDE", ENV0).message.body.content;
-  assert.ok(!html.includes("$") , html);
-  assert.match(html, /Mr\. T<\/b> \(Staff\), 2 lunches<\/p>/);
-  assert.match(html, /Order number ABCDE/);
+  assert.match(html, /Mr\. T<\/b> \(Staff\), 2 lunches at \$4\.00: \$8\.00<\/p>/);
+  assert.match(html, /Total: \$8\.00<\/b> \(order number ABCDE\)/);
   assert.match(confirmationMail(validateOrder(ORDER, menu, BEFORE).order, menu, "ABCDE", ENV0).message.body.content, /Total: \$/);
 });
 
 // ------------------------------------------------------------------ staff families (Staff Families tab)
 import { isStaffFamily } from "../src/staff.js";
 
-test("staff families: matched by parent or child last name or email; every child at the staff price, no prices shown", () => {
+test("staff families: matched by parent or child last name or email; every child at the staff price, total in the email", () => {
   const fams = [{ name: "kirby", email: "" }, { name: "buck", email: "mom@buck.test" }];
   assert.ok(isStaffFamily(fams, { last: "Kirby", email: "x@y.z" }, []));
   assert.ok(isStaffFamily(fams, { last: "Smith", email: "x@y.z" }, ["Levi Buck"]));
@@ -943,5 +942,5 @@ test("staff families: matched by parent or child last name or email; every child
   assert.equal(ok.order.total, 12); assert.ok(ok.order.staffPrice);
   const rows = orderRows(ok.order, menu, "ABCDE", new Date(BEFORE));
   assert.equal(rows[0][9], 4); assert.equal(rows[0][17], "Staff family price");
-  assert.ok(!confirmationMail(ok.order, menu, "ABCDE", ENV0).message.body.content.includes("$"));
+  assert.match(confirmationMail(ok.order, menu, "ABCDE", ENV0).message.body.content, /Total: \$12\.00/);
 });

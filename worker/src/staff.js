@@ -3,7 +3,7 @@
 // The list lives on the "Staff Families" tab of the office workbook (one family per row: last name and, if
 // known, the parent's email), so the office keeps it up to date; START only fills a new tab once. An
 // order is a staff family's when the parent's email is listed, or the parent's or a child's last name is.
-// The website never shows the staff price, so those orders show no prices or total.
+// The website never shows the staff price (no total on the form or thank-you); the confirmation email has it.
 
 export const STAFF_SHEET = "Staff Families";
 const HEAD = ["Family (last name)", "Parent email (optional)", "Notes"];
