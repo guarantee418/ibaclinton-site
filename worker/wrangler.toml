@@ -41,7 +41,7 @@ TRANSCRIPT_FEE_ALUMNI = "10"
 TRANSCRIPT_FEE_STUDENT = "10"
 TRANSCRIPT_PAY_URL = ""
 # Who hears about each Request Info inquiry (src/inquiries.js); comma-separated.
-INQUIRY_NOTIFY = "iba@ibcministries.org,ggreene@ibcministries.org"
+INQUIRY_NOTIFY = "ggreene@ibcministries.org"
 # Who hears about each absence report (src/absences.js); the homeroom teacher is Cc'd from the Teachers tab.
 ABSENCE_NOTIFY = "iba@ibcministries.org"
 # Also Cc'd on every absence report (comma-separated).
