@@ -1,26 +1,27 @@
 {
-  "week_start": "",
-  "order_deadline": "",
   "menu": [
     {
-      "day": "Monday"
+      "day": "Monday",
+      "meal": "hot dog"
     },
     {
-      "day": "Tuesday"
+      "day": "Tuesday",
+      "meal": "pizza"
     },
     {
-      "day": "Wednesday"
+      "day": "Wednesday",
+      "meal": "burger"
     },
     {
-      "day": "Thursday"
+      "day": "Thursday",
+      "meal": "chicken tenders"
     },
     {
-      "day": "Friday"
+      "day": "Friday",
+      "meal": "chili"
     }
   ],
   "price_regular": 8,
   "price_preschool": 5,
-  "price_staff": 4,
-  "note": "",
-  "order_form_url": ""
+  "price_staff": 4
 }
