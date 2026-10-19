@@ -39,6 +39,7 @@ import { TABLE as INQUIRY_TABLE, deleteTestInquiry, ensureInquiryTab, familyMail
   officeMail as inquiryOfficeMail, validateInquiry } from "./inquiries.js";
 import { TABLE as TRANSCRIPT_TABLE, deleteTestRequest, ensureTranscriptTab, officeMail as transcriptOfficeMail, requestRow,
   requesterMail, settings as transcriptSettings, validateRequest } from "./transcripts.js";
+import { inspect as inspectWorkbook } from "./guide.js";
 import { checkHomerooms, ensureTabs, fillTeacherEmails, weekCounts, homeroomMails, mondayToSend, readTeachers, readWeek } from "./homerooms.js";
 
 const SCOPES = "offline_access User.Read Mail.Send Files.ReadWrite";
@@ -124,6 +125,11 @@ async function admin(request, env) {
     const token = await accessToken(env);
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
     return json({ ok: true, weeks: await weekCounts(workbook(token, env)) }, 200, {});
+  }
+  if (body.action === "inspect") { // the workbook's tabs, tables and notes (no rows), see src/guide.js
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    return json({ ok: true, sheets: await inspectWorkbook(workbook(token, env)) }, 200, {});
   }
   if (body.action === "menu") { // how fetching the menu goes, hop by hop (no secrets)
     const hops = [];

@@ -1,0 +1,29 @@
+name: Office workbook layout
+
+# Manual only. "inspect" prints the office workbook's tabs, tables (headings and row counts) and notes;
+# no rows, so no family details. "organize" puts the tabs in order and writes the how-to guide and the
+# notes on each tab (src/guide.js); it never changes a table, a column heading or any row.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "What to do"
+        type: choice
+        options: [inspect, organize]
+        default: inspect
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    env:
+      LUNCH_SETUP_KEY: ${{ secrets.LUNCH_SETUP_KEY }}
+      ACTION: ${{ inputs.action }}
+    steps:
+      - name: Run
+        run: |
+          body=$(jq -nc --arg a "$ACTION" '{action:$a}')
+          curl -fsS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" \
+            -H "X-Setup-Key: $LUNCH_SETUP_KEY" -H "Content-Type: application/json" -d "$body" | jq .
