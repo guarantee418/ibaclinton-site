@@ -20,7 +20,7 @@ content:
         label: Week starts (Monday)
         type: date
         default: ""
-        description: The Monday of the lunch week. Leave the meals blank to show the general hot lunch text instead.
+        description: The Monday of the lunch week (a Saturday or Sunday counts as the Monday after it). Leave the meals blank to show the general hot lunch text instead.
         options:
           format: yyyy-MM-dd
       - name: order_deadline

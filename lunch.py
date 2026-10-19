@@ -48,9 +48,16 @@ def _range_label(start, end):
         return f"{start:%B} {start.day} – {end.day}"
     return f"{start:%B} {start.day} – {end:%B} {end.day}"
 
+def _monday(day):
+    """The Monday of the school week a date belongs to: Saturday and Sunday count as the coming week, so a
+    week start typed as Sunday 10/18 means Monday 10/19."""
+    if not day:
+        return None
+    return day + dt.timedelta(days=7 - day.weekday()) if day.weekday() >= 5 else day - dt.timedelta(days=day.weekday())
+
 def menu_data(data):
     """The week's menu as plain data, shared by the page, menu.json and the order service."""
-    start = _date(data.get("week_start"))
+    start = _monday(_date(data.get("week_start")))
     days = []
     for item in data.get("menu") or []:
         day, meal = str(item.get("day") or "").strip(), str(item.get("meal") or "").strip()
