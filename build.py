@@ -45,6 +45,9 @@ GTAG = f"""<script async src="https://www.googletagmanager.com/gtag/js?id={GA_ID
 
 ROOT = pathlib.Path(__file__).parent
 SRC, OUT, CONTENT = ROOT / "src", ROOT / "site", ROOT / "content"
+# styles.css is linked as styles.css?v=<this>, so browsers (Cloudflare tells them to keep the file 4 hours)
+# load the new styles as soon as they change instead of drawing new pages with old styles.
+CSS_VERSION = __import__("hashlib").sha256((OUT / "styles.css").read_bytes()).hexdigest()[:10]
 NAV = [("parents", "parents/", "Parents"), ("about", "about/", "About"),
        ("staff", "about-copy/", "Staff"), ("academics", "academics/", "Academics"),
        ("admissions", "admissions/", "Admissions"), ("student-life", "student-life/", "Student Life"),
@@ -237,7 +240,7 @@ def render(path, text, layout):
     html = (layout.replace("{{title}}", title).replace("{{head}}", head_extra).replace("{{description}}", meta["description"])
             .replace("{{nav}}", nav).replace("{{banner}}", banner)
             .replace("{{content}}", body.strip()).replace("{{cta}}", cta))
-    html = html.replace("{{root}}", root)
+    html = html.replace("{{root}}", root).replace("{{css_version}}", CSS_VERSION)
     leftover = re.findall(r"\{\{\w+\}\}", html)
     if leftover:
         raise SystemExit(f"{path}: unfilled {leftover}")
