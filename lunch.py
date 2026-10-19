@@ -8,6 +8,7 @@ always come from that file, never from the parent's browser.
 import datetime as dt
 import html
 import json
+import pathlib
 from zoneinfo import ZoneInfo
 
 EASTERN = ZoneInfo("America/New_York")
@@ -55,6 +56,7 @@ def _monday(day):
         return None
     return day + dt.timedelta(days=7 - day.weekday()) if day.weekday() >= 5 else day - dt.timedelta(days=day.weekday())
 
+IMAGE_TYPES = (".jpg", ".jpeg", ".png", ".gif", ".webp")
 MAX_OPTIONS = 5  # the Kitchen tab has room for this many choices per day
 
 def _options(value):
@@ -68,11 +70,11 @@ def _options(value):
             out.append(v)
     return out[:MAX_OPTIONS] if len(out) > 1 else []
 
-def menu_data(data):
-    """The week's menu as plain data, shared by the page, menu.json and the order service."""
-    start = _monday(_date(data.get("week_start")))
+def _week(w):
+    """One lunch week as plain data: its Monday, label, order deadline, note, menu graphic and days."""
+    start = _monday(_date(w.get("week_start")))
     days = []
-    for item in data.get("menu") or []:
+    for item in w.get("menu") or []:
         day, meal = str(item.get("day") or "").strip(), str(item.get("meal") or "").strip()
         options = _options(item.get("options"))
         if not meal and options:
@@ -83,57 +85,103 @@ def menu_data(data):
         days.append({"key": day[:3].lower(), "day": day, "meal": meal, "options": options,
                      "date": date.isoformat() if date else "",
                      "date_label": f"{date:%b} {date.day}" if date else ""})
-    deadline = _deadline(data.get("order_deadline"), start)
-    week_label = str(data.get("week_of") or "").strip()
-    if start and days and not week_label:
-        week_label = _range_label(dt.date.fromisoformat(days[0]["date"]), dt.date.fromisoformat(days[-1]["date"]))
+    deadline = _deadline(w.get("order_deadline"), start) if days else None
+    week_label = str(w.get("week_of") or "").strip()
+    if start and not week_label:
+        week_label = _range_label(start, start + dt.timedelta(days=4))
+    graphic = pathlib.PurePosixPath(str(w.get("graphic") or "").strip()).name
     return {
         "week_start": start.isoformat() if start else "",
+        "week_end": (start + dt.timedelta(days=4)).isoformat() if start else "",
         "week_label": week_label,
         "deadline": deadline.astimezone(dt.timezone.utc).isoformat() if deadline else "",
         "deadline_label": (f"{deadline:%A, %B} {deadline.day} at {deadline:%I:%M %p}".replace(" 0", " ")
                            if deadline else ""),
+        "note": str(w.get("note") or "").strip(),
+        "graphic": f"files/{graphic}" if graphic.lower().endswith(IMAGE_TYPES) else "",
+        "days": days,
+    }
+
+def _weeks(data, today=None):
+    """The weeks the office listed (content/lunch.json "weeks"; an older file with one week at the top level
+    still works), earliest first, without weeks that are over or have nothing to show."""
+    today = today or dt.datetime.now(EASTERN).date()
+    listed = data.get("weeks") if isinstance(data.get("weeks"), list) else [data]
+    weeks = [_week(w) for w in listed if isinstance(w, dict)]
+    weeks = [w for w in weeks if w["week_start"] and (w["days"] or w["graphic"]) and w["week_end"] >= today.isoformat()]
+    return sorted(weeks, key=lambda w: w["week_start"])
+
+def menu_data(data, today=None):
+    """The menu as plain data, shared by the page, menu.json and the order service. The top level is the
+    first week parents can still order (so an older reader of menu.json keeps working); "weeks" has them all."""
+    weeks = _weeks(data, today)
+    now = dt.datetime.now(dt.timezone.utc).isoformat()
+    first = next((w for w in weeks if w["days"] and w["deadline"] > now), None) or next(
+        (w for w in weeks if w["days"]), None) or {"week_start": "", "week_end": "", "week_label": "", "deadline": "",
+                                                  "deadline_label": "", "note": "", "graphic": "", "days": []}
+    return {
+        **first,
         "prices": {"regular": float(data.get("price_regular") or 8), "preschool": float(data.get("price_preschool") or 5),
                    "staff": float(data.get("price_staff") or 4)},
-        "note": str(data.get("note") or "").strip(),
-        "days": days,
         "grades": [{"value": v, "label": l, "preschool": p} for v, l, p in GRADES] + [STAFF],
+        "weeks": weeks,
     }
 
 def menu_file(data):
     return json.dumps(menu_data(data), indent=2) + "\n"
 
-def can_order_online(menu):
+def can_order_online(week):
     """Online ordering needs a week start date, a deadline and at least one meal."""
-    return bool(menu["week_start"] and menu["deadline"] and menu["days"])
+    return bool(week["week_start"] and week["deadline"] and week["days"])
 
-def lunch_block(data, root, api):
-    menu = menu_data(data)
+def _menu_table(week):
+    return '<table class="lunch"><tbody>' + "".join(
+        f'<tr><th scope="row">{esc(d["day"])}'
+        + (f' <span class="lunch-date">{esc(d["date_label"])}</span>' if d["date_label"] else "")
+        + f'</th><td>{esc(d["meal"])}'
+        + (f'<span class="lunch-choices">Choice of: {esc(", ".join(d["options"]))}</span>'
+           if d["options"] and d["meal"] != " or ".join(d["options"]) else "")
+        + '</td></tr>' for d in week["days"]) + "</tbody></table>"
+
+def _week_card(week, i, root):
+    """One week, with a banner that says which week it is (lunch.js marks This week / Next week)."""
+    out = [f'<section class="lunch-wk lunch-wk-{"a" if i % 2 == 0 else "b"}" data-start="{week["week_start"]}" '
+           f'data-end="{week["week_end"]}" aria-label="Week of {esc(week["week_label"])}">'
+           f'<h3 class="lunch-wk-head"><span class="lunch-wk-tag" hidden></span>'
+           f'<span class="lunch-wk-dates">Week of {esc(week["week_label"])}</span></h3><div class="lunch-wk-body">']
+    if week["graphic"]:
+        src = f'{root}{esc(week["graphic"])}'
+        out.append(f'<a class="lunch-graphic" href="{src}" target="_blank" rel="noopener">'
+                   f'<img src="{src}" alt="Hot lunch menu for the week of {esc(week["week_label"])}" loading="lazy"></a>')
+    if week["days"]:
+        out.append(_menu_table(week))
+    if week["note"]:
+        out.append(f'<p>{esc(week["note"])}</p>')
+    if week["deadline_label"]:
+        out.append(f'<p class="lunch-by" data-deadline="{week["deadline"]}">Please order by {esc(week["deadline_label"])}.</p>')
+    out.append("</div></section>")
+    return "".join(out)
+
+def lunch_block(data, root, api, today=None):
+    menu = menu_data(data, today)
+    weeks = menu["weeks"]
     price_line = (f"<p>Lunches are {money(menu['prices']['regular'])} "
                   f"({money(menu['prices']['preschool'])} for preschool).</p>")
     contact = ('<p>If your student is enrolled and you are not receiving the lunch form, please contact the '
                'school office at <a href="tel:3018561616">(301) 856-1616</a> or '
                '<a href="mailto:iba@ibcministries.org">iba@ibcministries.org</a>.</p>')
-    if not menu["days"]:
+    if not weeks:
         return ('<p>A lunch menu form is sent out via email/text one week in advance for students to select '
                 'the days they would like to eat hot lunch. Orders are due by 9:00 AM on the Friday before.</p>' + price_line + contact +
                 f'<img src="{root}img/hot-lunch-menu.jpg" alt="Sample weekly hot lunch menu with a different meal '
                 'for each day, such as chicken parmesan, soft tacos, hot dogs, chili and burgers" loading="lazy" '
                 'width="1000" height="562" style="border-radius:4px;margin-top:.8rem">')
-    out = [f'<p class="lunch-week">Week of {esc(menu["week_label"])}</p>' if menu["week_label"] else ""]
-    out.append('<table class="lunch"><tbody>' + "".join(
-        f'<tr><th scope="row">{esc(d["day"])}'
-        + (f' <span class="lunch-date">{esc(d["date_label"])}</span>' if d["date_label"] else "")
-        + f'</th><td>{esc(d["meal"])}'
-        + (f'<span class="lunch-choices">Choice of: {esc(", ".join(d["options"]))}</span>' if d["options"] and d["meal"] != " or ".join(d["options"]) else "")
-        + '</td></tr>' for d in menu["days"]) + "</tbody></table>")
-    out.append(price_line)
-    if menu["note"]:
+    out = [price_line, '<div class="lunch-weeks">', "".join(_week_card(w, i, root) for i, w in enumerate(weeks)), "</div>"]
+    if menu["note"] and not any(w["note"] for w in weeks):
         out.append(f"<p>{esc(menu['note'])}</p>")
-    if menu["deadline_label"]:
-        out.append(f'<p class="lunch-by">Please order by {esc(menu["deadline_label"])}.</p>')
-    if api and can_order_online(menu):
-        out.append(order_form(menu, root, api))
+    orderable = [w for w in weeks if can_order_online(w)]
+    if api and orderable:
+        out.append(order_form(menu, orderable, root, api))
     else:
         out.append(_forms_link(str(data.get("order_form_url") or "").strip()))
     return "".join(out) + contact
@@ -160,21 +208,29 @@ def _day_box(d):
     return (f'<div class="lunch-pick">{box}<label class="lunch-choice">Choice for {esc(d["day"])}'
             f'<select name="choice" data-day="{d["key"]}">{opts}</select></label></div>')
 
-def order_form(menu, root, api):
+def order_form(menu, weeks, root, api):
     grade_options = '<option value="">Choose…</option>' + "".join(
         f'<option value="{esc(g["value"])}">{esc(g["label"])}</option>' for g in menu["grades"] if not g.get("staff"))
-    day_boxes = "".join(_day_box(d) for d in menu["days"])
+    # One set of day boxes per open week; lunch.js shows the week picked under "Week".
+    day_sets = "".join(
+        f'<div class="lunch-days" role="group" aria-label="Lunch days, week of {esc(w["week_label"])}" '
+        f'data-week="{w["week_start"]}"{"" if i == 0 else " hidden"}>{"".join(_day_box(d) for d in w["days"])}</div>'
+        for i, w in enumerate(weeks))
+    week_options = "".join(
+        f'<option value="{w["week_start"]}" data-deadline="{w["deadline"]}">Week of {esc(w["week_label"])} '
+        f'(order by {esc(w["deadline_label"])})</option>' for w in weeks)
     child = (f'<fieldset class="lunch-child"><legend>Student</legend>'
              f'<label>Student’s full name<input name="student" autocomplete="off" maxlength="80" required></label>'
              f'<label>Grade<select name="grade" required>{grade_options}</select></label>'
-             f'<div class="lunch-days" role="group" aria-label="Lunch days">{day_boxes}</div>'
+             f'{day_sets}'
              f'<button type="button" class="lunch-remove" hidden>Remove this student</button></fieldset>')
     return (
         f'<form class="info lunch-order" id="lunch-order" data-api="{esc(api)}" '
         f'data-menu="{root}lunch/menu.json" novalidate>'
         '<h3>Order hot lunch online</h3>'
-        '<div id="lunch-closed" class="notice" hidden>Online ordering for this week is closed. '
+        '<div id="lunch-closed" class="notice" hidden>Online ordering is closed for now. '
         'To change or add an order, please call the office at <a href="tel:3018561616">(301) 856-1616</a>.</div>'
+        f'<label class="lunch-week-pick">Week<select name="week">{week_options}</select></label>'
         '<fieldset><legend>Parent/Guardian</legend>'
         '<label>First name<input name="parent_first" autocomplete="given-name" maxlength="60" required></label>'
         '<label>Last name<input name="parent_last" autocomplete="family-name" maxlength="60" required></label>'

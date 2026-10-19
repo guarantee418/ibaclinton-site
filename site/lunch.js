@@ -1,6 +1,18 @@
 // Hot lunch online ordering (see lunch.py and worker/). Prices, days and the deadline come
 // from lunch/menu.json; the order service checks them again, so nothing here is trusted.
 (function () {
+  // Week banners: drop weeks that are over and tag This week / Next week (by the visitor's date).
+  var today = new Date(), iso = function (d) { return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); };
+  var monday = new Date(today); monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  if (today.getDay() === 6 || today.getDay() === 0) monday.setDate(monday.getDate() + 7); // weekends: the coming week is "this week"
+  var thisMon = iso(monday), nextMon = iso(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 7));
+  Array.prototype.forEach.call(document.querySelectorAll(".lunch-wk"), function (w) {
+    if (w.getAttribute("data-end") < iso(today)) { w.hidden = true; return; }
+    var tag = w.querySelector(".lunch-wk-tag"), start = w.getAttribute("data-start");
+    tag.textContent = start === thisMon ? "This week" : start === nextMon ? "Next week" : "Coming up";
+    tag.hidden = false;
+  });
+
   var form = document.getElementById("lunch-order");
   if (!form || !window.fetch) return;
   var list = document.getElementById("lunch-children");
@@ -12,6 +24,19 @@
     var opt = document.createElement("option"); opt.value = "STAFF"; opt.textContent = "Staff";
     list.querySelector("[name=grade]").appendChild(opt);
   }
+  var weekSel = form.elements.week;
+  // Weeks whose order deadline has passed can't be picked any more.
+  Array.prototype.slice.call(weekSel.options).forEach(function (o) {
+    if (Date.now() > Date.parse(o.getAttribute("data-deadline"))) o.remove();
+  });
+  if (!weekSel.options.length) close();
+  function week() { return weekSel.value; }
+  function daysOf(c) { return c.querySelector('.lunch-days[data-week="' + week() + '"]'); }
+  function showWeek() {
+    Array.prototype.forEach.call(list.querySelectorAll(".lunch-days"), function (g) { g.hidden = g.getAttribute("data-week") !== week(); });
+  }
+  weekSel.addEventListener("change", function () { showWeek(); refresh(); });
+  showWeek();
   var template = list.firstElementChild.cloneNode(true);
   var MAX = 8, menu = null;
 
@@ -30,7 +55,8 @@
     kids.forEach(function (c, i) {
       c.querySelector("legend").textContent = kids.length > 1 ? "Student " + (i + 1) : "Student";
       c.querySelector(".lunch-remove").hidden = kids.length < 2;
-      total += price(c.querySelector("[name=grade]").value) * c.querySelectorAll("[name=days]:checked").length;
+      var g = daysOf(c);
+      total += g ? price(c.querySelector("[name=grade]").value) * g.querySelectorAll("[name=days]:checked").length : 0;
     });
     totalEl.textContent = money(total);
     addBtn.hidden = kids.length >= MAX;
@@ -42,7 +68,7 @@
 
   addBtn.addEventListener("click", function () {
     var c = template.cloneNode(true);
-    list.appendChild(c); refresh(); c.querySelector("[name=student]").focus();
+    list.appendChild(c); showWeek(); refresh(); c.querySelector("[name=student]").focus();
   });
   list.addEventListener("click", function (e) {
     if (e.target.classList.contains("lunch-remove")) { e.target.closest(".lunch-child").remove(); refresh(); }
@@ -63,7 +89,6 @@
 
   fetch(form.getAttribute("data-menu"), {cache: "no-store"}).then(function (r) { return r.json(); }).then(function (m) {
     menu = m; refresh();
-    if (!m.deadline || Date.now() > Date.parse(m.deadline)) close();
   }).catch(function () { /* the order service checks everything anyway */ });
 
   form.addEventListener("submit", function (e) {
@@ -72,15 +97,16 @@
     var order = {
       parent_first: f.parent_first.value.trim(), parent_last: f.parent_last.value.trim(),
       email: f.email.value.trim(), phone: f.phone.value.trim(), website: f.website.value,
-      week_start: menu ? menu.week_start : "", children: []
+      week_start: week(), children: []
     };
     if (!order.parent_first || !order.parent_last) problems.push("your first and last name");
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(order.email)) problems.push("a valid email address");
     if (!order.phone) problems.push("a phone number");
     children().forEach(function (c, i) {
-      var days = Array.prototype.map.call(c.querySelectorAll("[name=days]:checked"), function (x) { return x.value; });
+      var g = daysOf(c);
+      var days = Array.prototype.map.call(g.querySelectorAll("[name=days]:checked"), function (x) { return x.value; });
       var choices = {}, unpicked = [];
-      Array.prototype.forEach.call(c.querySelectorAll("[name=choice]"), function (s) {
+      Array.prototype.forEach.call(g.querySelectorAll("[name=choice]"), function (s) {
         var d = s.getAttribute("data-day");
         if (days.indexOf(d) < 0) return;
         if (s.value) choices[d] = s.value; else unpicked.push(s.closest(".lunch-pick").querySelector("b").textContent);

@@ -892,3 +892,22 @@ test("homeroom lists show the lunch choice instead of a check mark", async () =>
   const html = homeroomMails(kids, TEACHERS, "2026-10-26", ENV0)[0].mail.message.body.content;
   assert.ok(html.includes("Pepperoni &lt;pizza&gt;") && html.includes("&#10003;"));
 });
+
+// ------------------------------------------------------------------ several weeks on the menu
+import { pickWeek } from "../src/index.js";
+
+test("an order is checked against the week the parent picked", () => {
+  const next = { ...MENU, week_start: "2026-10-26", week_label: "October 26 – 30", deadline: "2026-10-23T13:00:00+00:00",
+    days: [{ key: "mon", day: "Monday", meal: "Tacos", options: [], date: "2026-10-26", date_label: "Oct 26" }] };
+  const menu = { ...MENU, weeks: [{ ...MENU, prices: undefined, grades: undefined }, next] };
+  delete menu.weeks[0].prices; delete menu.weeks[0].grades;
+  const picked = pickWeek(menu, "2026-10-26");
+  assert.equal(picked.week_label, "October 26 – 30"); assert.ok(picked.prices && picked.grades);
+  const order = { ...ORDER, week_start: "2026-10-26", children: [{ name: "Sam", grade: "3", days: ["mon"] }] };
+  assert.equal(validateOrder(order, picked, BEFORE).error, undefined);
+  // The first week's order still works, an unknown week falls back to the top level and is refused as changed.
+  assert.equal(validateOrder(ORDER, pickWeek(menu, "2026-10-19"), BEFORE).error, undefined);
+  assert.match(validateOrder({ ...ORDER, week_start: "2026-11-02" }, pickWeek(menu, "2026-11-02"), BEFORE).error, /menu changed/);
+  // Past its deadline a week is closed even if a later one is open.
+  assert.match(validateOrder(order, picked, Date.parse("2026-10-24T12:00:00Z")).error, /closed/);
+});
