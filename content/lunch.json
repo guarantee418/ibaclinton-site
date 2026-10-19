@@ -20,7 +20,12 @@
           "meal": "Grilled Chicken & Potatoes"
         },
         {
-          "day": "Friday"
+          "day": "Friday",
+          "meal": "Pizza",
+          "options": [
+            "Cheese",
+            "Pepperoni"
+          ]
         }
       ]
     }
