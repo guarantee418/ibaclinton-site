@@ -4,17 +4,7 @@
   "end": "1:00 PM",
   "minutes": 15,
   "break_minutes": 5,
-  "booking_deadline": "",
-  "note": "",
   "teachers": [
-    {
-      "name": "Miss Dove",
-      "subject": "Preschool (K3)"
-    },
-    {
-      "name": "Mrs. Febo",
-      "subject": "Preschool (K4)"
-    },
     {
       "name": "Ms. Schmidley",
       "subject": "Kindergarten (K5)"
