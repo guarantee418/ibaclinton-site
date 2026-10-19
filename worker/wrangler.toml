@@ -46,6 +46,10 @@ INQUIRY_NOTIFY = "iba@ibcministries.org,ggreene@ibcministries.org"
 ABSENCE_NOTIFY = "iba@ibcministries.org"
 # Also Cc'd on every absence report (comma-separated).
 ABSENCE_CC = "ibs@ibcministries.org"
+# Monday.com copies of tour sign-ups, info requests and transcript requests (src/monday.js; needs the
+# MONDAY_TOKEN secret). "private" boards are seen only by the token's owner until shared; "public" = everyone
+# on the Monday account. Only used when the boards are first made.
+MONDAY_BOARD_KIND = "private"
 # Filled in by the workflow from GitHub secrets (not secret, but kept out of this public repo):
 TENANT_ID = ""
 CLIENT_ID = ""

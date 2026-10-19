@@ -8,6 +8,7 @@ name: Delete a TEST booking, lunch order or tour sign-up
 # only if its Parent starts with "TEST"), a conference booking
 # (Conferences tab, only if its Student starts with "TEST") or a whole lunch order (Orders tab, only if
 # each of its rows has a Student or Parent starting with "TEST"). Real bookings and orders can't be removed.
+# A TEST tour sign-up, transcript request or info request is also removed from its Monday.com board.
 on:
   workflow_dispatch:
     inputs:

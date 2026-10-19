@@ -944,3 +944,75 @@ test("staff families: matched by parent or child last name or email; every child
   assert.equal(rows[0][9], 4); assert.equal(rows[0][17], "Staff family price");
   assert.match(confirmationMail(ok.order, menu, "ABCDE", ENV0).message.body.content, /Total: \$12\.00/);
 });
+
+// ------------------------------------------------------------------ Monday.com copies
+import { BOARDS, itemFor, setupMonday } from "../src/monday.js";
+
+test("monday item: name from the row, values by column title, formula guard dropped", () => {
+  const cols = [{ id: "status", title: "Status", type: "status" }, { id: "t1", title: "Email", type: "text" },
+    { id: "l1", title: "Notes", type: "long_text" }, { id: "t2", title: "Signup #", type: "text" }];
+  const row = ["1/5/2027 9:00 AM", "1/28/2027", "1:00 PM", "'=Pat Smith", "pat@example.com", "301", "Sam (3rd)", "Hi", "ABCDE"];
+  const item = itemFor("tour", row, cols);
+  assert.equal(item.name, "=Pat Smith");
+  assert.deepEqual(item.values, { t1: "pat@example.com", l1: { text: "Hi" }, t2: "ABCDE", status: { label: "Signed up" } });
+  assert.equal(BOARDS.inquiry.columns[2], "Status");
+});
+
+test("monday setup makes a board once and only the missing columns", async () => {
+  const calls = [];
+  globalThis.fetch = async (url, init = {}) => {
+    const q = JSON.parse(init.body); calls.push(q);
+    assert.equal(String(url), "https://api.monday.com/v2");
+    assert.equal(init.headers.Authorization, "tok");
+    const ok = (data) => new Response(JSON.stringify({ data }), { status: 200 });
+    if (q.query.includes("create_board")) return ok({ create_board: { id: 77 } });
+    if (q.query.includes("create_column")) return ok({ create_column: { id: "c" } });
+    if (q.query.includes("boards(ids")) return ok({ boards: [{ id: "77", columns: [{ id: "status", title: "Status", type: "status" }] }] });
+    return new Response("{}", { status: 500 });
+  };
+  const env = { MONDAY_TOKEN: "tok", LUNCH_KV: kv() };
+  const boards = await setupMonday(env);
+  assert.deepEqual(boards, { inquiry: "77", tour: "77", transcript: "77" });
+  assert.equal(calls.filter((c) => c.query.includes("create_board")).length, 3);
+  const made = calls.filter((c) => c.query.includes("create_column")).map((c) => c.variables.t);
+  assert.ok(!made.includes("Status") && !made.includes("Parent") && made.includes("Heard about IBA"));
+  assert.equal(calls.find((c) => c.variables.t === "Heard about IBA").variables.c, "long_text");
+  calls.length = 0;
+  await setupMonday(env);
+  assert.equal(calls.filter((c) => c.query.includes("create_board")).length, 0);
+});
+
+test("POST /inquiry copies the row to Monday, and a Monday failure doesn't stop the form", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: BEFORE });
+  for (const mondayOk of [true, false]) {
+    const items = [];
+    globalThis.fetch = async (url, init = {}) => {
+      url = String(url);
+      const ok = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
+      if (url.includes("/oauth2/v2.0/token")) return ok({ access_token: "at", refresh_token: "rt1", expires_in: 3600 });
+      if (url.includes("/workbook/")) return ok({}, 201);
+      if (url.endsWith("/me/sendMail")) return new Response(null, { status: 202 });
+      if (url === "https://api.monday.com/v2") {
+        if (!mondayOk) return ok({ errors: [{ message: "down" }] });
+        const q = JSON.parse(init.body);
+        if (q.query.includes("boards(ids")) {
+          return ok({ data: { boards: [{ id: "9", columns: [{ id: "st", title: "Status", type: "status" }, { id: "s1", title: "Student", type: "text" }] }] } });
+        }
+        items.push(q.variables); return ok({ data: { create_item: { id: 1 } } });
+      }
+      return ok({ error: "unexpected " + url }, 500);
+    };
+    const res = await worker.fetch(new Request("https://lunch.test/inquiry", {
+      method: "POST", body: JSON.stringify(INQ),
+      headers: { "Content-Type": "application/json", Origin: "https://guarantee418.github.io", "CF-Connecting-IP": `8.8.4.${mondayOk ? 1 : 2}` },
+    }), { ...INENV, MONDAY_TOKEN: "tok", LUNCH_KV: kv({ ms_refresh: "rt1", "monday:board:inquiry": "9" }) });
+    assert.equal(res.status, 200);
+    if (mondayOk) {
+      assert.equal(items.length, 1);
+      assert.equal(items[0].b, "9");
+      const v = JSON.parse(items[0].v);
+      assert.deepEqual(v.st, { label: "New" });
+      assert.match(v.s1, /\S/);
+    }
+  }
+});

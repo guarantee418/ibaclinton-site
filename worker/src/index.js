@@ -31,6 +31,8 @@
 //                   student is "TEST..."; {"action":"delete_test_inquiry","id":"ABCDE"} likewise one inquiry;
 //                   {"action":"delete_test_feedback","id":"ABCDE"} one feedback response whose name is "TEST...";
 //                   {"action":"delete_test_absence","id":"ABCDE"} one absence report whose student is "TEST..."
+//   Tour sign-ups, inquiries and transcript requests are also copied to Monday.com boards when the
+//   MONDAY_TOKEN secret is set (src/monday.js); the setup action makes the boards.
 //   cron            Mondays 7:00 AM Eastern: homeroom lunch lists to teachers (src/homerooms.js)
 //
 // Microsoft 365 access is delegated: the Worker acts only as the mailbox in MAILBOX
@@ -49,6 +51,7 @@ import { ensureStaffTab, isStaffFamily, readStaffFamilies } from "./staff.js";
 import { TABLE as FEEDBACK_TABLE, deleteTestFeedback, ensureFeedbackTab, feedbackRow, validateFeedback } from "./feedback.js";
 import { TABLE as TRANSCRIPT_TABLE, deleteTestRequest, ensureTranscriptTab, officeMail as transcriptOfficeMail, requestRow,
   requesterMail, settings as transcriptSettings, validateRequest } from "./transcripts.js";
+import { addToMonday, deleteFromMonday, setupMonday } from "./monday.js";
 import { STEPS as ORGANIZE_STEPS, inspect as inspectWorkbook, organize as organizeWorkbook } from "./guide.js";
 import { checkHomerooms, ensureTabs, fillTeacherEmails, weekCounts, homeroomMails, mondayToSend, readTeachers, readWeek } from "./homerooms.js";
 
@@ -58,7 +61,7 @@ const MAX_CHILDREN = 8;
 const GRAPH = "https://graph.microsoft.com/v1.0";
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const cors = corsHeaders(request, env);
     try {
@@ -72,12 +75,12 @@ export default {
       if (url.pathname === "/conferences" && request.method === "GET") return await conferences(env, cors);
       if (url.pathname === "/conference" && request.method === "POST") return await conference(request, env, cors);
       if (url.pathname === "/tours" && request.method === "GET") return await tours(env, cors);
-      if (url.pathname === "/tour" && request.method === "POST") return await tour(request, env, cors);
-      if (url.pathname === "/inquiry" && request.method === "POST") return await inquiry(request, env, cors);
+      if (url.pathname === "/tour" && request.method === "POST") return await tour(request, env, cors, ctx);
+      if (url.pathname === "/inquiry" && request.method === "POST") return await inquiry(request, env, cors, ctx);
       if (url.pathname === "/absence" && request.method === "POST") return await absence(request, env, cors);
       if (url.pathname === "/feedback" && request.method === "POST") return await feedback(request, env, cors);
       if (url.pathname === "/transcripts" && request.method === "GET") return transcripts(env, cors);
-      if (url.pathname === "/transcript" && request.method === "POST") return await transcript(request, env, cors);
+      if (url.pathname === "/transcript" && request.method === "POST") return await transcript(request, env, cors, ctx);
       if (url.pathname === "/admin" && request.method === "POST") return await admin(request, env);
       return json({ ok: false, error: "Not found" }, 404, cors);
     } catch (err) {
@@ -134,7 +137,11 @@ async function admin(request, env) {
     if (await ensureAbsenceTab(call)) added.push("Absences");
     if (await ensureStaffTab(call)) added.push("Staff Families");
     const filled = body.teacher_emails ? await fillTeacherEmails(call, body.teacher_emails) : 0;
-    return json({ ok: true, tabs_added: added, teacher_emails_filled: filled, homerooms_tab: await checkHomerooms(call) }, 200, {});
+    let monday = "no MONDAY_TOKEN";
+    if (env.MONDAY_TOKEN) {
+      try { monday = { boards: await setupMonday(env) }; } catch (err) { monday = { error: String(err && err.message || err) }; }
+    }
+    return json({ ok: true, tabs_added: added, teacher_emails_filled: filled, homerooms_tab: await checkHomerooms(call), monday }, 200, {});
   }
   if (body.action === "weeks") { // how many order rows per week (no names), for checking the workbook
     const token = await accessToken(env);
@@ -179,6 +186,7 @@ async function admin(request, env) {
     const token = await accessToken(env);
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
     const r = await deleteTestSignup(workbook(token, env), id);
+    if (r.deleted) r.monday_deleted = await deleteFromMonday(env, "tour", id);
     return json({ ok: r.deleted, id, ...r }, r.deleted ? 200 : 400, {});
   }
   if (body.action === "delete_test_transcript") { // removes one transcript request whose student is "TEST..."
@@ -187,6 +195,7 @@ async function admin(request, env) {
     const token = await accessToken(env);
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
     const r = await deleteTestRequest(workbook(token, env), id);
+    if (r.deleted) r.monday_deleted = await deleteFromMonday(env, "transcript", id);
     return json({ ok: r.deleted, id, ...r }, r.deleted ? 200 : 400, {});
   }
   if (body.action === "delete_test_inquiry") { // removes one Request Info inquiry whose student is "TEST..."
@@ -195,6 +204,7 @@ async function admin(request, env) {
     const token = await accessToken(env);
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
     const r = await deleteTestInquiry(workbook(token, env), id);
+    if (r.deleted) r.monday_deleted = await deleteFromMonday(env, "inquiry", id);
     return json({ ok: r.deleted, id, ...r }, r.deleted ? 200 : 400, {});
   }
   if (body.action === "delete_test_absence") { // removes one absence report whose student is "TEST..."
@@ -479,7 +489,7 @@ async function tours(env, cors) {
   return json({ ok: true, taken: takenCounts(schedule, await signupsOrTab(workbook(token, env))) }, 200, cors);
 }
 
-async function tour(request, env, cors) {
+async function tour(request, env, cors, ctx) {
   if (!cors["Access-Control-Allow-Origin"]) return json({ ok: false, error: "Not allowed" }, 403, cors);
   const text = await request.text();
   if (text.length > 5000) return json({ ok: false, error: "Too large" }, 413, cors);
@@ -510,8 +520,8 @@ async function tour(request, env, cors) {
     const clash = tourConflict(s, signups);
     if (clash) return json({ ok: false, ...clash }, clash.code === "full" ? 409 : 400, cors);
     const id = newOrderId();
-    const add = await call("POST", `/tables/${TOUR_TABLE}/rows/add`,
-      { index: null, values: [signupRow(s, id, eastern(new Date(), true))] });
+    const row = signupRow(s, id, eastern(new Date(), true));
+    const add = await call("POST", `/tables/${TOUR_TABLE}/rows/add`, { index: null, values: [row] });
     if (!add.ok) {
       console.error("tour workbook", add.status, await add.text());
       return json({ ok: false, error: "We couldn't save your sign-up" }, 502, cors);
@@ -523,6 +533,7 @@ async function tour(request, env, cors) {
       const o = await graph(token, "POST", "/me/sendMail", officeMail(s, id, count, env));
       if (!o.ok) console.error("tour office mail", o.status, await o.text());
     }
+    await later(ctx, addToMonday(env, "tour", row));
     return json({ ok: true, signup_id: id, email_sent: mail.ok }, 200, cors);
   } finally {
     await env.LUNCH_KV.delete(lock);
@@ -538,7 +549,7 @@ async function signupsOrTab(call) {
 }
 
 // ------------------------------------------------------------------ Request Info inquiries
-async function inquiry(request, env, cors) {
+async function inquiry(request, env, cors, ctx) {
   if (!cors["Access-Control-Allow-Origin"]) return json({ ok: false, error: "Not allowed" }, 403, cors);
   const text = await request.text();
   if (text.length > 6000) return json({ ok: false, error: "Too large" }, 413, cors);
@@ -571,6 +582,7 @@ async function inquiry(request, env, cors) {
     const o = await graph(token, "POST", "/me/sendMail", inquiryOfficeMail(q, id, env));
     if (!o.ok) console.error("inquiry office mail", o.status, await o.text());
   }
+  await later(ctx, addToMonday(env, "inquiry", row.values[0]));
   return json({ ok: true, request_id: id, email_sent: mail.ok }, 200, cors);
 }
 
@@ -649,7 +661,7 @@ function transcripts(env, cors) {
   return json({ ok: true, ...transcriptSettings(env) }, 200, cors);
 }
 
-async function transcript(request, env, cors) {
+async function transcript(request, env, cors, ctx) {
   if (!cors["Access-Control-Allow-Origin"]) return json({ ok: false, error: "Not allowed" }, 403, cors);
   const text = await request.text();
   if (text.length > 8000) return json({ ok: false, error: "Too large" }, 413, cors);
@@ -682,6 +694,7 @@ async function transcript(request, env, cors) {
     const o = await graph(token, "POST", "/me/sendMail", transcriptOfficeMail(q, id, env));
     if (!o.ok) console.error("transcript office mail", o.status, await o.text());
   }
+  await later(ctx, addToMonday(env, "transcript", row.values[0]));
   return json({ ok: true, request_id: id, email_sent: mail.ok, ...transcriptSettings(env) }, 200, cors);
 }
 
@@ -783,6 +796,11 @@ function corsHeaders(request, env) {
   const h = { "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type", Vary: "Origin" };
   if (allowed.includes(origin)) h["Access-Control-Allow-Origin"] = origin;
   return h;
+}
+
+// Work that can finish after the answer is sent (Monday copies); awaited when there is no ctx (tests).
+async function later(ctx, promise) {
+  if (ctx && ctx.waitUntil) ctx.waitUntil(promise); else await promise;
 }
 
 function json(data, status, headers) {
