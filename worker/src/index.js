@@ -10,6 +10,8 @@
 //                   refused when the tour is full, added to the Tours tab of the office workbook, emailed
 //   POST /inquiry      a Request Info form (src/inquiries.js): added to the Inquiries tab of the office
 //                   workbook, emailed to the family (confirmation) and the office
+//   POST /feedback     a Feedback for Administration form from the Parent Portal (src/feedback.js): added to
+//                   the Feedback tab of the office workbook (no email)
 //   GET  /transcripts  the transcript fees and the payment link (no names)
 //   POST /transcript   a transcript request (src/transcripts.js): added to the Transcripts tab of the office
 //                   workbook, emailed to the requester and the office
@@ -24,7 +26,8 @@
 //                   student is "TEST..."; {"action":"delete_test_order","id":"ABCDE"} removes a lunch order
 //                   whose rows are all "TEST..." (Actions -> "Delete a TEST booking or lunch order");
 //                   {"action":"delete_test_transcript","id":"ABCDE"} removes one transcript request whose
-//                   student is "TEST..."; {"action":"delete_test_inquiry","id":"ABCDE"} likewise one inquiry
+//                   student is "TEST..."; {"action":"delete_test_inquiry","id":"ABCDE"} likewise one inquiry;
+//                   {"action":"delete_test_feedback","id":"ABCDE"} one feedback response whose name is "TEST..."
 //   cron            Mondays 7:00 AM Eastern: homeroom lunch lists to teachers (src/homerooms.js)
 //
 // Microsoft 365 access is delegated: the Worker acts only as the mailbox in MAILBOX
@@ -37,6 +40,7 @@ import { TABLE as TOUR_TABLE, deleteTestSignup, ensureTourTab, familyMail, offic
   tourConflict, validateSignup } from "./tours.js";
 import { TABLE as INQUIRY_TABLE, deleteTestInquiry, ensureInquiryTab, familyMail as inquiryFamilyMail, inquiryRow,
   officeMail as inquiryOfficeMail, validateInquiry } from "./inquiries.js";
+import { TABLE as FEEDBACK_TABLE, deleteTestFeedback, ensureFeedbackTab, feedbackRow, validateFeedback } from "./feedback.js";
 import { TABLE as TRANSCRIPT_TABLE, deleteTestRequest, ensureTranscriptTab, officeMail as transcriptOfficeMail, requestRow,
   requesterMail, settings as transcriptSettings, validateRequest } from "./transcripts.js";
 import { STEPS as ORGANIZE_STEPS, inspect as inspectWorkbook, organize as organizeWorkbook } from "./guide.js";
@@ -64,6 +68,7 @@ export default {
       if (url.pathname === "/tours" && request.method === "GET") return await tours(env, cors);
       if (url.pathname === "/tour" && request.method === "POST") return await tour(request, env, cors);
       if (url.pathname === "/inquiry" && request.method === "POST") return await inquiry(request, env, cors);
+      if (url.pathname === "/feedback" && request.method === "POST") return await feedback(request, env, cors);
       if (url.pathname === "/transcripts" && request.method === "GET") return transcripts(env, cors);
       if (url.pathname === "/transcript" && request.method === "POST") return await transcript(request, env, cors);
       if (url.pathname === "/admin" && request.method === "POST") return await admin(request, env);
@@ -118,6 +123,7 @@ async function admin(request, env) {
     if (await ensureTourTab(call)) added.push("Tours");
     if (await ensureTranscriptTab(call)) added.push("Transcripts");
     if (await ensureInquiryTab(call)) added.push("Inquiries");
+    if (await ensureFeedbackTab(call)) added.push("Feedback");
     const filled = body.teacher_emails ? await fillTeacherEmails(call, body.teacher_emails) : 0;
     return json({ ok: true, tabs_added: added, teacher_emails_filled: filled, homerooms_tab: await checkHomerooms(call) }, 200, {});
   }
@@ -180,6 +186,14 @@ async function admin(request, env) {
     const token = await accessToken(env);
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
     const r = await deleteTestInquiry(workbook(token, env), id);
+    return json({ ok: r.deleted, id, ...r }, r.deleted ? 200 : 400, {});
+  }
+  if (body.action === "delete_test_feedback") { // removes one feedback response whose name is "TEST..."
+    const id = String(body.id || "").trim().toUpperCase();
+    if (!/^[A-Z0-9]{5}$/.test(id)) return json({ ok: false, error: "id (the 5-letter feedback number) is required" }, 400, {});
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    const r = await deleteTestFeedback(workbook(token, env), id);
     return json({ ok: r.deleted, id, ...r }, r.deleted ? 200 : 400, {});
   }
   if (body.action === "delete_test_order") { // removes a lunch order whose rows are all "TEST..."
@@ -507,6 +521,36 @@ async function inquiry(request, env, cors) {
     if (!o.ok) console.error("inquiry office mail", o.status, await o.text());
   }
   return json({ ok: true, request_id: id, email_sent: mail.ok }, 200, cors);
+}
+
+// ------------------------------------------------------------------ Feedback for Administration
+async function feedback(request, env, cors) {
+  if (!cors["Access-Control-Allow-Origin"]) return json({ ok: false, error: "Not allowed" }, 403, cors);
+  const text = await request.text();
+  if (text.length > 8000) return json({ ok: false, error: "Too large" }, 413, cors);
+  let body;
+  try { body = JSON.parse(text); } catch { return json({ ok: false, error: "Bad request" }, 400, cors); }
+  if (body.website) return json({ ok: true, feedback_id: "0" }, 200, cors); // spam trap
+
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  if (await tooMany(env, ip, "rlfb")) {
+    return json({ ok: false, error: "Too many responses from this connection; please try again later" }, 429, cors);
+  }
+  const checked = validateFeedback(body);
+  if (checked.error) return json({ ok: false, error: checked.error }, 400, cors);
+  const token = await accessToken(env);
+  if (!token) return json({ ok: false, error: "Online feedback isn't connected yet" }, 503, cors);
+
+  const call = workbook(token, env);
+  const id = newOrderId();
+  const row = { index: null, values: [feedbackRow(checked.feedback, id, eastern(new Date(), true))] };
+  let add = await call("POST", `/tables/${FEEDBACK_TABLE}/rows/add`, row);
+  if (add.status === 404 && await ensureFeedbackTab(call)) add = await call("POST", `/tables/${FEEDBACK_TABLE}/rows/add`, row);
+  if (!add.ok) {
+    console.error("feedback workbook", add.status, await add.text());
+    return json({ ok: false, error: "We couldn't save your feedback" }, 502, cors);
+  }
+  return json({ ok: true, feedback_id: id }, 200, cors);
 }
 
 // ------------------------------------------------------------------ transcript requests

@@ -77,7 +77,7 @@ export function colNumber(a) {
 // each tab's table, the Kitchen week box, and empty rows left at the bottom of the tables
 // after deletions (a table keeps at least one row). Safe to run again; it writes the same thing each time.
 
-const ORDER = ["How to use", "Orders", "Kitchen", "Homerooms", "Teachers", "Conferences", "Tours", "Transcripts", "Inquiries"];
+const ORDER = ["How to use", "Orders", "Kitchen", "Homerooms", "Teachers", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback"];
 const NAVY = "#1B2A4A";
 const MONDAY = "TODAY()-WEEKDAY(TODAY(),3)+IF(WEEKDAY(TODAY(),2)>5,7,0)";
 
@@ -89,6 +89,7 @@ const TABLES = [
   { sheet: "Tours", table: "Signups", formulas: [] },
   { sheet: "Transcripts", table: "Requests", formulas: [] },
   { sheet: "Inquiries", table: "InfoRequests", formulas: [] },
+  { sheet: "Feedback", table: "Responses", formulas: [] },
 ];
 
 // The reminder beside each tab's table: [cell where it starts, lines].
@@ -151,13 +152,19 @@ export const NOTES = {
     "• Follow up, then type where things stand in Status (for example: Called 10/20, touring 1/28).",
     "• Don't add columns to this table: the website fills it. Write longer notes to the right, outside the table.",
   ]],
+  Feedback: ["L1", [
+    "How to use this tab (full steps: How to use tab)",
+    "• Each 'Feedback for Administration' form on the Parent Portal adds one row. No email is sent; check this tab.",
+    "• Name, email and phone are optional: '(no name)' means the parent didn't sign.",
+    "• Change Status as you go (for example Read, Answered) and use Notes for what was done.",
+  ]],
 };
 
 // The "How to use" tab: [kind, column A, column B]. Kinds: title, text, head (a section), tab (a row of the
 // tabs-at-a-glance list), step (a numbered step), gap.
 export const GUIDE = [
   ["title", "IBA Portal Forms: how to use this workbook"],
-  ["text", "Everything families fill out on ibaclinton.com lands in this workbook by itself: hot lunch orders, parent-teacher conferences, school tours, transcript requests and Request Info inquiries."],
+  ["text", "Everything families fill out on ibaclinton.com lands in this workbook by itself: hot lunch orders, parent-teacher conferences, school tours, transcript requests, Request Info inquiries and parents' feedback for administration."],
   ["text", "The website adds each new entry as a row at the bottom of the table on its tab. You can read, sort, filter, edit and delete rows. Each tab also has a short reminder to the right of its table. Please follow the rules at the bottom of this page so the website keeps working."],
   ["gap"],
   ["head", "The tabs at a glance"],
@@ -169,6 +176,7 @@ export const GUIDE = [
   ["tab", "Tours", "School tour sign-ups, one row per family."],
   ["tab", "Transcripts", "Transcript requests from current students and alumni, with the $10 fee status."],
   ["tab", "Inquiries", "Request Info forms from families interested in enrolling."],
+  ["tab", "Feedback", "Feedback for Administration from the Parent Portal, one row per response."],
   ["gap"],
   ["head", "Hot lunch: Orders tab"],
   ["step", "1", "Parents order on the Parent Portal page of the website. Each order adds one row per student: Week of (that Monday), the parent's contact, grade, price per lunch and an X under each day ordered. Lunches and Total add themselves up."],
@@ -216,6 +224,11 @@ export const GUIDE = [
   ["head", "Request Info: Inquiries tab"],
   ["step", "1", "Families ask for information on the Request Info page. Each form adds a row with Status 'New'. The family gets a confirmation; iba@ and Mr. Greene get an email, and pressing Reply on it answers the family."],
   ["step", "2", "Follow up within two school days, then type where things stand in Status (for example: Called 10/20, touring 1/28, Enrolled)."],
+  ["gap"],
+  ["head", "Feedback for Administration: Feedback tab"],
+  ["step", "1", "Parents send feedback from the Parent Portal page (the 'Feedback for Administration' section). Each response adds a row with Status 'New', a topic and the message. No email is sent, so check this tab regularly."],
+  ["step", "2", "Name, email and phone are optional. A row that says '(no name)' was sent without a name; it can't be answered directly."],
+  ["step", "3", "Pass anything that needs Mr. Greene's attention to him. Change Status as you go (for example Read, Answered) and type what was done in Notes."],
   ["gap"],
   ["head", "Rules that keep the website working"],
   ["step", "•", "Don't rename this file or move it out of the main folder of the OneDrive."],
