@@ -3,12 +3,15 @@
 // inspect: what the workbook looks like, for checking before a change: each tab's name, place and size, its
 // tables (headings and row count) and the notes beside them. It never returns rows, so no family details.
 // Its output lands in the public Actions log, so it also leaves out the Teachers tab's names and emails.
+// A few tabs per request ("part" 1, 2, ...): all of them at once took more than Cloudflare's 50 outside calls.
+export const INSPECT_TABS = 4;
 
-export async function inspect(call) {
+export async function inspect(call, part = 1) {
   const r = await call("GET", "/worksheets?$select=name,position,visibility");
   if (!r.ok) throw new Error(`worksheets ${r.status}`);
+  const all = ((await r.json()).value || []).sort((a, b) => a.position - b.position);
   const out = [];
-  for (const w of (await r.json()).value || []) {
+  for (const w of all.slice((part - 1) * INSPECT_TABS, part * INSPECT_TABS)) {
     const s = `/worksheets/${encodeURIComponent(w.name)}`;
     const used = await call("GET", `${s}/usedRange(valuesOnly=true)?$select=address`);
     const sheet = { name: w.name, position: w.position, visibility: w.visibility,
@@ -46,7 +49,7 @@ export async function inspect(call) {
     }
     out.push(sheet);
   }
-  return out.sort((a, b) => a.position - b.position);
+  return { sheets: out, part, parts: Math.ceil(all.length / INSPECT_TABS) };
 }
 
 // Non-empty cells as {"B3": "text"} (formulas shown as "=...").

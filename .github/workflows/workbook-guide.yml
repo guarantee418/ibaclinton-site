@@ -39,6 +39,12 @@ jobs:
             # One step per request (src/guide.js STEPS), so each stays under Cloudflare's per-request limit.
             for step in order guide headings notes notes2 kitchen rows; do post "$(jq -nc --arg s "$step" '{action:"organize",step:$s}')"; done
           else
-            curl -fsS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" \
-              -H "X-Setup-Key: $LUNCH_SETUP_KEY" -H "Content-Type: application/json" -d '{"action":"inspect"}' | jq .
+            # A few tabs per request (src/guide.js INSPECT_TABS), so each stays under Cloudflare's per-request limit.
+            part=1; parts=1
+            while [ "$part" -le "$parts" ]; do
+              out=$(curl -fsS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" \
+                -H "X-Setup-Key: $LUNCH_SETUP_KEY" -H "Content-Type: application/json" -d "{\"action\":\"inspect\",\"part\":$part}")
+              echo "$out" | jq .sheets
+              parts=$(echo "$out" | jq .parts); part=$((part + 1))
+            done
           fi

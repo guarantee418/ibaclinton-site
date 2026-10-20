@@ -766,9 +766,10 @@ function fakeBook({ orders = [], b3 = "=MAX(Orders[Week of])" } = {}) {
     if (path === "/tables/Orders/range?$select=values") return ok({ values: [["Order #", "Student", "Lunches", "Total"], ...orders] });
     if (path.startsWith("/tables/") && path.endsWith("range?$select=values")) return ok({ values: [["A", "B"], ["", ""]] });
     if (path.includes("range(address='B3')?$select=formulas")) return ok({ formulas: [[b3]] });
+    if (path.endsWith("/tables?$select=name")) return ok({ value: [{ name: "T" }] });
     return ok({});
   };
-  return { call, calls };
+  return { call, calls, sheets };
 }
 
 test("organize: every step stays under Cloudflare's 50 outside calls and never touches a table's rows with data", async () => {
@@ -788,6 +789,20 @@ test("organize: every step stays under Cloudflare's 50 outside calls and never t
       assert.deepEqual(moves[0], ["How to use", 0]); assert.deepEqual(moves[1], ["Orders", 1]);
     }
   }
+});
+
+test("inspect: a few tabs per request, each under Cloudflare's 50 outside calls, together every tab once", async () => {
+  const seen = [];
+  let parts = 1;
+  for (let part = 1; part <= parts; part++) {
+    const { call, calls } = fakeBook();
+    const r = await inspect(call, part);
+    assert.ok(calls.length < 48, `part ${part}: ${calls.length} calls`);
+    parts = r.parts;
+    seen.push(...r.sheets.map((x) => x.name));
+  }
+  assert.equal(new Set(seen).size, seen.length);
+  assert.equal(seen.length, fakeBook().sheets.length);
 });
 
 test("organize: the Kitchen week box is fixed only while it still holds the original formula", async () => {
