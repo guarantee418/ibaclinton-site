@@ -18,14 +18,6 @@
         {
           "day": "Thursday",
           "meal": "Grilled Chicken & Potatoes"
-        },
-        {
-          "day": "Friday",
-          "meal": "Pizza",
-          "options": [
-            "Cheese",
-            "Pepperoni"
-          ]
         }
       ]
     }
