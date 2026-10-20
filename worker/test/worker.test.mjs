@@ -847,10 +847,12 @@ test("organize: the Kitchen week box is fixed only while it still holds the orig
   await organize(b.call, "kitchen");
   assert.match(b.calls.find((c) => c.method === "PATCH").body.formulas[0][0], /^=IF\(COUNT\(Orders\[Week of\]\)=0,TODAY\(\)/);
   b = fakeBook({ b3: "10/26/2026" });
-  assert.deepEqual(await organize(b.call, "kitchen"), ["week box left as it is", "choices table"]);
+  assert.deepEqual(await organize(b.call, "kitchen"), ["week box left as it is", "day counts with Staff", "choices table"]);
   assert.equal(b.calls.filter((c) => c.method === "PATCH" && c.path.includes("B3")).length, 0);
   // The Choices table goes below the day counts, with a formula per day (Monday at row 16).
-  const t = b.calls.find((c) => c.method === "PATCH" && c.path.includes("range(address='A14:E40')"));
+  const k = b.calls.find((c) => c.method === "PATCH" && c.path.includes("range(address='A5:F12')"));
+  assert.deepEqual(k.body.formulas[0], ["Day", "Date", "K5–12th", "Preschool", "Staff", "Total"]);
+  const t = b.calls.find((c) => c.method === "PATCH" && c.path.includes("range(address='A14:F40')"));
   assert.equal(t.body.formulas.length, 27);
   assert.match(t.body.formulas[2][1], /Orders\[Mon\]/); assert.match(t.body.formulas[7][1], /Orders\[Tue\]/);
 });
@@ -1004,7 +1006,7 @@ test("POST /absence end to end: saves the row (adding the tab), emails the paren
 });
 
 // ------------------------------------------------------------------ lunch choices (e.g. cheese or pepperoni pizza)
-import { choiceFormula } from "../src/guide.js";
+import { choiceFormula, kitchenRows } from "../src/guide.js";
 
 const CMENU = { ...MENU, days: [MENU.days[0], { ...MENU.days[1], meal: "Pizza", options: ["Cheese pizza", "Pepperoni pizza"] }] };
 const CORDER = { ...ORDER, children: [{ name: "Sam Smith", grade: "3", days: ["mon", "wed"], choices: { wed: "pepperoni PIZZA" } }] };
@@ -1028,6 +1030,18 @@ test("Kitchen choices formula counts each choice per day for the Kitchen's week"
   assert.match(f, /^=IFERROR\(LET\(u,SORT\(UNIQUE\(FILTER\(Orders\[Wed\],/);
   assert.match(f, /Orders\[Wed\]<>"X"/);
   assert.match(f, /COUNTIFS\(Orders\[Week of\],\$B\$3,Orders\[Wed\],u,Orders\[Preschool\],"Yes"\)/);
+  assert.match(f, /Orders\[Wed\],u,Orders\[Preschool\],"No",Orders\[Grade\],"<>Staff"\)/);
+  assert.match(f, /Orders\[Wed\],u,Orders\[Grade\],"Staff"\)/);
+});
+
+test("Kitchen day counts: K5–12th is students only, staff have their own column, Total adds all three", () => {
+  const rows = kitchenRows();
+  assert.equal(rows.length, 8);
+  assert.equal(rows[1][2], '=COUNTIFS(Orders[Week of],$B$3,Orders[Mon],"<>",Orders[Preschool],"No",Orders[Grade],"<>Staff")');
+  assert.equal(rows[1][3], '=COUNTIFS(Orders[Week of],$B$3,Orders[Mon],"<>",Orders[Preschool],"Yes")');
+  assert.equal(rows[1][4], '=COUNTIFS(Orders[Week of],$B$3,Orders[Mon],"<>",Orders[Grade],"Staff")');
+  assert.equal(rows[5][1], "=$B$3+4"); assert.equal(rows[5][5], "=SUM(C10:E10)");
+  assert.equal(rows[6][5], "=SUM(F6:F10)"); assert.match(rows[7][5], /^=SUMIFS\(Orders\[Total\]/);
 });
 
 test("homeroom lists show the lunch choice instead of a check mark", async () => {
