@@ -251,6 +251,22 @@ test("the Gradelink tab is added once, with the billing list read from the Order
   for (const day of ["2026-10-23", "2026-10-24", "2026-10-25"]) assert.equal(monday(day), "2026-10-26", day);
 });
 
+test("the Gradelink check shows a week for a moment, then puts the week box back", async () => {
+  const { tryGradelink } = await import("../src/gradelink.js");
+  const calls = [];
+  const call = async (method, path, body) => {
+    calls.push({ method, path, body });
+    if (path.endsWith("B3')?$select=formulas")) return new Response(JSON.stringify({ formulas: [["=TODAY()+3-WEEKDAY(TODAY()+3,3)"]] }));
+    if (path.includes("A7:I400")) return new Response(JSON.stringify({ values: [["Kim", "Ana Kim", "3rd Grade", "Jo Kim", 2, 8, 16, "m", ""], ["Lee", "Bo Lee", "K4", "Al Lee", 1, 5, 5, "m", ""], ["", "", "", "", "", "", "", "", ""]] }));
+    if (path.includes("B3:B4")) return new Response(JSON.stringify({ text: [["10/26/2026"], ["$21.00"]] }));
+    return new Response("{}");
+  };
+  const r = await tryGradelink(call, "2026-10-26", () => 3);
+  assert.deepEqual(r, { week: "10/26/2026", total_to_bill: "$21.00", order_rows_that_week: 3, shows: "list (2 students, 3 lunches, charges $21.00)" });
+  const writes = calls.filter((c) => c.method === "PATCH");
+  assert.deepEqual(writes.map((c) => c.body), [{ values: [["10/26/2026"]] }, { formulas: [["=TODAY()+3-WEEKDAY(TODAY()+3,3)"]] }]);
+});
+
 test("POST /admin needs the setup key", async () => {
   const env = { ...ENV0, LUNCH_KV: kv() };
   const req = (key) => new Request("https://lunch.test/admin", { method: "POST", body: '{"action":"setup"}', headers: { "X-Setup-Key": key } });

@@ -54,7 +54,7 @@ import { TABLE as INQUIRY_TABLE, deleteTestInquiry, ensureInquiryTab, familyMail
 import { TABLE as ABSENCE_TABLE, absenceRow, deleteTestAbsence, ensureAbsenceTab, homeroomFor, officeMail as absenceOfficeMail,
   parentMail as absenceParentMail, validateAbsence } from "./absences.js";
 import { ensureStaffTab, isStaffFamily, readStaffFamilies } from "./staff.js";
-import { checkGradelink, ensureGradelinkTab } from "./gradelink.js";
+import { checkGradelink, ensureGradelinkTab, tryGradelink } from "./gradelink.js";
 import { TABLE as FEEDBACK_TABLE, deleteTestFeedback, ensureFeedbackTab, feedbackRow, validateFeedback } from "./feedback.js";
 import { confirmationMail as formMail, deleteTestResponse, noticeMail as formNotice, responseRow, saveResponse,
   validateResponse } from "./forms.js";
@@ -161,6 +161,16 @@ async function admin(request, env) {
     const token = await accessToken(env);
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
     return json({ ok: true, weeks: await weekCounts(workbook(token, env)) }, 200, {});
+  }
+  if (body.action === "gradelink") { // what the Gradelink tab shows for a week (counts and totals, no names)
+    if (body.week && !/^\d{4}-\d{2}-\d{2}$/.test(body.week)) return json({ ok: false, error: "week must be YYYY-MM-DD" }, 400, {});
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    const call = workbook(token, env);
+    const weeks = await weekCounts(call);
+    const rowsFor = (text) => { const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(text || "").trim());
+      return m ? weeks[`${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`] || 0 : null; };
+    return json({ ok: true, ...(await tryGradelink(call, body.week || "", rowsFor)) }, 200, {});
   }
   if (body.action === "inspect") { // the workbook's tabs, tables and notes (no rows), see src/guide.js
     const token = await accessToken(env);

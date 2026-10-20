@@ -64,6 +64,29 @@ export async function checkGradelink(call) {
   return `list (${col.length} rows)`;
 }
 
+// Admin "gradelink" check: what the list shows for one week, without names. With "week" (YYYY-MM-DD) the yellow
+// box shows that Monday for a few seconds and then gets its formula (or whatever the office typed) back.
+export async function tryGradelink(call, week, orderRows) {
+  const s = `/worksheets/${GRADELINK_SHEET}`;
+  const b = await call("GET", `${s}/range(address='B3')?$select=formulas`);
+  if (!b.ok) return { error: `unreadable (${b.status})` };
+  const before = ((await b.json()).formulas || [[""]])[0][0];
+  const [y, m, d] = String(week || "").split("-").map(Number); // typed like the office does: 10/26/2026
+  if (week) await must(call("PATCH", `${s}/range(address='B3')`, { values: [[`${m}/${d}/${y}`]] }));
+  try {
+    const r = await call("GET", `${s}/range(address='A7:I400')?$select=values`);
+    const rows = r.ok ? ((await r.json()).values || []).filter((x) => x[0] !== "" && x[0] != null) : [];
+    const first = rows.length ? String(rows[0][0]) : "";
+    const t = await call("GET", `${s}/range(address='B3:B4')?$select=text`);
+    const [[wk], [total]] = t.ok ? (await t.json()).text : [[""], [""]];
+    return { week: wk, total_to_bill: total, order_rows_that_week: orderRows(wk),
+      shows: !rows.length ? "empty" : first.startsWith("#") ? `error ${first}` : first.startsWith("No lunch orders") ? "no orders this week"
+        : `list (${rows.length} students, ${rows.reduce((n, x) => n + (Number(x[4]) || 0), 0)} lunches, charges $${rows.reduce((n, x) => n + (Number(x[6]) || 0), 0).toFixed(2)})` };
+  } finally {
+    if (week) await must(call("PATCH", `${s}/range(address='B3')`, { formulas: [[before]] }));
+  }
+}
+
 async function must(p) {
   const r = await p;
   if (!r.ok) throw new Error(`workbook ${r.status} ${(await r.text()).slice(0, 200)}`);
