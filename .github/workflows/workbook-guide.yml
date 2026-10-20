@@ -5,14 +5,14 @@ name: Office workbook layout
 # on each tab, fixes the Kitchen week box and removes empty table rows (src/guide.js); it never changes a
 # table's columns or headings, or any row with something in it. "check-gradelink" prints what the Gradelink
 # billing tab shows for a week (students, lunches, charges; no names), putting its week box back afterwards.
-# "reset-gradelink-week" puts that week box back to its formula (this week; the coming week from Friday on).
+# "reset-week-boxes" puts the Kitchen, Homerooms and Gradelink week boxes back to their formulas (next week with orders).
 on:
   workflow_dispatch:
     inputs:
       action:
         description: "What to do"
         type: choice
-        options: [inspect, organize, check-gradelink, reset-gradelink-week]
+        options: [inspect, organize, check-gradelink, reset-week-boxes]
         default: inspect
       week:
         description: "check-gradelink only: Monday to show for a moment (YYYY-MM-DD), or blank for the box as it is"
@@ -36,9 +36,9 @@ jobs:
           if [ "$ACTION" = check-gradelink ]; then
             # What the Gradelink billing tab shows for one week: counts and totals only, no names.
             post "$(jq -nc --arg w "$WEEK" '{action:"gradelink",week:$w}')"
-          elif [ "$ACTION" = reset-gradelink-week ]; then
-            # Puts the Gradelink tab's yellow box back to its formula, then shows what the tab shows (no names).
-            post '{"action":"gradelink","reset":true}'
+          elif [ "$ACTION" = reset-week-boxes ]; then
+            # The Kitchen, Homerooms and Gradelink week boxes get their formulas back; prints the week each shows.
+            post '{"action":"week_boxes"}'
           elif [ "$ACTION" = organize ]; then
             # One step per request (src/guide.js STEPS), so each stays under Cloudflare's per-request limit.
             for step in order guide headings notes notes2 kitchen rows; do post "$(jq -nc --arg s "$step" '{action:"organize",step:$s}')"; done

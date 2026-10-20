@@ -10,9 +10,18 @@ export const GRADELINK_SHEET = "Gradelink";
 const NAVY = "#1B2A4A";
 const HEAD = ["Family", "Student", "Grade", "Parent", "Lunches", "Price per lunch", "Charge", "Gradelink memo", "Notes"];
 
-// The lunch week to bill: this week Monday to Thursday, the coming week from Friday on (orders close Friday
+// The yellow "Week of" boxes on the Kitchen, Homerooms and Gradelink tabs show the earliest week with orders,
+// starting from a given Monday (Garrett, 2026-10-20: all three showed 10/26 while the week of 10/19 had none),
+// or that Monday when no later week has orders. "Week of" may hold a date or text like 10/26/2026.
+export function weekBox(from) {
+  return `=LET(m,${from},d,Orders[Week of],w,INT(IF(ISNUMBER(d),d,IFERROR(DATEVALUE(d),0))),IFERROR(MIN(FILTER(w,w>=m)),m))`;
+}
+// Kitchen and Homerooms start from this week (Saturday and Sunday: the coming week).
+export const SHOW_WEEK = weekBox("TODAY()-WEEKDAY(TODAY(),3)+IF(WEEKDAY(TODAY(),2)>5,7,0)");
+// Gradelink starts from this week Monday to Thursday and from the coming week on Friday (orders close Friday
 // 9:00 AM before the week), so Friday's billing shows the week that just closed.
-export const BILL_WEEK = "=TODAY()+3-WEEKDAY(TODAY()+3,3)";
+export const BILL_WEEK = weekBox("TODAY()+3-WEEKDAY(TODAY()+3,3)");
+const BILL_NOTE = "Shows the next week with orders (from Friday on, the coming week's). Type another Monday's date to see that week.";
 
 const W = "Orders[Week of],$B$3,Orders[Student],s,Orders[Grade],g";
 export const BILLING_FORMULA =
@@ -42,7 +51,7 @@ export async function ensureGradelinkTab(call) {
   const s = `/worksheets/${GRADELINK_SHEET}`;
   await must(call("PATCH", `${s}/range(address='A1:C4')`, {
     formulas: [["Gradelink billing", "", ""], ["", "", ""],
-      ["Week of (Monday)", BILL_WEEK, "Shows this week (Monday–Thursday) or the coming week (from Friday on). Type another Monday's date to see that week."],
+      ["Week of (Monday)", BILL_WEEK, BILL_NOTE],
       ["Total to bill", "=SUMIFS(Orders[Total],Orders[Week of],$B$3)", ""]],
   }));
   await must(call("PATCH", `${s}/range(address='B3')`, { numberFormat: [["m/d/yyyy"]] }));
@@ -97,9 +106,19 @@ export async function tryGradelink(call, week, orderRows) {
   }
 }
 
-// Admin "gradelink" with "reset": the yellow box goes back to its formula (this week, the coming week from Friday on).
-export async function resetBillWeek(call) {
-  await must(call("PATCH", `/worksheets/${GRADELINK_SHEET}/range(address='B3')`, { formulas: [[BILL_WEEK]] }));
+// Admin "week_boxes": the yellow boxes on the Kitchen, Homerooms and Gradelink tabs get their formulas back (over
+// a date someone typed). Returns the week each one shows now.
+export async function resetWeekBoxes(call) {
+  const out = {};
+  for (const [tab, f] of [["Kitchen", SHOW_WEEK], ["Homerooms", SHOW_WEEK], [GRADELINK_SHEET, BILL_WEEK]]) {
+    const s = `/worksheets/${tab}`;
+    const w = await call("PATCH", `${s}/range(address='B3')`, { formulas: [[f]] });
+    if (!w.ok) { out[tab] = `not changed (${w.status})`; continue; }
+    if (tab === GRADELINK_SHEET) await call("PATCH", `${s}/range(address='C3')`, { values: [[BILL_NOTE]] });
+    const t = await call("GET", `${s}/range(address='B3')?$select=text`);
+    out[tab] = t.ok ? ((await t.json()).text || [[""]])[0][0] : `unreadable (${t.status})`;
+  }
+  return out;
 }
 
 async function must(p) {

@@ -6,6 +6,8 @@
 // each year. The service also adds a "Homerooms" tab (the same list, live, for the office).
 // Both tabs are created only when missing; the office's edits are never overwritten.
 
+import { SHOW_WEEK } from "./gradelink.js";
+
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 export const TEACHERS_SHEET = "Teachers";
 export const HOMEROOMS_SHEET = "Homerooms";
@@ -54,8 +56,8 @@ export async function ensureTabs(call) {
     const s = `/worksheets/${HOMEROOMS_SHEET}`;
     await must(call("PATCH", `${s}/range(address='A1:C3')`, {
       formulas: [["Lunches by homeroom", "", ""], ["", "", ""],
-        ["Week of (Monday)", "=TODAY()-WEEKDAY(TODAY(),3)+IF(WEEKDAY(TODAY(),2)>5,7,0)",
-          "Shows this school week (next week on weekends). Type another Monday's date to see that week."]],
+        ["Week of (Monday)", SHOW_WEEK,
+          "Shows the next week with orders, from this week on. Type another Monday's date to see that week."]],
     }));
     await must(call("PATCH", `${s}/range(address='B3')`, { numberFormat: [["m/d/yyyy"]] }));
     await must(call("PATCH", `${s}/range(address='A5:G5')`, { values: [["Grade", "Student", ...DAYS]] }));
