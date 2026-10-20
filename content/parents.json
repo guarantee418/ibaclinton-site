@@ -27,6 +27,7 @@
       "hidden": false
     },
     {
+      "title": "Picture Retakes",
       "when": "October 29",
       "graphic": "/files/pic-retakes.png",
       "hidden": false
@@ -115,6 +116,9 @@
       "show_lunch": false,
       "show_absence": false,
       "show_feedback": false,
+      "form": {
+        "closed": false
+      },
       "anchor": "conferences"
     },
     {
@@ -129,6 +133,9 @@
       "show_lunch": false,
       "show_absence": false,
       "show_feedback": false,
+      "form": {
+        "closed": false
+      },
       "anchor": "calendars"
     },
     {
@@ -137,6 +144,9 @@
       "show_lunch": false,
       "show_absence": true,
       "show_feedback": false,
+      "form": {
+        "closed": false
+      },
       "anchor": "absence"
     },
     {
@@ -158,6 +168,9 @@
       "show_lunch": false,
       "show_absence": false,
       "show_feedback": false,
+      "form": {
+        "closed": false
+      },
       "anchor": "handbooks"
     },
     {
@@ -172,6 +185,9 @@
       "show_lunch": false,
       "show_absence": false,
       "show_feedback": false,
+      "form": {
+        "closed": false
+      },
       "anchor": "athletics"
     },
     {
@@ -180,6 +196,9 @@
       "show_lunch": false,
       "show_absence": false,
       "show_feedback": false,
+      "form": {
+        "closed": false
+      },
       "anchor": "intramurals"
     },
     {
@@ -187,6 +206,9 @@
       "show_lunch": true,
       "show_absence": false,
       "show_feedback": false,
+      "form": {
+        "closed": false
+      },
       "anchor": "hot-lunch"
     },
     {
@@ -205,6 +227,9 @@
       "show_lunch": false,
       "show_absence": false,
       "show_feedback": false,
+      "form": {
+        "closed": false
+      },
       "anchor": "spirit-days"
     },
     {
@@ -219,6 +244,9 @@
       "show_lunch": false,
       "show_absence": false,
       "show_feedback": false,
+      "form": {
+        "closed": false
+      },
       "anchor": "supply-lists"
     },
     {
@@ -281,6 +309,9 @@
       "show_lunch": false,
       "show_absence": false,
       "show_feedback": false,
+      "form": {
+        "closed": false
+      },
       "anchor": "fine-arts"
     },
     {
@@ -295,6 +326,9 @@
       "show_lunch": false,
       "show_absence": false,
       "show_feedback": false,
+      "form": {
+        "closed": false
+      },
       "anchor": "traffic"
     },
     {
@@ -303,6 +337,9 @@
       "show_lunch": false,
       "show_absence": false,
       "show_feedback": true,
+      "form": {
+        "closed": false
+      },
       "anchor": "feedback"
     },
     {
@@ -317,6 +354,9 @@
       "show_lunch": false,
       "show_absence": false,
       "show_feedback": false,
+      "form": {
+        "closed": false
+      },
       "anchor": "gradelink"
     }
   ]
