@@ -9,7 +9,7 @@
     e.preventDefault();
     var missing = Array.prototype.filter.call(f.querySelectorAll("[required]"), function (el) { return !el.value.trim(); });
     if (missing.length || !f.checkValidity()) {
-      show("err", "Please choose a topic and write your feedback" + (f.elements.email.validity.valid ? "." : ", and check your email address (or leave it blank)."));
+      show("err", "Please choose a topic, write your feedback and enter your email address.");
       (missing[0] || f.querySelector(":invalid")).focus();
       return;
     }
@@ -22,8 +22,7 @@
       .then(function (d) {
         if (!d.ok) throw new Error(d.error || "");
         f.reset(); f.hidden = true;
-        show("ok", "<b>Thank you!</b> Your feedback was sent to the administration." +
-          (b.email || b.phone ? " We’ll be in touch if a reply is needed." : ""));
+        show("ok", "<b>Thank you!</b> Your feedback was sent to the administration. We’ll be in touch if a reply is needed.");
       })
       .catch(function (err) {
         btn.disabled = false; btn.textContent = "Send feedback";

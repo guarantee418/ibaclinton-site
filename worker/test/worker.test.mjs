@@ -818,13 +818,14 @@ test("guide and reminders cover every tab", () => {
 // ------------------------------------------------------------------ Feedback for Administration
 import { COLUMNS as FB_COLUMNS, validateFeedback, feedbackRow } from "../src/feedback.js";
 
-const FB = { name: "", email: "", phone: "", grades: "3rd", topic: "Suggestion", message: "More field trips, please.\nThank you!" };
+const FB = { name: "", email: "parent@example.com", phone: "", grades: "3rd", topic: "Suggestion", message: "More field trips, please.\nThank you!" };
 
-test("feedback is checked on the server; name and contact are optional", () => {
+test("feedback is checked on the server; email is required, name and phone are optional", () => {
   const ok = validateFeedback(FB);
   assert.equal(ok.error, undefined);
   assert.equal(ok.feedback.message, "More field trips, please.\nThank you!");
   assert.match(validateFeedback({ ...FB, email: "nope" }).error, /email/);
+  assert.match(validateFeedback({ ...FB, email: "" }).error, /email/);
   assert.match(validateFeedback({ ...FB, topic: "Gossip" }).error, /topic/);
   assert.match(validateFeedback({ ...FB, message: "  " }).error, /feedback/);
   const row = feedbackRow(validateFeedback({ ...FB, message: "=HYPERLINK(1)" }).feedback, "FB001", "1/5/2027 9:00 AM");
