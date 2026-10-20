@@ -5,7 +5,8 @@ name: Office workbook layout
 # on each tab, fixes the Kitchen week box and removes empty table rows (src/guide.js); it never changes a
 # table's columns or headings, or any row with something in it. "check-gradelink" prints what the Gradelink
 # billing tab shows for a week (students, lunches, charges; no names), putting its week box back afterwards.
-# "reset-week-boxes" puts the Kitchen, Homerooms and Gradelink week boxes back to their formulas (next week with orders).
+# "reset-week-boxes" sets up the Kitchen, Homerooms and Gradelink week boxes: the yellow "Pick a week" box in row 2
+# (kept if filled) and "Week of" back to its formula (that week, or the next week with orders).
 on:
   workflow_dispatch:
     inputs:

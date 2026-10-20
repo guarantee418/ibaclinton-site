@@ -263,7 +263,7 @@ test("the Gradelink tab is added once, with the billing list read from the Order
   assert.ok(!f.includes("Orders[Week of]=$B$3"));
   // Billing week: Monday-Thursday this week, Friday-Sunday the coming week (as Excel's WEEKDAY(d,3): Monday = 0).
   const monday = (iso) => { const d = new Date(`${iso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 3); d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7)); return d.toISOString().slice(0, 10); };
-  assert.match(BILL_WEEK, /^=LET\(m,TODAY\(\)\+3-WEEKDAY\(TODAY\(\)\+3,3\),/);
+  assert.match(BILL_WEEK, /^=IF\(ISNUMBER\(\$B\$2\),\$B\$2-WEEKDAY\(\$B\$2,3\),LET\(m,TODAY\(\)\+3-WEEKDAY\(TODAY\(\)\+3,3\),/);
   for (const day of ["2026-10-19", "2026-10-21", "2026-10-22"]) assert.equal(monday(day), "2026-10-19", day);
   for (const day of ["2026-10-23", "2026-10-24", "2026-10-25"]) assert.equal(monday(day), "2026-10-26", day);
 });
@@ -286,10 +286,12 @@ test("the Gradelink check shows a week for a moment, then puts the week box back
 
 test("the week boxes show the earliest week with orders from this week on (Gradelink: from the coming week on Fridays)", async () => {
   const { weekBox, SHOW_WEEK, BILL_WEEK, resetWeekBoxes } = await import("../src/gradelink.js");
-  assert.equal(SHOW_WEEK, weekBox("TODAY()-WEEKDAY(TODAY(),3)+IF(WEEKDAY(TODAY(),2)>5,7,0)"));
-  assert.equal(BILL_WEEK, weekBox("TODAY()+3-WEEKDAY(TODAY()+3,3)"));
+  // A Monday typed in the "Pick a week" box (B2) wins (any day counts as its Monday); empty, the automatic week.
+  const pick = (auto) => `=IF(ISNUMBER($B$2),$B$2-WEEKDAY($B$2,3),${auto.slice(1)})`;
+  assert.equal(SHOW_WEEK, pick(weekBox("TODAY()-WEEKDAY(TODAY(),3)+IF(WEEKDAY(TODAY(),2)>5,7,0)")));
+  assert.equal(BILL_WEEK, pick(weekBox("TODAY()+3-WEEKDAY(TODAY()+3,3)")));
   // Week of may be a date or text; both become a day number before comparing.
-  assert.match(SHOW_WEEK, /w,INT\(IF\(ISNUMBER\(d\),d,IFERROR\(DATEVALUE\(d\),0\)\)\),IFERROR\(MIN\(FILTER\(w,w>=m\)\),m\)\)$/);
+  assert.match(SHOW_WEEK, /w,INT\(IF\(ISNUMBER\(d\),d,IFERROR\(DATEVALUE\(d\),0\)\)\),IFERROR\(MIN\(FILTER\(w,w>=m\)\),m\)\)\)$/);
   // The same rule in JavaScript (Excel's WEEKDAY(d,3): Monday = 0; WEEKDAY(d,2) > 5: Saturday or Sunday).
   const day = (iso) => new Date(`${iso}T12:00:00Z`);
   const iso = (d) => d.toISOString().slice(0, 10);
@@ -313,6 +315,10 @@ test("the week boxes show the earliest week with orders from this week on (Grade
   assert.deepEqual(out, { Kitchen: "10/26/2026", Homerooms: "10/26/2026", Gradelink: "10/26/2026" });
   const b3 = calls.filter((c) => c.method === "PATCH" && c.path.endsWith("B3')")).map((c) => [c.path.split("/")[2], c.body.formulas[0][0]]);
   assert.deepEqual(b3, [["Kitchen", SHOW_WEEK], ["Homerooms", SHOW_WEEK], ["Gradelink", BILL_WEEK]]);
+  // Row 2 gets the label, hint and yellow box, but a week the office already picked in B2 is never overwritten.
+  assert.ok(!calls.some((c) => c.path.endsWith("B2')") && c.body && (c.body.values || c.body.formulas)));
+  assert.equal(calls.filter((c) => c.path.endsWith("A2')") && c.body.values[0][0] === "Pick a week:").length, 3);
+  assert.equal(calls.filter((c) => c.path.endsWith("B2')/format/fill") && c.body.color === "#FFF7E0").length, 3);
 });
 
 test("POST /admin needs the setup key", async () => {

@@ -16,12 +16,16 @@ const HEAD = ["Family", "Student", "Grade", "Parent", "Lunches", "Price per lunc
 export function weekBox(from) {
   return `=LET(m,${from},d,Orders[Week of],w,INT(IF(ISNUMBER(d),d,IFERROR(DATEVALUE(d),0))),IFERROR(MIN(FILTER(w,w>=m)),m))`;
 }
+// The office picks another week in the yellow "Pick a week" box above it (B2; any day counts as its Monday) and
+// deletes it to go back, so "Week of" (B3) is never typed over (Garrett, 2026-10-20).
+const picked = (auto) => `=IF(ISNUMBER($B$2),$B$2-WEEKDAY($B$2,3),${auto.slice(1)})`;
 // Kitchen and Homerooms start from this week (Saturday and Sunday: the coming week).
-export const SHOW_WEEK = weekBox("TODAY()-WEEKDAY(TODAY(),3)+IF(WEEKDAY(TODAY(),2)>5,7,0)");
+export const SHOW_WEEK = picked(weekBox("TODAY()-WEEKDAY(TODAY(),3)+IF(WEEKDAY(TODAY(),2)>5,7,0)"));
 // Gradelink starts from this week Monday to Thursday and from the coming week on Friday (orders close Friday
 // 9:00 AM before the week), so Friday's billing shows the week that just closed.
-export const BILL_WEEK = weekBox("TODAY()+3-WEEKDAY(TODAY()+3,3)");
-const BILL_NOTE = "Shows the next week with orders (from Friday on, the coming week's). Type another Monday's date to see that week.";
+export const BILL_WEEK = picked(weekBox("TODAY()+3-WEEKDAY(TODAY()+3,3)"));
+export const PICK_LABEL = "Pick a week:";
+export const PICK_HINT = "← type a Monday; delete it to go back";
 
 const W = "Orders[Week of],$B$3,Orders[Student],s,Orders[Grade],g";
 export const BILLING_FORMULA =
@@ -51,7 +55,7 @@ export async function ensureGradelinkTab(call) {
   const s = `/worksheets/${GRADELINK_SHEET}`;
   await must(call("PATCH", `${s}/range(address='A1:C4')`, {
     formulas: [["Gradelink billing", "", ""], ["", "", ""],
-      ["Week of (Monday)", BILL_WEEK, BILL_NOTE],
+      ["Week of (Monday)", BILL_WEEK, ""],
       ["Total to bill", "=SUMIFS(Orders[Total],Orders[Week of],$B$3)", ""]],
   }));
   await must(call("PATCH", `${s}/range(address='B3')`, { numberFormat: [["m/d/yyyy"]] }));
@@ -106,15 +110,23 @@ export async function tryGradelink(call, week, orderRows) {
   }
 }
 
-// Admin "week_boxes": the yellow boxes on the Kitchen, Homerooms and Gradelink tabs get their formulas back (over
-// a date someone typed). Returns the week each one shows now.
+// Admin "week_boxes": on the Kitchen, Homerooms and Gradelink tabs, row 2 gets the yellow "Pick a week" box and
+// "Week of" (B3) its formula back (over a date someone typed), no longer yellow. A week already picked in B2 is
+// kept. Returns the week each tab shows now.
 export async function resetWeekBoxes(call) {
   const out = {};
   for (const [tab, f] of [["Kitchen", SHOW_WEEK], ["Homerooms", SHOW_WEEK], [GRADELINK_SHEET, BILL_WEEK]]) {
     const s = `/worksheets/${tab}`;
     const w = await call("PATCH", `${s}/range(address='B3')`, { formulas: [[f]] });
     if (!w.ok) { out[tab] = `not changed (${w.status})`; continue; }
-    if (tab === GRADELINK_SHEET) await call("PATCH", `${s}/range(address='C3')`, { values: [[BILL_NOTE]] });
+    await call("POST", `${s}/range(address='B3')/format/fill/clear`, {});
+    await call("PATCH", `${s}/range(address='C3')`, { values: [[""]] }); // the old "type a Monday here" hint
+    await call("PATCH", `${s}/range(address='A2')`, { values: [[PICK_LABEL]] });
+    await call("PATCH", `${s}/range(address='C2')`, { values: [[PICK_HINT]] });
+    await call("PATCH", `${s}/range(address='B2')`, { numberFormat: [["m/d/yyyy"]] });
+    await call("PATCH", `${s}/range(address='B2')/format/fill`, { color: "#FFF7E0" });
+    await call("PATCH", `${s}/range(address='A2')/format/font`, { bold: true });
+    await call("PATCH", `${s}/range(address='C2')/format/font`, { italic: true, color: "#666666" });
     const t = await call("GET", `${s}/range(address='B3')?$select=text`);
     out[tab] = t.ok ? ((await t.json()).text || [[""]])[0][0] : `unreadable (${t.status})`;
   }
