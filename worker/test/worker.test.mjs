@@ -215,6 +215,42 @@ test("ensureTabs adds only missing tabs", async () => {
   assert.ok(calls.some((c) => c.body && c.body.formulas && String(c.body.formulas[0][0]).startsWith("=LET(")));
 });
 
+test("the Gradelink tab is added once, with the billing list read from the Orders table", async () => {
+  const { ensureGradelinkTab, BILLING_FORMULA, BILL_WEEK } = await import("../src/gradelink.js");
+  const book = (names) => {
+    const calls = [];
+    const call = async (method, path, body) => {
+      calls.push({ method, path, body });
+      if (path.startsWith("/worksheets?")) return new Response(JSON.stringify({ value: names.map((name) => ({ name })) }));
+      return new Response("{}", { status: 200 });
+    };
+    return { call, calls };
+  };
+  let b = book(["Orders", "Gradelink"]);
+  assert.equal(await ensureGradelinkTab(b.call), false);
+  assert.equal(b.calls.length, 1);
+  b = book(["Orders"]);
+  assert.equal(await ensureGradelinkTab(b.call), true);
+  assert.ok(b.calls.length < 30);
+  const a7 = b.calls.find((c) => c.path.endsWith("range(address='A7')"));
+  assert.equal(a7.body.formulas[0][0], BILLING_FORMULA);
+  // Balanced brackets, every Orders column it reads exists, and the empty week has a plain message.
+  const f = BILLING_FORMULA;
+  assert.equal((f.match(/"/g) || []).length % 2, 0);
+  const code = f.replace(/"[^"]*"/g, '""');
+  assert.equal((code.match(/\(/g) || []).length, (code.match(/\)/g) || []).length);
+  for (const col of f.match(/Orders\[[^\]]+\]/g)) {
+    assert.ok(["Week of", "Student", "Grade", "Parent", "Lunches", "Total", "Notes"].includes(col.slice(7, -1)), col);
+  }
+  assert.match(f, /m,"No lunch orders for this week yet\.",IF\(SUM\(f\)=0,m,/);
+  assert.ok(!/IFERROR\(LET/.test(f));
+  // Billing week: Monday-Thursday this week, Friday-Sunday the coming week (as Excel's WEEKDAY(d,3): Monday = 0).
+  const monday = (iso) => { const d = new Date(`${iso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 3); d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7)); return d.toISOString().slice(0, 10); };
+  assert.equal(BILL_WEEK, "=TODAY()+3-WEEKDAY(TODAY()+3,3)");
+  for (const day of ["2026-10-19", "2026-10-21", "2026-10-22"]) assert.equal(monday(day), "2026-10-19", day);
+  for (const day of ["2026-10-23", "2026-10-24", "2026-10-25"]) assert.equal(monday(day), "2026-10-26", day);
+});
+
 test("POST /admin needs the setup key", async () => {
   const env = { ...ENV0, LUNCH_KV: kv() };
   const req = (key) => new Request("https://lunch.test/admin", { method: "POST", body: '{"action":"setup"}', headers: { "X-Setup-Key": key } });
@@ -689,7 +725,7 @@ import { organize, inspect, STEPS, GUIDE, NOTES } from "../src/guide.js";
 
 function fakeBook({ orders = [], b3 = "=MAX(Orders[Week of])" } = {}) {
   const calls = [];
-  const sheets = ["Orders", "Homerooms", "Kitchen", "How to use", "Teachers", "Staff Families", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"];
+  const sheets = ["Orders", "Homerooms", "Gradelink", "Kitchen", "How to use", "Teachers", "Staff Families", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"];
   const ok = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
   const call = async (method, path, body) => {
     calls.push({ method, path, body });
@@ -756,7 +792,7 @@ test("organize: the warnings about the Orders headings are bold red", async () =
 
 test("guide and reminders cover every tab", () => {
   const tabs = GUIDE.filter(([k]) => k === "tab").map(([, a]) => a);
-  assert.deepEqual(tabs, ["Orders", "Kitchen", "Homerooms", "Teachers", "Staff Families", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"]);
+  assert.deepEqual(tabs, ["Orders", "Kitchen", "Homerooms", "Gradelink", "Teachers", "Staff Families", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"]);
   assert.deepEqual(Object.keys(NOTES).sort(), [...tabs].sort());
   // Reminders start to the right of each table (Orders A:R, Conferences A:J, Tours A:I, Transcripts A:V, Inquiries A:N, Feedback A:J, Absences A:M).
   assert.deepEqual([NOTES.Orders[0], NOTES.Conferences[0], NOTES.Tours[0], NOTES.Transcripts[0], NOTES.Inquiries[0], NOTES.Feedback[0],

@@ -23,8 +23,8 @@
 //   GET  /health    {"ok":true,"connected":true|false}
 //   GET  /connect   one-time Microsoft sign-in by the office mailbox (needs ?key=SETUP_KEY)
 //   GET  /callback  Microsoft sends the sign-in back here
-//   POST /admin     upkeep, needs header X-Setup-Key: {"action":"setup"} adds the Teachers and
-//                   Homerooms tabs (and the Conferences tab) to the workbook if missing (and, with
+//   POST /admin     upkeep, needs header X-Setup-Key: {"action":"setup"} adds the Teachers,
+//                   Homerooms and Gradelink tabs (and the Conferences tab) to the workbook if missing (and, with
 //                   "teacher_emails", fills blank teacher emails); {"action":"homerooms","week":"YYYY-MM-DD",
 //                   "test_to":"someone@..."} sends that week's homeroom emails to test_to only;
 //                   {"action":"delete_test_booking","id":"ABCDE"} removes one conference booking whose
@@ -54,6 +54,7 @@ import { TABLE as INQUIRY_TABLE, deleteTestInquiry, ensureInquiryTab, familyMail
 import { TABLE as ABSENCE_TABLE, absenceRow, deleteTestAbsence, ensureAbsenceTab, homeroomFor, officeMail as absenceOfficeMail,
   parentMail as absenceParentMail, validateAbsence } from "./absences.js";
 import { ensureStaffTab, isStaffFamily, readStaffFamilies } from "./staff.js";
+import { checkGradelink, ensureGradelinkTab } from "./gradelink.js";
 import { TABLE as FEEDBACK_TABLE, deleteTestFeedback, ensureFeedbackTab, feedbackRow, validateFeedback } from "./feedback.js";
 import { confirmationMail as formMail, deleteTestResponse, noticeMail as formNotice, responseRow, saveResponse,
   validateResponse } from "./forms.js";
@@ -145,8 +146,10 @@ async function admin(request, env) {
     if (await ensureFeedbackTab(call)) added.push("Feedback");
     if (await ensureAbsenceTab(call)) added.push("Absences");
     if (await ensureStaffTab(call)) added.push("Staff Families");
+    if (await ensureGradelinkTab(call)) added.push("Gradelink");
     const filled = body.teacher_emails ? await fillTeacherEmails(call, body.teacher_emails) : 0;
-    return json({ ok: true, tabs_added: added, teacher_emails_filled: filled, homerooms_tab: await checkHomerooms(call) }, 200, {});
+    return json({ ok: true, tabs_added: added, teacher_emails_filled: filled, homerooms_tab: await checkHomerooms(call),
+      gradelink_tab: await checkGradelink(call) }, 200, {});
   }
   if (body.action === "monday") { // makes one Monday.com board ("board": inquiry, tour, transcript) and its columns if missing
     if (!env.MONDAY_TOKEN) return json({ ok: false, error: "no MONDAY_TOKEN" }, 400, {});

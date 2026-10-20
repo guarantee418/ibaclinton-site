@@ -25,7 +25,7 @@ TYPES = {
 # The first columns of every form's table (worker/src/forms.js FIXED); a question can't take one of these names.
 FIXED = ["Received", "Response #", "Status", "Notes", "Name", "Email"]
 # The workbook's own tabs (worker/src/guide.js ORDER): a form named like one gets " form" added to its tab name.
-TABS = ["How to use", "Orders", "Kitchen", "Homerooms", "Teachers", "Staff Families", "Conferences", "Tours",
+TABS = ["How to use", "Orders", "Kitchen", "Homerooms", "Gradelink", "Teachers", "Staff Families", "Conferences", "Tours",
         "Transcripts", "Inquiries", "Feedback", "Absences"]
 
 def esc(value):
