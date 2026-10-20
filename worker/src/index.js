@@ -175,7 +175,9 @@ async function admin(request, env) {
   if (body.action === "inspect") { // the workbook's tabs, tables and notes (no rows), see src/guide.js
     const token = await accessToken(env);
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
-    return json({ ok: true, sheets: await inspectWorkbook(workbook(token, env)) }, 200, {});
+    const part = Number(body.part) || 1;
+    if (!Number.isInteger(part) || part < 1) return json({ ok: false, error: "part must be 1, 2, ..." }, 400, {});
+    return json({ ok: true, ...(await inspectWorkbook(workbook(token, env), part)) }, 200, {});
   }
   if (body.action === "organize") { // one step of tidying the workbook ("step": order, guide, ...), see src/guide.js
     if (!ORGANIZE_STEPS.includes(body.step)) return json({ ok: false, error: `step must be one of ${ORGANIZE_STEPS.join(", ")}` }, 400, {});
