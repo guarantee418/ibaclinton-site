@@ -23,6 +23,12 @@ the workbook (the office handles call-in changes and exceptions first).
   The Worker also adds a live **Homerooms** tab. Both tabs are added only if missing (on each deploy and
   each Monday run). Blank teacher emails are filled from the `TEACHER_EMAILS` repo secret on each
   deploy (`K3=a@x.org,K4=...,1=...,12=...`); emails typed in the tab are never changed. Test: Actions -> "Send a test homeroom lunch email" (one week, one address, marked TEST).
+- **Gradelink billing tab** (`src/gradelink.js`, Garrett asked 2026-10-20): a formulas-only **Gradelink** tab,
+  added by the deploy's setup step if missing. For one week (yellow box B3: this week Monday-Thursday, the
+  coming week from Friday on) it lists one row per student from the Orders table (same student's orders that
+  week added together), sorted by family (parent's last name): Lunches, Price per lunch, Charge, a memo to paste
+  into Gradelink and the rows' Notes, with "Total to bill" in B4. After a deploy, run Actions -> "Office workbook
+  layout" -> organize to put the tab after Homerooms and write its reminder.
 - **Parent-teacher conferences** (`src/conferences.js`, built 2026-10-16, not live until Garrett approves):
   parents sign up on ibaclinton.com/conferences/ (one panel per teacher). The day, hours, session length,
   break and teachers come from `content/conferences.json` (office editor), published as
