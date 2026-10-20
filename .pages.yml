@@ -396,6 +396,61 @@ content:
             label: Show the Feedback for Administration form here
             type: boolean
             description: Turn on for the Feedback for Administration section only. Responses go to the Feedback tab of the office workbook.
+          - name: form
+            label: Form (optional)
+            type: object
+            description: "Add a form to this section: give it a name and at least one question. Every form also asks the person's name and email. Each response goes to the form's own tab in the office workbook (named after the form, made by the first response); the person gets a confirmation email and iba@ and ibs@ get the details. Adding a question adds a column at the end of that tab; renaming the form, or renaming, removing or reordering questions, starts a new tab."
+            fields:
+              - name: name
+                label: Form name
+                type: string
+                description: For example "Field Trip Permission". Also the name of its tab in the office workbook. Leave blank for no form.
+              - name: intro
+                label: Text above the form (optional)
+                type: text
+              - name: button
+                label: Button text (optional)
+                type: string
+                description: For example "Sign up". Leave blank for "Send".
+              - name: closed
+                label: Stop taking responses
+                type: boolean
+                description: Turn on to close the form without deleting it. The page then says the form isn't taking responses.
+              - name: questions
+                label: Questions
+                type: object
+                description: Up to 15. Drag to reorder (reordering starts a new tab, so set the order before the form goes out).
+                list:
+                  max: 15
+                  collapsible:
+                    collapsed: true
+                    summary: "{label}"
+                fields:
+                  - name: label
+                    label: Question
+                    type: string
+                    required: true
+                    description: For example "Child's name and grade". This is also the column heading on the form's tab.
+                  - name: type
+                    label: Answer type
+                    type: select
+                    default: Short answer
+                    options:
+                      values: [Short answer, Long answer, Email, Phone, Date, Number, Dropdown (pick one), Checkboxes (pick any), Yes/No box]
+                  - name: choices
+                    label: Choices (for Dropdown or Checkboxes)
+                    type: string
+                    list:
+                      max: 20
+                    description: One choice per line item, for example "T-shirt size S", "M", "L".
+                  - name: required
+                    label: Required
+                    type: boolean
+                    description: For a Yes/No box, required means it must be ticked (for example "I give permission").
+                  - name: help
+                    label: Help text (optional)
+                    type: string
+                    description: A short hint under the question.
           - name: anchor
             label: Page link name (advanced)
             type: string

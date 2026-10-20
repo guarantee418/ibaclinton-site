@@ -14,6 +14,9 @@
 //                   workbook, emailed to the parent (confirmation) and the office, Cc the homeroom teacher
 //   POST /feedback     a Feedback for Administration form from The Kings Corner (src/feedback.js): added to
 //                   the Feedback tab of the office workbook (no email)
+//   POST /form         a form the office added to a Kings Corner section (src/forms.js): checked against the
+//                   published site/forms/forms.json, added to that form's own tab of the office workbook (made by
+//                   the first response), emailed to the person (confirmation) and FORM_NOTIFY
 //   GET  /transcripts  the transcript fees and the payment link (no names)
 //   POST /transcript   a transcript request (src/transcripts.js): added to the Transcripts tab of the office
 //                   workbook, emailed to the requester and the office
@@ -30,7 +33,9 @@
 //                   {"action":"delete_test_transcript","id":"ABCDE"} removes one transcript request whose
 //                   student is "TEST..."; {"action":"delete_test_inquiry","id":"ABCDE"} likewise one inquiry;
 //                   {"action":"delete_test_feedback","id":"ABCDE"} one feedback response whose name is "TEST...";
-//                   {"action":"delete_test_absence","id":"ABCDE"} one absence report whose student is "TEST..."
+//                   {"action":"delete_test_absence","id":"ABCDE"} one absence report whose student is "TEST...";
+//                   {"action":"delete_test_form","id":"ABCDE"} one form response whose name is "TEST..." (and a
+//                   "TEST..." form's tab once it is empty)
 //   Tour sign-ups, inquiries and transcript requests are also copied to Monday.com boards when the
 //   MONDAY_TOKEN secret is set (src/monday.js); {"action":"monday","board":"tour"} makes a board (one per call:
 //   a Worker may make only 50 outside requests at a time).
@@ -51,6 +56,8 @@ import { TABLE as ABSENCE_TABLE, absenceRow, deleteTestAbsence, ensureAbsenceTab
 import { ensureStaffTab, isStaffFamily, readStaffFamilies } from "./staff.js";
 import { checkGradelink, ensureGradelinkTab } from "./gradelink.js";
 import { TABLE as FEEDBACK_TABLE, deleteTestFeedback, ensureFeedbackTab, feedbackRow, validateFeedback } from "./feedback.js";
+import { confirmationMail as formMail, deleteTestResponse, noticeMail as formNotice, responseRow, saveResponse,
+  validateResponse } from "./forms.js";
 import { TABLE as TRANSCRIPT_TABLE, deleteTestRequest, ensureTranscriptTab, officeMail as transcriptOfficeMail, requestRow,
   requesterMail, settings as transcriptSettings, validateRequest } from "./transcripts.js";
 import { BOARDS as MONDAY_BOARDS, addToMonday, deleteFromMonday, setupMonday } from "./monday.js";
@@ -81,6 +88,7 @@ export default {
       if (url.pathname === "/inquiry" && request.method === "POST") return await inquiry(request, env, cors, ctx);
       if (url.pathname === "/absence" && request.method === "POST") return await absence(request, env, cors);
       if (url.pathname === "/feedback" && request.method === "POST") return await feedback(request, env, cors);
+      if (url.pathname === "/form" && request.method === "POST") return await formResponse(request, env, cors);
       if (url.pathname === "/transcripts" && request.method === "GET") return transcripts(env, cors);
       if (url.pathname === "/transcript" && request.method === "POST") return await transcript(request, env, cors, ctx);
       if (url.pathname === "/admin" && request.method === "POST") return await admin(request, env);
@@ -227,6 +235,14 @@ async function admin(request, env) {
     const token = await accessToken(env);
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
     const r = await deleteTestFeedback(workbook(token, env), id);
+    return json({ ok: r.deleted, id, ...r }, r.deleted ? 200 : 400, {});
+  }
+  if (body.action === "delete_test_form") { // removes one form response whose name is "TEST..."
+    const id = String(body.id || "").trim().toUpperCase();
+    if (!/^[A-Z0-9]{5}$/.test(id)) return json({ ok: false, error: "id (the 5-letter response number) is required" }, 400, {});
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    const r = await deleteTestResponse(workbook(token, env), env.LUNCH_KV, id);
     return json({ ok: r.deleted, id, ...r }, r.deleted ? 200 : 400, {});
   }
   if (body.action === "delete_test_order") { // removes a lunch order whose rows are all "TEST..."
@@ -659,6 +675,41 @@ async function feedback(request, env, cors) {
     return json({ ok: false, error: "We couldn't save your feedback" }, 502, cors);
   }
   return json({ ok: true, feedback_id: id }, 200, cors);
+}
+
+// ------------------------------------------------------------------ forms the office adds (src/forms.js)
+async function formResponse(request, env, cors) {
+  if (!cors["Access-Control-Allow-Origin"]) return json({ ok: false, error: "Not allowed" }, 403, cors);
+  const text = await request.text();
+  if (text.length > 70000) return json({ ok: false, error: "Too large" }, 413, cors);
+  let body;
+  try { body = JSON.parse(text); } catch { return json({ ok: false, error: "Bad request" }, 400, cors); }
+  if (body.website) return json({ ok: true, response_id: "0", email_sent: true }, 200, cors); // spam trap
+
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  if (await tooMany(env, ip, "rlcf")) {
+    return json({ ok: false, error: "Too many responses from this connection; please try again later" }, 429, cors);
+  }
+  const checked = validateResponse(body, await loadJson(env.FORMS_URL), Date.now());
+  if (checked.error) return json({ ok: false, error: checked.error }, 400, cors);
+  const { form, entry } = checked;
+  const token = await accessToken(env);
+  if (!token) return json({ ok: false, error: "Online forms aren't connected yet" }, 503, cors);
+
+  const id = newOrderId();
+  const saved = await saveResponse(workbook(token, env), env.LUNCH_KV, form, responseRow(entry, id, eastern(new Date(), true)));
+  if (!saved.ok) {
+    console.error("form workbook", form.id, saved.status);
+    return json({ ok: false, error: "We couldn't save your response" }, 502, cors);
+  }
+  await env.LUNCH_KV.put(`formresp:${id}`, JSON.stringify({ table: saved.table, sheet: saved.sheet }), { expirationTtl: 60 * 86400 });
+  const mail = await graph(token, "POST", "/me/sendMail", formMail(form, entry, id, env));
+  if (!mail.ok) console.error("form mail", mail.status, await mail.text());
+  if (env.FORM_NOTIFY) {
+    const o = await graph(token, "POST", "/me/sendMail", formNotice(form, entry, id, env, saved.sheet));
+    if (!o.ok) console.error("form notice", o.status, await o.text());
+  }
+  return json({ ok: true, response_id: id, email_sent: mail.ok }, 200, cors);
 }
 
 // ------------------------------------------------------------------ transcript requests
