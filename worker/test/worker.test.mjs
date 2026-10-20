@@ -228,12 +228,26 @@ test("the Gradelink tab is added once, with the billing list read from the Order
   };
   let b = book(["Orders", "Gradelink"]);
   assert.equal(await ensureGradelinkTab(b.call), false);
-  assert.equal(b.calls.length, 1);
+  assert.equal(b.calls.filter((c) => c.method !== "GET").length, 0);
   b = book(["Orders"]);
   assert.equal(await ensureGradelinkTab(b.call), true);
   assert.ok(b.calls.length < 30);
   const a7 = b.calls.find((c) => c.path.endsWith("range(address='A7')"));
   assert.equal(a7.body.formulas[0][0], BILLING_FORMULA);
+  // An existing tab gets the new list only while A7 still holds the first version's formula.
+  for (const [old, writes] of [['=LET(f,(Orders[Week of]=$B$3)*(Orders[Student]<>""),m,"x")', 1], ["=SUM(1)", 0]]) {
+    const calls = [];
+    const call = async (method, path, body) => {
+      calls.push({ method, path, body });
+      if (path.startsWith("/worksheets?")) return new Response(JSON.stringify({ value: [{ name: "Gradelink" }] }));
+      if (path.endsWith("A7')?$select=formulas")) return new Response(JSON.stringify({ formulas: [[old]] }));
+      return new Response("{}");
+    };
+    assert.equal(await ensureGradelinkTab(call), false);
+    const w = calls.filter((c) => c.method === "PATCH");
+    assert.equal(w.length, writes);
+    if (writes) assert.equal(w[0].body.formulas[0][0], BILLING_FORMULA);
+  }
   // Balanced brackets, every Orders column it reads exists, and the empty week has a plain message.
   const f = BILLING_FORMULA;
   assert.equal((f.match(/"/g) || []).length % 2, 0);
@@ -244,6 +258,9 @@ test("the Gradelink tab is added once, with the billing list read from the Order
   }
   assert.match(f, /m,"No lunch orders for this week yet\.",IF\(SUM\(f\)=0,m,/);
   assert.ok(!/IFERROR\(LET/.test(f));
+  // The service writes "Week of" as text (10/26/2026), so the week is matched as a date, not as an exact value.
+  assert.match(f, /IF\(ISNUMBER\(d\),d,IFERROR\(DATEVALUE\(d\),0\)\)/);
+  assert.ok(!f.includes("Orders[Week of]=$B$3"));
   // Billing week: Monday-Thursday this week, Friday-Sunday the coming week (as Excel's WEEKDAY(d,3): Monday = 0).
   const monday = (iso) => { const d = new Date(`${iso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 3); d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7)); return d.toISOString().slice(0, 10); };
   assert.equal(BILL_WEEK, "=TODAY()+3-WEEKDAY(TODAY()+3,3)");
