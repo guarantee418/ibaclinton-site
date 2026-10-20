@@ -69,7 +69,7 @@
   }
 
   kc.addEventListener("click", function (e) {
-    var a = e.target.closest && e.target.closest('a.kc-tile[href^="#"]');
+    var a = e.target.closest && e.target.closest('a.kc-tile[href^="#"], a.kc-btn[href^="#"], a.kc-flyer[href^="#"]');
     if (a && show(a.getAttribute("href").slice(1), true)) e.preventDefault();
   });
 

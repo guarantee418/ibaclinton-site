@@ -6,6 +6,34 @@
     "button_text": "Log in to Gradelink",
     "button_url": "https://secure.gradelink.com/lkg/Gradelink.xml"
   },
+  "announcements": [
+    {
+      "script": "Coming up",
+      "title": "Parent-Teacher Conferences",
+      "when": "Monday, November 16 · 9:00 AM – 1:00 PM",
+      "text": "Sign up for a 15-minute conference with your child's teacher. Sign-up closes Friday, November 13 at 3:00 PM.",
+      "graphic": "",
+      "graphic_description": "",
+      "button_text": "Sign up",
+      "button_url": "https://ibaclinton.com/conferences/",
+      "show_from": "",
+      "show_until": "2026-11-16",
+      "hidden": false
+    },
+    {
+      "script": "Every week",
+      "title": "Hot Lunch",
+      "when": "Orders close Friday at 9:00 AM",
+      "text": "See this week's menu and order hot lunch for next week right here on The Kings Corner.",
+      "graphic": "",
+      "graphic_description": "",
+      "button_text": "Order lunch",
+      "button_url": "hot-lunch",
+      "show_from": "",
+      "show_until": "",
+      "hidden": false
+    }
+  ],
   "tiles_script": "Inside the Corner",
   "tiles_heading": "Find what you need",
   "tiles": [
