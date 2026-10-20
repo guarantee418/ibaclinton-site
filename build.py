@@ -179,6 +179,48 @@ def absence_form(root):
         '<a href="mailto:iba@ibcministries.org">iba@ibcministries.org</a>.</p></noscript>'
         f'<script src="{root}absence.js" defer></script>')
 
+def announcement_slides(items, ids, root, today=None):
+    """Announcement slides after the welcome slide in the Kings Corner's purple banner (content/parents.json).
+    Each has an optional graphic (uploaded to site/files); one with a graphic and no title shows the graphic alone,
+    for a ready-made flyer. Slides outside their show dates are left out here, and hidden in the browser too
+    (data-from/data-until), since the site is only rebuilt when something is saved."""
+    today = (today or lunch.dt.datetime.now(lunch.EASTERN).date()).isoformat()
+    out = []
+    for a in items or []:
+        if not isinstance(a, dict):
+            continue
+        start, until = str(a.get("show_from") or "")[:10], str(a.get("show_until") or "")[:10]
+        if (until and until < today) or a.get("hidden"):
+            continue
+        name = pathlib.PurePosixPath(str(a.get("graphic") or "").strip()).name
+        img = f"{root}files/" + html.escape(name, quote=True) if name.lower().endswith(lunch.IMAGE_TYPES) else ""
+        title, target = esc(a.get("title")), str(a.get("button_url") or "").strip()
+        href = esc(safe_url(target)) or (f"#{slug(target)}" if target and slug(target) in ids else "")
+        if not title and not img:
+            continue
+        alt = esc(a.get("graphic_description")) or title or "Announcement"
+        dates = (f' data-from="{esc(start)}"' if start else "") + (f' data-until="{esc(until)}"' if until else "")
+        if not title:
+            picture = f'<img src="{img}" alt="{alt}" loading="lazy">'
+            body = f'<a class="kc-flyer" href="{href}">{picture}</a>' if href else f'<div class="kc-flyer">{picture}</div>'
+            out.append(f'<li class="kc-slide kc-slide-flyer" aria-roledescription="slide"{dates}>'
+                       f'<div class="kc-in kc-hero-in">{body}</div></li>')
+            continue
+        button = ""
+        if href:
+            button = f'<a class="kc-btn" href="{href}">{esc(a.get("button_text")) or "Learn more"}</a>'
+        out.append(
+            f'<li class="kc-slide" aria-roledescription="slide"{dates}><div class="kc-in kc-hero-in"><div class="kc-hero-text">'
+            + (f'<p class="kc-script">{esc(a.get("script"))}</p>' if esc(a.get("script")) else "")
+            + f'<h2 class="kc-ann-title">{title}</h2>'
+            + (f'<p class="kc-when">{esc(a.get("when"))}</p>' if esc(a.get("when")) else "")
+            + (f'<p class="kc-lead">{esc(a.get("text"))}</p>' if esc(a.get("text")) else "")
+            + button + '</div>'
+            + (f'<img class="kc-ann-img" src="{img}" alt="{alt}" loading="lazy">' if img else
+               f'<img class="kc-crest" src="{root}img/kings-crest.png" alt="" width="600" height="450" loading="lazy">')
+            + '</div></li>')
+    return out
+
 def parents_block(data, root):
     """The Kings Corner (parents page): hero and tile grid; each tile opens its section in a pop-up (site/kings.js).
     All text comes from content/parents.json. Without JavaScript the sections show below the tiles instead."""
@@ -191,14 +233,25 @@ def parents_block(data, root):
     button = ""
     if esc(hero.get("button_text")) and safe_url(hero.get("button_url")):
         button = f'<a class="kc-btn" href="{esc(safe_url(hero["button_url"]))}">{esc(hero["button_text"])}</a>'
-    hero_html = (
-        '<div class="kc-hero"><div class="kc-in kc-hero-in"><div class="kc-hero-text">'
+    welcome = (
+        '<div class="kc-in kc-hero-in"><div class="kc-hero-text">'
         + (f'<p class="kc-script">{esc(hero.get("script"))}</p>' if esc(hero.get("script")) else "")
         + f'<h1>{esc(hero.get("title")) or "The Kings Corner"}</h1>'
         + (f'<p class="kc-lead">{esc(hero.get("text"))}</p>' if esc(hero.get("text")) else "")
         + button + '</div>'
         f'<img class="kc-crest" src="{root}img/kings-crest.png" alt="Independent Baptist Academy Kings crest" width="600" height="450">'
-        '</div></div>')
+        '</div>')
+    slides = [welcome] + announcement_slides(data.get("announcements"), ids, root)
+    if len(slides) == 1:
+        hero_html = f'<div class="kc-hero">{welcome}</div>'
+    else:
+        # A slider (site/kings-slides.js adds the arrows, dots and turning). Without JavaScript the slides
+        # still swipe or scroll sideways.
+        items = "".join(s if s.startswith("<li") else f'<li class="kc-slide" aria-roledescription="slide">{s}</li>'
+                        for s in slides)
+        hero_html = (f'<div class="kc-hero kc-slider" role="region" aria-roledescription="carousel" '
+                     f'aria-label="Welcome and announcements"><ul class="kc-track">{items}</ul></div>'
+                     f'<script src="{root}kings-slides.js" defer></script>')
 
     # A tile opens a section (its page link name) or goes to a full https:// address.
     # A tile whose section no longer exists is left out, so no tile is a dead link; a section that no tile opens

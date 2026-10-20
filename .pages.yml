@@ -254,6 +254,67 @@ content:
             pattern:
               regex: "^(https://.*)?$"
               message: "Paste the full link, starting with https://"
+      - name: announcements
+        label: Announcements (slides in the purple banner)
+        description: Upcoming events and news. Each one is a slide after the welcome slide; the banner turns every few seconds and parents can use the arrows and dots. Drag to reorder. A slide disappears by itself after its "Show until" date.
+        type: object
+        list:
+          collapsible:
+            collapsed: true
+            summary: "{title} {show_until}"
+        fields:
+          - name: script
+            label: Small line above the title
+            type: string
+            description: For example "Coming up" or "Save the date". Leave blank to hide it.
+          - name: title
+            label: Title
+            type: string
+            description: For example "Fall Festival". Leave blank (with a graphic) to show only the graphic, for example a flyer made in Canva.
+          - name: when
+            label: Date and time line
+            type: string
+            description: Shown in a gold box under the title, for example "Friday, November 6 · 6:00 PM". Leave blank to hide it.
+          - name: text
+            label: Text
+            type: text
+            description: One or two short sentences.
+          - name: graphic
+            label: Graphic (optional)
+            type: file
+            description: A picture or flyer (JPG or PNG). With a title it shows on the right; without a title it fills the slide.
+            options:
+              extensions: [jpg, jpeg, png, gif, webp]
+          - name: graphic_description
+            label: Describe the graphic (optional)
+            type: string
+            description: A few words for parents who use a screen reader, for example "Fall Festival flyer, November 6 at 6 PM".
+          - name: button_text
+            label: Button text
+            type: string
+            description: For example "Sign up" or "Order lunch". Shown only with a button link.
+          - name: button_url
+            label: Button link
+            type: string
+            description: A full link starting with https://, or a section's "Page link name" (for example hot-lunch or conferences) to open it on this page. Leave blank for no button.
+          - name: show_from
+            label: Show from (optional)
+            type: date
+            default: ""
+            description: Leave blank to show it right away.
+            options:
+              format: yyyy-MM-dd
+          - name: show_until
+            label: Show until (optional)
+            type: date
+            default: ""
+            description: The last day it shows, usually the day of the event. Leave blank to keep it up until you delete it.
+            options:
+              format: yyyy-MM-dd
+          - name: hidden
+            label: Hide for now
+            type: boolean
+            description: Turn on to take the slide down without deleting it.
       - name: tiles_script
         label: Small line above the tiles
         type: string

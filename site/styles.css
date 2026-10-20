@@ -206,6 +206,26 @@ form.info .tr-who{grid-template-columns:1fr}
 .kc-btn:hover{background:#fff}
 .kc-hero a:focus-visible{outline-color:var(--gold)}
 .kc-crest{flex:0 1 300px;width:300px;max-width:100%;height:auto;margin:0 auto}
+/* Banner slider (site/kings-slides.js): welcome slide + announcements; slides swipe sideways, arrows and dots added by JS. */
+.kc-slider{position:relative}
+.kc-track{display:flex;margin:0;padding:0;list-style:none;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain}
+.kc-track::-webkit-scrollbar{display:none}
+.kc-slide{flex:0 0 100%;scroll-snap-align:start;display:flex;align-items:center;min-width:0}
+.kc-slide>.kc-hero-in{flex:1;box-sizing:border-box}
+.kc-slider-js .kc-hero-in{padding-left:96px;padding-right:96px;padding-bottom:84px}
+.kc-ann-title{font:italic 800 clamp(2.6rem,7vw,5rem)/.95 var(--kc-cond);text-transform:uppercase;color:#fff;margin:4px 0 0}
+.kc-when{display:inline-block;margin:16px 0 0;background:var(--gold);color:var(--navy-d);font-weight:800;font-size:17px;padding:6px 14px;border-radius:8px}
+.kc-ann-img{flex:0 1 420px;width:420px;max-width:100%;max-height:380px;object-fit:contain;border-radius:14px;margin:0 auto;box-shadow:0 12px 30px rgba(0,0,0,.3)}
+.kc-slide-flyer .kc-hero-in{justify-content:center}
+.kc-flyer{display:block;margin:0 auto;line-height:0}
+.kc-flyer img{display:block;max-width:100%;max-height:440px;width:auto;height:auto;border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,.3)}
+.kc-nav{position:absolute;top:50%;transform:translateY(-50%);width:52px;height:52px;display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.5);border-radius:50%;background:rgba(59,20,86,.55);color:#fff;cursor:pointer}
+.kc-nav:hover{background:var(--gold);border-color:var(--gold);color:var(--navy-d)}
+.kc-prev{left:24px}.kc-next{right:24px}
+.kc-dots{position:absolute;left:0;right:0;bottom:26px;display:flex;justify-content:center;gap:12px;pointer-events:none}
+.kc-dot{pointer-events:auto;width:16px;height:16px;padding:0;border:2px solid #fff;border-radius:50%;background:transparent;cursor:pointer}
+.kc-dot[aria-current="true"]{background:var(--gold);border-color:var(--gold)}
+.kc-nav:focus-visible,.kc-dot:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 .kc-find{padding-top:64px}
 .kc-eyebrow{font-size:28px;color:#8a5aa8}
 .kc-h2{font:italic 800 48px/1 var(--kc-cond);text-transform:uppercase;color:var(--navy);margin:0 0 32px}
@@ -245,6 +265,12 @@ html.kc-lock{overflow:hidden}
   .kc-hero-in{padding-top:44px;padding-bottom:44px;gap:28px}
   .kc-lead{font-size:19px}
   .kc-crest{width:220px}
+  .kc-slider-js .kc-hero-in{padding-left:20px;padding-right:20px;padding-bottom:72px}
+  .kc-nav{top:auto;bottom:12px;transform:none;width:44px;height:44px}
+  .kc-prev{left:16px}.kc-next{right:16px}
+  .kc-dots{bottom:26px}
+  .kc-ann-img{width:100%;max-height:320px}
+  .kc-flyer img{max-height:70vh}
   .kc-find{padding-top:44px}.kc-sections{padding-top:40px}
   .kc-h2{font-size:40px}
   .kc-tile{min-height:0}.kc-tiles{gap:14px}
