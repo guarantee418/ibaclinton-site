@@ -195,8 +195,6 @@ def _week_card(week, i, root):
     out.append(_no_school_line(week))
     if week["note"]:
         out.append(f'<p>{esc(week["note"])}</p>')
-    if week["deadline_label"]:
-        out.append(f'<p class="lunch-by" data-deadline="{week["deadline"]}">Please order by {esc(week["deadline_label"])}.</p>')
     out.append("</div></section>")
     return "".join(out)
 
