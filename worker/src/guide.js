@@ -395,10 +395,11 @@ async function kitchenCounts(call, s) {
   await must(call("PATCH", `${s}/range(address='A5:F12')`, { formulas: kitchenRows() }));
   await call("PATCH", `${s}/range(address='A5:F5')/format/font`, { bold: true, color: "#FFFFFF" });
   await call("PATCH", `${s}/range(address='A5:F5')/format/fill`, { color: NAVY });
-  await call("PATCH", `${s}/range(address='C6:F11')/format`, { numberFormat: Array(6).fill(Array(4).fill("0")) });
+  await call("PATCH", `${s}/range(address='C6:F11')`, { numberFormat: Array(6).fill(Array(4).fill("0")) });
   await call("PATCH", `${s}/range(address='E11:E12')/format/font`, { bold: false });
   await call("PATCH", `${s}/range(address='F11')/format/font`, { bold: true });
-  await call("PATCH", `${s}/range(address='E12:F12')/format`, { numberFormat: [["General", "$#,##0.00"]] });
+  await call("PATCH", `${s}/range(address='E12')`, { numberFormat: [["General"]] });
+  await must(call("PATCH", `${s}/range(address='F12')`, { numberFormat: [["$#,##0.00"]] }));
   await call("PATCH", `${s}/range(address='C:F')/format`, { columnWidth: 70 });
   return ["day counts with Staff"];
 }
