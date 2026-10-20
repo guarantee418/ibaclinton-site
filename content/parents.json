@@ -27,6 +27,9 @@
       "hidden": false
     },
     {
+      "script": "Picture Retakes October 29",
+      "title": "Picture Retakes",
+      "when": "October 29",
       "graphic": "/files/pic-retakes.png",
       "hidden": false
     }
