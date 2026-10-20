@@ -19,6 +19,9 @@
           "day": "Thursday",
           "meal": "Grilled Chicken & Potatoes"
         }
+      ],
+      "no_school": [
+        "Friday"
       ]
     }
   ],

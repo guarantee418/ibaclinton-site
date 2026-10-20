@@ -47,6 +47,9 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
   Worker checks the workbook's Staff Families tab (last name or parent email; `worker/src/staff.js`) and their rows
   say "Staff family price" in Notes. Staff prices are never shown on the site (no total on the form or thank-you); the confirmation email has them. The row's
   Grade says Staff (counted with K5-12th on the Kitchen tab).
+- **No school days** (`no_school` on a week, "No school on" in the editor): those days drop off the menu and the
+  form (so they can't be ordered), the card says "No school Friday, Oct 30.", and the week's dates shorten
+  (October 26 – 29). A Friday marked off moves the next week's usual deadline to Thursday 9:00 AM.
 - With `LUNCH_API` empty, the page shows the menu and the backup Microsoft Forms link, if any.
 
 ## Go-live checklist (only with Garrett Greene's approval)

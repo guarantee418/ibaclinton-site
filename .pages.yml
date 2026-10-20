@@ -61,11 +61,18 @@ content:
                 list:
                   max: 5
                 description: Only for a day with more than one option, for example Cheese pizza and Pepperoni pizza. Parents then pick one per student, and the Kitchen tab counts each choice. Leave empty for one meal.
+          - name: no_school
+            label: No school on
+            type: select
+            description: Pick any days there is no school this week, for example Friday for a day off. Those days show "No school" on the website, can't be ordered, and the week's dates shorten to match (Week of October 26 – 29). When a Friday is marked No school, the next week's usual deadline moves to Thursday by itself.
+            options:
+              multiple: true
+              values: [Monday, Tuesday, Wednesday, Thursday, Friday]
           - name: order_deadline
             label: Order deadline (only if different)
             type: date
             default: ""
-            description: Leave blank for the usual deadline, 9:00 AM on the Friday before the lunch week. Fill in only for a different date or time (Eastern), for example when that Friday is a day off.
+            description: Leave blank for the usual deadline, 9:00 AM on the Friday before the lunch week. Fill in only for a different date or time (Eastern).
             options:
               time: true
               format: yyyy-MM-dd'T'HH:mm

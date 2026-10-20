@@ -69,12 +69,35 @@ def _options(value):
             out.append(v)
     return out[:MAX_OPTIONS] if len(out) > 1 else []
 
-def _week(w):
-    """One lunch week as plain data: its Monday, label, order deadline, note, menu graphic and days."""
+def _no_school(w):
+    """The weekdays the office marked "No school" for a week (a list from the editor, or one day as text)."""
+    value = w.get("no_school")
+    value = value if isinstance(value, list) else [value]
+    return [d for d in DAYS if d in {str(v or "").strip() for v in value}]
+
+def _days_off(listed):
+    """Every no-school date across the listed weeks, so a week's usual deadline can skip a Friday off."""
+    out = set()
+    for w in listed:
+        start = _monday(_date(w.get("week_start"))) if isinstance(w, dict) else None
+        if start:
+            out.update(start + dt.timedelta(days=DAYS.index(d)) for d in _no_school(w))
+    return out
+
+def _day_off(day, start):
+    date = start + dt.timedelta(days=DAYS.index(day))
+    return {"day": day, "date": date.isoformat(), "date_label": f"{date:%b} {date.day}"}
+
+def _week(w, days_off=frozenset()):
+    """One lunch week as plain data: its Monday, label, order deadline, note, menu graphic, days and days off.
+    A day marked No school is left off the menu (so it can't be ordered) and out of the week's dates."""
     start = _monday(_date(w.get("week_start")))
+    off = _no_school(w)
     days = []
     for item in w.get("menu") or []:
         day, meal = str(item.get("day") or "").strip(), str(item.get("meal") or "").strip()
+        if day in off:
+            continue
         options = _options(item.get("options"))
         if not meal and options:
             meal = " or ".join(options)
@@ -85,9 +108,14 @@ def _week(w):
                      "date": date.isoformat() if date else "",
                      "date_label": f"{date:%b} {date.day}" if date else ""})
     deadline = _deadline(w.get("order_deadline"), start) if days else None
+    if deadline and not str(w.get("order_deadline") or "").strip():
+        # The usual Friday deadline moves to the school day before when that Friday is a day off.
+        while deadline.date() in days_off and deadline.weekday() > 0:
+            deadline -= dt.timedelta(days=1)
     week_label = str(w.get("week_of") or "").strip()
+    school = [i for i in range(5) if DAYS[i] not in off] or [0, 4]
     if start and not week_label:
-        week_label = _range_label(start, start + dt.timedelta(days=4))
+        week_label = _range_label(start + dt.timedelta(days=school[0]), start + dt.timedelta(days=school[-1]))
     graphic = pathlib.PurePosixPath(str(w.get("graphic") or "").strip()).name
     return {
         "week_start": start.isoformat() if start else "",
@@ -99,6 +127,7 @@ def _week(w):
         "note": str(w.get("note") or "").strip(),
         "graphic": f"files/{graphic}" if graphic.lower().endswith(IMAGE_TYPES) else "",
         "days": days,
+        "no_school": [_day_off(d, start) for d in off] if start else [],
     }
 
 def _weeks(data, today=None):
@@ -106,7 +135,8 @@ def _weeks(data, today=None):
     still works), earliest first, without weeks that are over or have nothing to show."""
     today = today or dt.datetime.now(EASTERN).date()
     listed = data.get("weeks") if isinstance(data.get("weeks"), list) else [data]
-    weeks = [_week(w) for w in listed if isinstance(w, dict)]
+    off = _days_off(listed)
+    weeks = [_week(w, off) for w in listed if isinstance(w, dict)]
     weeks = [w for w in weeks if w["week_start"] and (w["days"] or w["graphic"]) and w["week_end"] >= today.isoformat()]
     return sorted(weeks, key=lambda w: w["week_start"])
 
@@ -117,7 +147,8 @@ def menu_data(data, today=None):
     now = dt.datetime.now(dt.timezone.utc).isoformat()
     first = next((w for w in weeks if w["days"] and w["deadline"] > now), None) or next(
         (w for w in weeks if w["days"]), None) or {"week_start": "", "week_end": "", "week_label": "", "deadline": "",
-                                                  "deadline_label": "", "note": "", "graphic": "", "days": []}
+                                                  "deadline_label": "", "note": "", "graphic": "", "days": [],
+                                                  "no_school": []}
     return {
         **first,
         "prices": {"regular": float(data.get("price_regular") or 8), "preschool": float(data.get("price_preschool") or 5),
@@ -132,6 +163,13 @@ def menu_file(data):
 def can_order_online(week):
     """Online ordering needs a week start date, a deadline and at least one meal."""
     return bool(week["week_start"] and week["deadline"] and week["days"])
+
+def _no_school_line(week):
+    """"No school Friday, Oct 30." for the days the office marked off."""
+    if not week["no_school"]:
+        return ""
+    names = [f'{d["day"]}, {d["date_label"]}' for d in week["no_school"]]
+    return f'<p class="lunch-off">No school {esc(" and ".join(names) if len(names) < 3 else "; ".join(names))}.</p>'
 
 def _menu_table(week):
     return '<table class="lunch"><tbody>' + "".join(
@@ -154,6 +192,7 @@ def _week_card(week, i, root):
                    f'<img src="{src}" alt="Hot lunch menu for the week of {esc(week["week_label"])}" loading="lazy"></a>')
     if week["days"]:
         out.append(_menu_table(week))
+    out.append(_no_school_line(week))
     if week["note"]:
         out.append(f'<p>{esc(week["note"])}</p>')
     if week["deadline_label"]:
@@ -213,7 +252,8 @@ def order_form(menu, weeks, root, api):
     # One set of day boxes per open week; lunch.js shows the week picked under "Week".
     day_sets = "".join(
         f'<div class="lunch-days" role="group" aria-label="Lunch days, week of {esc(w["week_label"])}" '
-        f'data-week="{w["week_start"]}"{"" if i == 0 else " hidden"}>{"".join(_day_box(d) for d in w["days"])}</div>'
+        f'data-week="{w["week_start"]}"{"" if i == 0 else " hidden"}>{"".join(_day_box(d) for d in w["days"])}'
+        f'{_no_school_line(w)}</div>'
         for i, w in enumerate(weeks))
     week_options = "".join(
         f'<option value="{w["week_start"]}" data-deadline="{w["deadline"]}">Week of {esc(w["week_label"])} '
