@@ -57,7 +57,7 @@ export async function ensureTabs(call) {
     await must(call("PATCH", `${s}/range(address='A1:C3')`, {
       formulas: [["Lunches by homeroom", "", ""], ["", "", ""],
         ["Week of (Monday)", SHOW_WEEK,
-          "Shows the next week with orders, from this week on. Type another Monday's date to see that week."]],
+          ""]],
     }));
     await must(call("PATCH", `${s}/range(address='B3')`, { numberFormat: [["m/d/yyyy"]] }));
     await must(call("PATCH", `${s}/range(address='A5:G5')`, { values: [["Grade", "Student", ...DAYS]] }));
