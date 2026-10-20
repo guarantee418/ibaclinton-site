@@ -5,13 +5,13 @@
    "name": "TEST Form",
    "sheet": "TEST Form",
    "table": "Form_TestForm",
-   "version": "test3",
+   "version": "test2",
    "closed": false,
    "questions": [
     {
      "key": "q1",
-     "label": "Student's name",
-     "text": "Student's name",
+     "label": "Child's name",
+     "text": "Child's name",
      "type": "short",
      "required": true,
      "choices": [],
