@@ -2,7 +2,7 @@
 // on the same service and workbook as hot lunch, conferences, tours, transcripts and Request Info.
 //
 // Each response is one row of the "Responses" table on the Feedback tab of the office workbook (the service adds
-// that tab when it is missing). Name, email and phone are optional, so a parent can write without signing.
+// that tab when it is missing). Email is required so the office can reply (Garrett, 2026-10-20); name and phone are optional.
 // No email goes out: the office and Mr. Greene read the tab and update Status.
 
 export const SHEET = "Feedback";
@@ -43,7 +43,7 @@ export function validateFeedback(body) {
     name: str(body.name, 120).replace(/\s+/g, " "), email: str(body.email, 120).toLowerCase(), phone: str(body.phone, 30),
     grades: str(body.grades, 60), topic: str(body.topic, 40), message: str(body.message, 4000),
   };
-  if (q.email && !/^[^@\s<>"]+@[^@\s<>"]+\.[^@\s<>"]+$/.test(q.email)) return { error: "Please check your email address, or leave it blank" };
+  if (!/^[^@\s<>"]+@[^@\s<>"]+\.[^@\s<>"]+$/.test(q.email)) return { error: "Please enter your email address" };
   if (!TOPICS.includes(q.topic)) return { error: "Please choose a topic" };
   if (q.message.length < 5) return { error: "Please write your feedback" };
   return { feedback: q };
