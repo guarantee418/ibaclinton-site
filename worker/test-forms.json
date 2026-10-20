@@ -1,6 +1,57 @@
-{"forms": [{"id": "test-form", "name": "TEST Form", "sheet": "TEST Form", "table": "Form_TestForm", "version": "test1", "closed": false,
-  "questions": [
-    {"key": "q1", "label": "Child's name", "text": "Child's name", "type": "short", "required": true, "choices": [], "help": ""},
-    {"key": "q2", "label": "Lunch", "text": "Lunch", "type": "multi", "required": false, "choices": ["Sandwich", "Juice"], "help": ""},
-    {"key": "q3", "label": "Trip day", "text": "Trip day", "type": "date", "required": false, "choices": [], "help": ""}
-  ]}]}
+{
+ "forms": [
+  {
+   "id": "test-form",
+   "name": "TEST Form",
+   "sheet": "TEST Form",
+   "table": "Form_TestForm",
+   "version": "test2",
+   "closed": false,
+   "questions": [
+    {
+     "key": "q1",
+     "label": "Child's name",
+     "text": "Child's name",
+     "type": "short",
+     "required": true,
+     "choices": [],
+     "help": ""
+    },
+    {
+     "key": "q2",
+     "label": "Lunch",
+     "text": "Lunch",
+     "type": "multi",
+     "required": false,
+     "choices": [
+      "Sandwich",
+      "Juice"
+     ],
+     "help": ""
+    },
+    {
+     "key": "q3",
+     "label": "Trip day",
+     "text": "Trip day",
+     "type": "date",
+     "required": false,
+     "choices": [],
+     "help": ""
+    },
+    {
+     "key": "q4",
+     "label": "T-shirt size",
+     "text": "T-shirt size",
+     "type": "choice",
+     "required": false,
+     "choices": [
+      "S",
+      "M",
+      "L"
+     ],
+     "help": ""
+    }
+   ]
+  }
+ ]
+}
