@@ -263,7 +263,7 @@ test("the Gradelink tab is added once, with the billing list read from the Order
   assert.ok(!f.includes("Orders[Week of]=$B$3"));
   // Billing week: Monday-Thursday this week, Friday-Sunday the coming week (as Excel's WEEKDAY(d,3): Monday = 0).
   const monday = (iso) => { const d = new Date(`${iso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 3); d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7)); return d.toISOString().slice(0, 10); };
-  assert.equal(BILL_WEEK, "=TODAY()+3-WEEKDAY(TODAY()+3,3)");
+  assert.match(BILL_WEEK, /^=LET\(m,TODAY\(\)\+3-WEEKDAY\(TODAY\(\)\+3,3\),/);
   for (const day of ["2026-10-19", "2026-10-21", "2026-10-22"]) assert.equal(monday(day), "2026-10-19", day);
   for (const day of ["2026-10-23", "2026-10-24", "2026-10-25"]) assert.equal(monday(day), "2026-10-26", day);
 });
@@ -284,11 +284,35 @@ test("the Gradelink check shows a week for a moment, then puts the week box back
   assert.deepEqual(writes.map((c) => c.body), [{ values: [["10/26/2026"]] }, { formulas: [["=TODAY()+3-WEEKDAY(TODAY()+3,3)"]] }]);
 });
 
-test("the Gradelink week box can be put back to its formula", async () => {
-  const { resetBillWeek, BILL_WEEK } = await import("../src/gradelink.js");
+test("the week boxes show the earliest week with orders from this week on (Gradelink: from the coming week on Fridays)", async () => {
+  const { weekBox, SHOW_WEEK, BILL_WEEK, resetWeekBoxes } = await import("../src/gradelink.js");
+  assert.equal(SHOW_WEEK, weekBox("TODAY()-WEEKDAY(TODAY(),3)+IF(WEEKDAY(TODAY(),2)>5,7,0)"));
+  assert.equal(BILL_WEEK, weekBox("TODAY()+3-WEEKDAY(TODAY()+3,3)"));
+  // Week of may be a date or text; both become a day number before comparing.
+  assert.match(SHOW_WEEK, /w,INT\(IF\(ISNUMBER\(d\),d,IFERROR\(DATEVALUE\(d\),0\)\)\),IFERROR\(MIN\(FILTER\(w,w>=m\)\),m\)\)$/);
+  // The same rule in JavaScript (Excel's WEEKDAY(d,3): Monday = 0; WEEKDAY(d,2) > 5: Saturday or Sunday).
+  const day = (iso) => new Date(`${iso}T12:00:00Z`);
+  const iso = (d) => d.toISOString().slice(0, 10);
+  const add = (d, n) => { const x = new Date(d); x.setUTCDate(x.getUTCDate() + n); return x; };
+  const wd3 = (d) => (d.getUTCDay() + 6) % 7;
+  const show = (t) => add(t, -wd3(t) + (wd3(t) >= 5 ? 7 : 0));
+  const bill = (t) => add(add(t, 3), -wd3(add(t, 3)));
+  const box = (from, weeks) => weeks.filter((w) => w >= iso(from)).sort()[0] || iso(from);
+  const weeks = ["2026-10-12", "2026-10-26"];
+  assert.equal(box(show(day("2026-10-20")), weeks), "2026-10-26"); // Garrett, 10/20: all three show 10/26
+  assert.equal(box(bill(day("2026-10-20")), weeks), "2026-10-26");
+  assert.equal(box(show(day("2026-10-30")), [...weeks, "2026-11-02"]), "2026-10-26"); // Friday: Kitchen keeps this week
+  assert.equal(box(bill(day("2026-10-30")), [...weeks, "2026-11-02"]), "2026-11-02"); // Gradelink bills the closed week
+  assert.equal(box(show(day("2026-11-04")), weeks), "2026-11-02"); // no later orders: this week
+  // The reset writes all three boxes and reports what each shows.
   const calls = [];
-  await resetBillWeek(async (method, path, body) => { calls.push({ method, path, body }); return new Response("{}"); });
-  assert.deepEqual(calls, [{ method: "PATCH", path: "/worksheets/Gradelink/range(address='B3')", body: { formulas: [[BILL_WEEK]] } }]);
+  const out = await resetWeekBoxes(async (method, path, body) => {
+    calls.push({ method, path, body });
+    return new Response(JSON.stringify(method === "GET" ? { text: [["10/26/2026"]] } : {}));
+  });
+  assert.deepEqual(out, { Kitchen: "10/26/2026", Homerooms: "10/26/2026", Gradelink: "10/26/2026" });
+  const b3 = calls.filter((c) => c.method === "PATCH" && c.path.endsWith("B3')")).map((c) => [c.path.split("/")[2], c.body.formulas[0][0]]);
+  assert.deepEqual(b3, [["Kitchen", SHOW_WEEK], ["Homerooms", SHOW_WEEK], ["Gradelink", BILL_WEEK]]);
 });
 
 test("POST /admin needs the setup key", async () => {
