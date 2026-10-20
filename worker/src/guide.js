@@ -79,6 +79,7 @@ export function colNumber(a) {
 
 const ORDER = ["How to use", "Orders", "Kitchen", "Homerooms", "Teachers", "Staff Families", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"];
 const NAVY = "#1B2A4A";
+const RED = "#B00020";
 const MONDAY = "TODAY()-WEEKDAY(TODAY(),3)+IF(WEEKDAY(TODAY(),2)>5,7,0)";
 
 // Tables whose empty rows can go: the column that is always filled on a real row, and the columns that are
@@ -101,7 +102,7 @@ export const NOTES = {
     "• Billing: filter 'Week of' to one Monday, then charge each student's Total in Gradelink.",
     "• Phone change: type an X (or the choice) under a day, or delete it. Cancel a student's whole week: delete the row.",
     "• Use Notes for anything worth remembering. Order # is the number in the parent's email.",
-    "• Don't rename, add, remove or move the columns of this table: the website fills them.",
+    "⚠ NEVER rename the headings in row 1 (e.g. Price per lunch, Lunches, Total) or add columns inside the table: orders stop going through. Your own columns go right of Notes, with a blank column between.",
   ]],
   Kitchen: ["G1", [
     "How to use this tab (full steps: How to use tab)",
@@ -175,7 +176,7 @@ export const NOTES = {
 };
 
 // The "How to use" tab: [kind, column A, column B]. Kinds: title, text, head (a section), tab (a row of the
-// tabs-at-a-glance list), step (a numbered step), gap.
+// tabs-at-a-glance list), step (a numbered step), warn (a step in bold red), gap.
 export const GUIDE = [
   ["title", "IBA Portal Forms: how to use this workbook"],
   ["text", "Everything families fill out on ibaclinton.com lands in this workbook by itself: hot lunch orders, parent-teacher conferences, school tours, transcript requests, Request Info inquiries, parents' feedback for administration and absence reports."],
@@ -201,6 +202,7 @@ export const GUIDE = [
   ["step", "4", "Changes by phone: type an X under a day to add a lunch (on a day with choices, type the choice exactly as on the menu), or clear the cell to remove one; the totals update. To cancel a student's whole week, right-click the row number and choose Delete."],
   ["step", "5", "Use the Notes column for anything worth remembering (paid in cash, called to change, and so on)."],
   ["step", "6", "To find an order, press Ctrl+F (Cmd+F on a Mac) and type the Order # from the parent's email, or the student's name."],
+  ["warn", "⚠", "NEVER rename, add, remove or move the column headings on the Orders tab. Row 1 must read exactly: Submitted, Week of, Order #, Parent, Email, Phone, Student, Grade, Preschool, Price per lunch, Mon, Tue, Wed, Thu, Fri, Lunches, Total, Notes. If one is changed, no parent can order (the website says \"We couldn't save your order\") until it is put back. Your own columns go to the right of Notes, with one blank column in between."],
   ["gap"],
   ["head", "Hot lunch: Kitchen tab"],
   ["step", "1", "Shows how many lunches to make each day of one week: K5–12th (staff are counted here), Preschool and Total, plus the week total and the week's charges."],
@@ -259,7 +261,7 @@ export const GUIDE = [
   ["gap"],
   ["head", "Rules that keep the website working"],
   ["step", "•", "Don't rename this file or move it out of the main folder of the OneDrive."],
-  ["step", "•", "Don't rename the tabs, the tables or their column headings, and don't add, remove or move columns inside a table. Your own notes can go to the right of a table, outside it."],
+  ["warn", "⚠", "NEVER rename the tabs, the tables or their column headings, and never add, remove or move columns inside a table: the website stops saving that form until they are put back. Your own notes can go to the right of a table, with one blank column in between."],
   ["step", "•", "Add rows at the bottom of a table (press Tab in the last cell of the table), not below it or in between."],
   ["step", "•", "Type dates like 11/16/2026 and times like 9:30 AM, so the website can read them."],
   ["step", "•", "Rows whose names start with TEST are tests; Mr. Greene removes them."],
@@ -296,10 +298,11 @@ export async function organize(call, step) {
       await must(call("PATCH", `${sheet(name)}/range(address='${col}1:${col}${lines.length}')`, { values: lines.map((l) => [l]) }));
       await call("PATCH", `${sheet(name)}/range(address='${col}2:${col}${lines.length}')/format/font`, { color: "#444444" });
       await call("PATCH", `${sheet(name)}/range(address='${col}1')/format/font`, { bold: true, color: NAVY });
+      for (const [i, line] of lines.entries()) { // a "⚠" line is a warning: bold red
+        if (line.startsWith("⚠")) await call("PATCH", `${sheet(name)}/range(address='${col}${i + 1}')/format/font`, { bold: true, color: RED });
+      }
       done.push(name);
     }
-    // The old one-line reminder on the Kitchen tab is now part of the reminder at G1.
-    if (have.has("Kitchen")) await call("POST", `${sheet("Kitchen")}/range(address='C3')/clear`, { applyTo: "Contents" });
   } else if (step === "kitchen") { // with no orders yet the week box showed 1/0/1900; then show this week
     if (have.has("Kitchen")) {
       const b3 = await call("GET", `${sheet("Kitchen")}/range(address='B3')?$select=formulas`);
@@ -366,7 +369,7 @@ async function writeGuide(call, s) {
   await call("POST", `${s}/range(address='A1:F300')/clear`, { applyTo: "All" });
   const n = GUIDE.length;
   await must(call("PATCH", `${s}/range(address='A1:B${n}')`, {
-    values: GUIDE.map(([kind, a = "", b = ""]) => (kind === "tab" || kind === "step" ? [a, b] : [a, ""])) }));
+    values: GUIDE.map(([kind, a = "", b = ""]) => (kind === "tab" || kind === "step" || kind === "warn" ? [a, b] : [a, ""])) }));
   await call("PATCH", `${s}/range(address='A:A')/format`, { columnWidth: 110, horizontalAlignment: "Right" });
   await call("PATCH", `${s}/range(address='A:A')/format/font`, { bold: true, color: NAVY });
   await call("PATCH", `${s}/range(address='B:B')/format`, { columnWidth: 640, wrapText: true });
@@ -385,6 +388,8 @@ async function writeGuide(call, s) {
     } else if (kind === "head") {
       await call("PATCH", `${r}/format/fill`, { color: NAVY });
       await call("PATCH", `${r}/format/font`, { size: 12, color: "#FFFFFF" });
+    } else if (kind === "warn") {
+      await call("PATCH", `${r}/format/font`, { bold: true, color: RED });
     }
   }
   // The tabs-at-a-glance rows sit together: tab names left-aligned in one go.

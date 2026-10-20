@@ -689,7 +689,7 @@ import { organize, inspect, STEPS, GUIDE, NOTES } from "../src/guide.js";
 
 function fakeBook({ orders = [], b3 = "=MAX(Orders[Week of])" } = {}) {
   const calls = [];
-  const sheets = ["Orders", "Homerooms", "Kitchen", "How to use", "Teachers", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"];
+  const sheets = ["Orders", "Homerooms", "Kitchen", "How to use", "Teachers", "Staff Families", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"];
   const ok = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
   const call = async (method, path, body) => {
     calls.push({ method, path, body });
@@ -732,6 +732,24 @@ test("organize: the Kitchen week box is fixed only while it still holds the orig
   const t = b.calls.find((c) => c.method === "PATCH" && c.path.includes("range(address='A14:E40')"));
   assert.equal(t.body.formulas.length, 27);
   assert.match(t.body.formulas[2][1], /Orders\[Mon\]/); assert.match(t.body.formulas[7][1], /Orders\[Tue\]/);
+});
+
+test("organize: the warnings about the Orders headings are bold red", async () => {
+  let b = fakeBook();
+  await organize(b.call, "notes");
+  const n = NOTES.Orders[1].findIndex((l) => l.startsWith("⚠")) + 1;
+  assert.ok(n > 0 && /Price per lunch, Lunches, Total/.test(NOTES.Orders[1][n - 1]));
+  assert.ok(b.calls.some((c) => c.path === `/worksheets/Orders/range(address='T${n}')/format/font` && c.body.bold && c.body.color === "#B00020"));
+  b = fakeBook();
+  await organize(b.call, "guide");
+  const warns = GUIDE.map(([k], i) => (k === "warn" ? i + 1 : 0)).filter(Boolean);
+  assert.equal(warns.length, 2);
+  assert.match(GUIDE[warns[0] - 1][2], /Price per lunch, Mon, Tue, Wed, Thu, Fri, Lunches, Total, Notes/);
+  for (const r of warns) {
+    assert.ok(b.calls.some((c) => c.path.endsWith(`range(address='A${r}:B${r}')/format/font`) && c.body.bold && c.body.color === "#B00020"), `row ${r}`);
+  }
+  const values = b.calls.find((c) => c.method === "PATCH" && c.body && c.body.values).body.values;
+  assert.equal(values[warns[0] - 1][0], "⚠");
 });
 
 test("guide and reminders cover every tab", () => {
