@@ -32,6 +32,7 @@ export async function inspect(call) {
     if (w.name === "How to use" || w.name === "Kitchen") addr = "A1:H60";
     else if (lastCol) addr = `${colLetter(lastCol + 1)}1:${colLetter(lastCol + 4)}15`;
     else if (w.name === "Homerooms") addr = "A1:H5";
+    else if (w.name === "Gradelink") addr = "A1:I6"; // the billing list below has names
     else if (w.name === "Teachers") addr = "D1:H10"; // notes only: teacher emails stay out of the (public) logs
     else addr = "A1:H8";
     const txt = await call("GET", `${s}/range(address='${addr}')?$select=text,formulas`);
@@ -77,7 +78,7 @@ export function colNumber(a) {
 // each tab's table, the Kitchen week box, and empty rows left at the bottom of the tables
 // after deletions (a table keeps at least one row). Safe to run again; it writes the same thing each time.
 
-const ORDER = ["How to use", "Orders", "Kitchen", "Homerooms", "Teachers", "Staff Families", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"];
+const ORDER = ["How to use", "Orders", "Kitchen", "Homerooms", "Gradelink", "Teachers", "Staff Families", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"];
 const NAVY = "#1B2A4A";
 const RED = "#B00020";
 const MONDAY = "TODAY()-WEEKDAY(TODAY(),3)+IF(WEEKDAY(TODAY(),2)>5,7,0)";
@@ -99,7 +100,7 @@ export const NOTES = {
   Orders: ["T1", [
     "How to use this tab (full steps: How to use tab)",
     "• Each hot lunch order from the website adds one row per student, with an X (or the choice, e.g. Cheese pizza) under each day ordered.",
-    "• Billing: filter 'Week of' to one Monday, then charge each student's Total in Gradelink.",
+    "• Billing: the Gradelink tab lists what to charge each student for a week.",
     "• Phone change: type an X (or the choice) under a day, or delete it. Cancel a student's whole week: delete the row.",
     "• Use Notes for anything worth remembering. Order # is the number in the parent's email.",
     "⚠ NEVER rename the headings in row 1 (e.g. Price per lunch, Lunches, Total) or add columns inside the table: orders stop going through. Your own columns go right of Notes, with a blank column between.",
@@ -116,6 +117,14 @@ export const NOTES = {
     "• This week's lunches by grade, youngest first. The week changes by itself (weekends show the coming week).",
     "• Teachers get the same list by email every Monday at 7:00 AM.",
     "• Nothing to type. Leave column K (the grade order) and the rows below the headings as they are.",
+  ]],
+  Gradelink: ["K1", [
+    "How to use this tab (full steps: How to use tab)",
+    "• What to charge in Gradelink for one lunch week: one row per student, brothers and sisters together by family name.",
+    "• Monday–Thursday it shows this week; from Friday on (orders close Friday 9:00 AM) the coming week. Type another Monday in the yellow box to see that week.",
+    "• Charge each student the Charge amount; the Gradelink memo can be copied into the charge's memo.",
+    "• Grade 'Staff' is a staff member's own lunch, not a student's. Notes come from the Orders tab (for example 'Staff family price').",
+    "• Phone changes made on the Orders tab show up here by themselves. Nothing to type except the yellow box.",
   ]],
   Teachers: ["E1", [
     "How to use this tab (full steps: How to use tab)",
@@ -186,6 +195,7 @@ export const GUIDE = [
   ["tab", "Orders", "Hot lunch orders: one row per student per week. Filled in by the website. Used for billing in Gradelink."],
   ["tab", "Kitchen", "Lunch counts per day for one week (K5–12th and Preschool) and the week's charges. Formulas only."],
   ["tab", "Homerooms", "This week's lunches by grade. Formulas only. Teachers get the same list by email every Monday."],
+  ["tab", "Gradelink", "What to charge each student in Gradelink for one lunch week. Formulas only."],
   ["tab", "Teachers", "Each grade's homeroom teacher and email. Kept up to date by the office."],
   ["tab", "Staff Families", "Staff families whose children get the staff hot lunch price. Kept up to date by the office."],
   ["tab", "Conferences", "Parent-teacher conference bookings, one row per booking."],
@@ -194,11 +204,12 @@ export const GUIDE = [
   ["tab", "Inquiries", "Request Info forms from families interested in enrolling."],
   ["tab", "Feedback", "Feedback for Administration from The Kings Corner, one row per response."],
   ["tab", "Absences", "Absences parents report on the website, one row per report."],
+  ["text", "Forms the office adds to The Kings Corner in the website editor each get their own tab too, named after the form (see 'Forms added in the editor' below)."],
   ["gap"],
   ["head", "Hot lunch: Orders tab"],
   ["step", "1", "Parents order on The Kings Corner page of the website. Each order adds one row per student: Week of (that Monday), the parent's contact, grade, price per lunch and an X under each day ordered; on a day with choices the cell says which one (for example Pepperoni pizza). Lunches and Total add themselves up."],
   ["step", "2", "Prices: Preschool (K3 and K4) $5 a lunch, K5–12th $8, Staff $4 (staff rows say Grade 'Staff'). Orders close at 9:00 AM on the Friday before the lunch week unless the menu says otherwise."],
-  ["step", "3", "Billing, each week after orders close: click the arrow on the 'Week of' heading, choose only that Monday, then charge each student's Total in Gradelink. Clear the filter afterwards."],
+  ["step", "3", "Billing, each week after orders close: use the Gradelink tab (below). It adds up each student's lunches for the week."],
   ["step", "4", "Changes by phone: type an X under a day to add a lunch (on a day with choices, type the choice exactly as on the menu), or clear the cell to remove one; the totals update. To cancel a student's whole week, right-click the row number and choose Delete."],
   ["step", "5", "Use the Notes column for anything worth remembering (paid in cash, called to change, and so on)."],
   ["step", "6", "To find an order, press Ctrl+F (Cmd+F on a Mac) and type the Order # from the parent's email, or the student's name."],
@@ -214,6 +225,12 @@ export const GUIDE = [
   ["step", "1", "Shows this week's lunches grouped by grade, youngest first, taken from the Orders tab. The week changes by itself every Monday; on Saturday and Sunday it shows the coming week."],
   ["step", "2", "Every Monday at 7:00 AM each homeroom teacher gets the list for their grades by email (Cc ibs@ibcministries.org). A teacher with no lunches that week gets no email."],
   ["step", "3", "Nothing to type here. Leave column K (the grade order the list uses) and everything below the headings as it is."],
+  ["gap"],
+  ["head", "Hot lunch billing: Gradelink tab"],
+  ["step", "1", "Shows what to charge in Gradelink for one lunch week: one row per student (two orders for the same student are added together), brothers and sisters together by family name, with Lunches, Price per lunch, Charge and a memo to copy into Gradelink. 'Total to bill' at the top is the whole week."],
+  ["step", "2", "Monday to Thursday it shows this week; from Friday on (orders close Friday at 9:00 AM) it shows the coming week. To bill a different week, type that week's Monday (like 10/26/2026) in the yellow box."],
+  ["step", "3", "For each row, open the student in Gradelink and post the Charge (paste the memo if you like). Grade 'Staff' is a staff member's own lunch, not a student's. Notes come from the Orders tab (for example 'Staff family price')."],
+  ["step", "4", "Phone changes made on the Orders tab show up here by themselves. Everything except the yellow box is a formula: please don't type over it."],
   ["gap"],
   ["head", "Teachers tab"],
   ["step", "1", "One row per grade: Grade, Teacher and Email. The Monday lunch lists and the conference booking notices use it."],
@@ -259,6 +276,12 @@ export const GUIDE = [
   ["step", "2", "The homeroom teacher comes from the Teachers tab (matched by grade). 'Teacher told' shows who was Cc'd; 'No email on Teachers tab' means the teacher wasn't told, so please pass it on."],
   ["step", "3", "To see who is out on a day, sort or filter the First day column. Use Notes for anything worth remembering (called in, doctor's note received, and so on)."],
   ["gap"],
+  ["head", "Forms added in the editor"],
+  ["step", "1", "In the website editor, open The Kings Corner, open a section and fill in its Form: a name (also the tab's name here), up to 15 questions with an answer type each, and Required where needed. Every form also asks the person's name and email. Save, and the form shows in that section's pop-up a minute or two later."],
+  ["step", "2", "The first response makes the form's tab in this workbook, with one column per question. Each response adds a row with Status 'New'; the person gets a confirmation email with their answers, and iba@ and ibs@ get the details (pressing Reply answers the person)."],
+  ["step", "3", "Change Status as you go (for example Read, Done) and use Notes. To stop a form, turn on 'Stop taking responses' in the editor, or delete the form from the section."],
+  ["warn", "⚠", "Adding a question adds a column at the end of the form's tab. Renaming the form, or renaming, removing or reordering its questions, starts a NEW tab (for example 'Field Trip 2'), so answers never land under the wrong heading. NEVER rename, move or delete the columns on a form's tab: the next response would start a new tab."],
+  ["gap"],
   ["head", "Rules that keep the website working"],
   ["step", "•", "Don't rename this file or move it out of the main folder of the OneDrive."],
   ["warn", "⚠", "NEVER rename the tabs, the tables or their column headings, and never add, remove or move columns inside a table: the website stops saving that form until they are put back. Your own notes can go to the right of a table, with one blank column in between."],
@@ -269,7 +292,7 @@ export const GUIDE = [
 ];
 
 // One step per call: each stays under Cloudflare's limit on outside calls per request (50 on the free plan).
-export const STEPS = ["order", "guide", "notes", "kitchen", "rows"];
+export const STEPS = ["order", "guide", "headings", "notes", "notes2", "kitchen", "rows"];
 
 export async function organize(call, step) {
   const list = await call("GET", "/worksheets?$select=name,position");
@@ -285,13 +308,19 @@ export async function organize(call, step) {
       const r = await call("PATCH", sheet(name), { position: pos++ });
       done.push(r.ok ? name : `${name}: ${r.status}`);
     }
-  } else if (step === "guide") { // the How to use tab
+  } else if (step === "guide") { // the How to use tab: its text
     if (have.has("How to use")) {
       await writeGuide(call, sheet("How to use"));
       done.push(`${GUIDE.length} lines`);
     }
-  } else if (step === "notes") { // the reminder beside each tab's table
-    for (const [name, [start, lines]] of Object.entries(NOTES)) {
+  } else if (step === "headings") { // ... and its section headings and warnings (a step of their own: 50 calls)
+    if (have.has("How to use")) {
+      await formatGuide(call, sheet("How to use"));
+      done.push("headings");
+    }
+  } else if (step === "notes" || step === "notes2") { // the reminder beside each tab's table, half the tabs per step
+    const all = Object.entries(NOTES), half = Math.ceil(all.length / 2);
+    for (const [name, [start, lines]] of step === "notes" ? all.slice(0, half) : all.slice(half)) {
       if (!have.has(name)) continue;
       const col = start.replace(/\d+/g, "");
       await call("POST", `${sheet(name)}/range(address='${col}1:${col}15')/clear`, { applyTo: "All" });
@@ -385,17 +414,25 @@ async function writeGuide(call, s) {
       await call("POST", `${r}/merge`, { across: false });
       await call("PATCH", `${r}/format`, { horizontalAlignment: "Left", wrapText: true, rowHeight: 16 * Math.ceil(a.length / 115) + 4 });
       await call("PATCH", `${r}/format/font`, { bold: false, color: "#000000" });
-    } else if (kind === "head") {
-      await call("PATCH", `${r}/format/fill`, { color: NAVY });
-      await call("PATCH", `${r}/format/font`, { size: 12, color: "#FFFFFF" });
-    } else if (kind === "warn") {
-      await call("PATCH", `${r}/format/font`, { bold: true, color: RED });
     }
   }
   // The tabs-at-a-glance rows sit together: tab names left-aligned in one go.
   const tabs = GUIDE.map(([kind], i) => (kind === "tab" ? i + 1 : 0)).filter(Boolean);
   if (tabs.length) {
     await call("PATCH", `${s}/range(address='A${tabs[0]}:A${tabs[tabs.length - 1]}')/format`, { horizontalAlignment: "Left" });
+  }
+}
+
+async function formatGuide(call, s) {
+  for (let i = 0; i < GUIDE.length; i++) {
+    const [kind] = GUIDE[i];
+    const r = `${s}/range(address='A${i + 1}:B${i + 1}')`;
+    if (kind === "head") {
+      await call("PATCH", `${r}/format/fill`, { color: NAVY });
+      await call("PATCH", `${r}/format/font`, { size: 12, color: "#FFFFFF" });
+    } else if (kind === "warn") {
+      await call("PATCH", `${r}/format/font`, { bold: true, color: RED });
+    }
   }
 }
 

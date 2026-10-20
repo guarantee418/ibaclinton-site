@@ -29,7 +29,7 @@ jobs:
             -H "X-Setup-Key: $LUNCH_SETUP_KEY" -H "Content-Type: application/json" -d "$1" | jq -c .; }
           if [ "$ACTION" = organize ]; then
             # One step per request (src/guide.js STEPS), so each stays under Cloudflare's per-request limit.
-            for step in order guide notes kitchen rows; do post "$(jq -nc --arg s "$step" '{action:"organize",step:$s}')"; done
+            for step in order guide headings notes notes2 kitchen rows; do post "$(jq -nc --arg s "$step" '{action:"organize",step:$s}')"; done
           else
             curl -fsS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" \
               -H "X-Setup-Key: $LUNCH_SETUP_KEY" -H "Content-Type: application/json" -d '{"action":"inspect"}' | jq .

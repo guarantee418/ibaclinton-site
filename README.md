@@ -30,6 +30,22 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
 - Everything typed in the editor is HTML-escaped by `build.py`, and only `https://` links are used.
   Section text is rich text: `build.py` keeps only simple formatting (bold, italics, lists, links).
 
+## Forms the office adds (The Kings Corner)
+
+- Any Kings Corner section can have a **Form** in the editor: a name, optional text above it, button text, "Stop
+  taking responses", and up to 15 questions (Short answer, Long answer, Email, Phone, Date, Number, Dropdown,
+  Checkboxes, Yes/No box; required; help text). Every form also asks the person's name and email. Approved by
+  Garrett 2026-10-20: forms go live when the office saves them.
+- `forms.py` draws the form (sent by `site/forms.js`) and writes `site/forms/forms.json`, which the Pages workflow
+  commits; the service (`worker/src/forms.js`, `POST /form`) reads it from GitHub (`FORMS_URL`) and checks every
+  answer against it. A page built with other questions is refused ("This form changed; please reload").
+- The first response makes the form's own tab in IBA Portal Forms.xlsx (named after the form, table `Form_<Name>`).
+  A question added at the end adds a column; renaming the form, or renaming, removing or reordering questions,
+  starts a new tab ("Name 2"). The person gets a confirmation with their answers; `FORM_NOTIFY` (iba@ and ibs@)
+  gets the details, Reply-To the person.
+- TEST responses: Actions -> "Delete a TEST booking, lunch order or tour sign-up", kind "form response" (only a Name
+  starting with TEST; a form tab named "TEST..." is removed once empty).
+
 ## Hot lunch ordering
 
 - The Hot Lunch section of The Kings Corner comes from `content/lunch.json` via `lunch.py`: menu

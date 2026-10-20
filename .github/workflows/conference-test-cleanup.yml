@@ -1,6 +1,7 @@
 name: Delete a TEST booking, lunch order or tour sign-up
 
-# Manual only. Removes a TEST row from the office workbook by its number: an absence report (Absences tab,
+# Manual only. Removes a TEST row from the office workbook by its number: a response to a form the office added
+# (its own tab, only if its Name starts with "TEST"; a tab named "TEST..." goes too once it is empty), an absence report (Absences tab,
 # only if its Student starts with "TEST"), a Feedback for Administration
 # response (Feedback tab, only if its Name starts with "TEST"), a Request Info inquiry
 # (Inquiries tab, only if its Student starts with "TEST"), a transcript request
@@ -15,7 +16,7 @@ on:
       kind:
         description: "What to delete"
         type: choice
-        options: [conference booking, lunch order, tour sign-up, transcript request, info request, feedback, absence report]
+        options: [conference booking, lunch order, tour sign-up, transcript request, info request, feedback, absence report, form response]
         default: conference booking
       id:
         description: "Its number (5 letters/digits, e.g. MBG7S)"
@@ -40,6 +41,7 @@ jobs:
           [ "$KIND" = "info request" ] && action=delete_test_inquiry
           [ "$KIND" = "feedback" ] && action=delete_test_feedback
           [ "$KIND" = "absence report" ] && action=delete_test_absence
+          [ "$KIND" = "form response" ] && action=delete_test_form
           body=$(jq -nc --arg a "$action" --arg id "$ID" '{action:$a,id:$id}')
           curl -fsS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" \
             -H "X-Setup-Key: $LUNCH_SETUP_KEY" -H "Content-Type: application/json" -d "$body"

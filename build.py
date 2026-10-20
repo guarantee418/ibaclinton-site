@@ -14,6 +14,7 @@ import html, json, pathlib, re
 from html.parser import HTMLParser
 
 import conferences
+import forms
 import lunch
 import tours
 
@@ -281,7 +282,7 @@ def parents_block(data, root):
             + (f'<h2 class="kc-h2">{esc(data.get("tiles_heading"))}</h2>' if esc(data.get("tiles_heading")) else "")
             + f'<ul class="kc-tiles">{"".join(cards)}</ul></div>')
 
-    blocks = []
+    blocks, form_ids = [], set()
     for s in sections:
         extra = ""
         if s.get("show_lunch"):
@@ -290,6 +291,7 @@ def parents_block(data, root):
             extra += feedback_form(root)
         if s.get("show_absence"):
             extra += absence_form(root)
+        extra += forms.form_html(s, root, LUNCH_API, form_ids)  # a form the office added (forms.py)
         blocks.append(f'<div class="block" id="{s["_id"]}"><h2>{esc(s["title"])}</h2>'
                       f'{clean_html(s.get("text"))}{docs_list(s.get("links"), root)}{extra}</div>')
     back = f'Back to {esc(hero.get("title")) or "The Kings Corner"}'
@@ -364,6 +366,8 @@ if __name__ == "__main__":
     write("lunch/menu.json", lunch.menu_file(json.loads((CONTENT / "lunch.json").read_text())))
     (OUT / "conferences").mkdir(exist_ok=True)
     write("conferences/schedule.json", conferences.schedule_file(json.loads((CONTENT / "conferences.json").read_text())))
+    (OUT / "forms").mkdir(exist_ok=True)
+    write("forms/forms.json", forms.forms_file(json.loads((CONTENT / "parents.json").read_text())))
     (OUT / "tours").mkdir(exist_ok=True)
     write("tours/schedule.json", tours.schedule_file(json.loads((CONTENT / "tours.json").read_text())))
     write("robots.txt", f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}sitemap.xml\n")

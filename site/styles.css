@@ -187,7 +187,7 @@ form.info textarea{resize:vertical}
 form.info label.tr-choice{flex-direction:row;align-items:flex-start;gap:.5rem;font-weight:400;font-size:1rem;cursor:pointer}
 form.info .tr-who{grid-template-columns:1fr}
 #tr-status:empty{display:none}
-#ab-status:empty{display:none}#ab-status{margin:1rem 0}.ab-form{margin-top:1rem}#fb-status:empty{display:none}#fb-status{margin:1rem 0}.fb-form{margin-top:1rem}form.info .fb-note{grid-column:1/-1;margin:0;color:var(--muted);font-size:.92rem}
+#ab-status:empty{display:none}#ab-status{margin:1rem 0}.ab-form{margin-top:1rem}#fb-status:empty{display:none}#fb-status{margin:1rem 0}.fb-form{margin-top:1rem}.cf-status:empty{display:none}.cf-status{margin:1rem 0}.cf-form{margin-top:1rem}.cf-intro{margin:0}.cf-fine{margin:0;color:var(--muted);font-size:.9rem}form.info .cf-group{display:flex;flex-direction:column;gap:.45rem;font-size:.92rem}form.info .cf-label{font-weight:600}form.info label.cf-check{flex-direction:row;align-items:flex-start;gap:.55rem;font-weight:400}form.info .cf-check input{margin:.2rem 0 0;padding:0;width:auto}form.info .cf-help{font-weight:400;color:var(--muted);font-size:.88rem}form.info .fb-note{grid-column:1/-1;margin:0;color:var(--muted);font-size:.92rem}
 
 /* The Kings Corner (parents page only; everything below is scoped to .kc). Purple and gold from the Kings crest;
    gold is only ever a background or used on purple, never text on a light background. */
