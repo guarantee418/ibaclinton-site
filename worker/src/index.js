@@ -54,7 +54,7 @@ import { TABLE as INQUIRY_TABLE, deleteTestInquiry, ensureInquiryTab, familyMail
 import { TABLE as ABSENCE_TABLE, absenceRow, deleteTestAbsence, ensureAbsenceTab, homeroomFor, officeMail as absenceOfficeMail,
   parentMail as absenceParentMail, validateAbsence } from "./absences.js";
 import { ensureStaffTab, isStaffFamily, readStaffFamilies } from "./staff.js";
-import { checkGradelink, ensureGradelinkTab, tryGradelink } from "./gradelink.js";
+import { checkGradelink, ensureGradelinkTab, resetBillWeek, tryGradelink } from "./gradelink.js";
 import { TABLE as FEEDBACK_TABLE, deleteTestFeedback, ensureFeedbackTab, feedbackRow, validateFeedback } from "./feedback.js";
 import { confirmationMail as formMail, deleteTestResponse, noticeMail as formNotice, responseRow, saveResponse,
   validateResponse } from "./forms.js";
@@ -167,6 +167,7 @@ async function admin(request, env) {
     const token = await accessToken(env);
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
     const call = workbook(token, env);
+    if (body.reset) await resetBillWeek(call);
     const weeks = await weekCounts(call);
     const rowsFor = (text) => { const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(text || "").trim());
       return m ? weeks[`${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`] || 0 : null; };

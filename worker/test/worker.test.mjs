@@ -284,6 +284,13 @@ test("the Gradelink check shows a week for a moment, then puts the week box back
   assert.deepEqual(writes.map((c) => c.body), [{ values: [["10/26/2026"]] }, { formulas: [["=TODAY()+3-WEEKDAY(TODAY()+3,3)"]] }]);
 });
 
+test("the Gradelink week box can be put back to its formula", async () => {
+  const { resetBillWeek, BILL_WEEK } = await import("../src/gradelink.js");
+  const calls = [];
+  await resetBillWeek(async (method, path, body) => { calls.push({ method, path, body }); return new Response("{}"); });
+  assert.deepEqual(calls, [{ method: "PATCH", path: "/worksheets/Gradelink/range(address='B3')", body: { formulas: [[BILL_WEEK]] } }]);
+});
+
 test("POST /admin needs the setup key", async () => {
   const env = { ...ENV0, LUNCH_KV: kv() };
   const req = (key) => new Request("https://lunch.test/admin", { method: "POST", body: '{"action":"setup"}', headers: { "X-Setup-Key": key } });
