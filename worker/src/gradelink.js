@@ -97,6 +97,11 @@ export async function tryGradelink(call, week, orderRows) {
   }
 }
 
+// Admin "gradelink" with "reset": the yellow box goes back to its formula (this week, the coming week from Friday on).
+export async function resetBillWeek(call) {
+  await must(call("PATCH", `/worksheets/${GRADELINK_SHEET}/range(address='B3')`, { formulas: [[BILL_WEEK]] }));
+}
+
 async function must(p) {
   const r = await p;
   if (!r.ok) throw new Error(`workbook ${r.status} ${(await r.text()).slice(0, 200)}`);
