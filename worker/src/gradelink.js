@@ -3,6 +3,7 @@
 // student (two orders for the same student that week are added together), siblings together by family name,
 // with the number of lunches, the price, the charge and a memo to paste into Gradelink. No IFERROR around it:
 // a broken formula shows as an error (checkGradelink reports it) instead of looking like an empty week.
+// "Week of" holds text like 10/26/2026 (as the service writes it) or a date the office typed: both count.
 // The tab is made only when missing (admin "setup", run by every lunch deploy); the office's edits are kept.
 
 export const GRADELINK_SHEET = "Gradelink";
@@ -15,7 +16,8 @@ export const BILL_WEEK = "=TODAY()+3-WEEKDAY(TODAY()+3,3)";
 
 const W = "Orders[Week of],$B$3,Orders[Student],s,Orders[Grade],g";
 export const BILLING_FORMULA =
-  "=LET(f,(Orders[Week of]=$B$3)*(Orders[Student]<>\"\"),m,\"No lunch orders for this week yet.\",IF(SUM(f)=0,m,LET(" +
+  "=LET(d,Orders[Week of],w,IF(ISNUMBER(d),d,IFERROR(DATEVALUE(d),0)),b,IF(ISNUMBER($B$3),$B$3,IFERROR(DATEVALUE($B$3),-1))," +
+  "f,(INT(w)=INT(b))*(Orders[Student]<>\"\"),m,\"No lunch orders for this week yet.\",IF(SUM(f)=0,m,LET(" +
   "k,UNIQUE(FILTER(HSTACK(Orders[Student],Orders[Grade]),f)),s,CHOOSECOLS(k,1),g,CHOOSECOLS(k,2)," +
   `n,SUMIFS(Orders[Lunches],${W}),a,SUMIFS(Orders[Total],${W}),` +
   "p,MAP(s,g,LAMBDA(x,y,XLOOKUP(1,f*(Orders[Student]=x)*(Orders[Grade]=y),Orders[Parent],\"\")))," +
@@ -24,10 +26,18 @@ export const BILLING_FORMULA =
   "t,HSTACK(fam,s,g,p,n,IF(n>0,a/n,0),a,\"Hot Lunch week of \"&TEXT($B$3,\"m/d/yyyy\")&\" (\"&n&IF(n=1,\" lunch)\",\" lunches)\"),nt)," +
   "r,FILTER(t,n>0,m),IF(ROWS(r)*COLUMNS(r)=1,r,SORTBY(r,CHOOSECOLS(r,1),1,CHOOSECOLS(r,2),1)))))";
 
+const OLD_START = "=LET(f,(Orders[Week of]=$B$3)*(Orders[Student]<>\"\"),";
+
 export async function ensureGradelinkTab(call) {
   const r = await call("GET", "/worksheets?$select=name");
   if (!r.ok) throw new Error(`worksheets ${r.status}`);
-  if (((await r.json()).value || []).some((w) => w.name === GRADELINK_SHEET)) return false;
+  if (((await r.json()).value || []).some((w) => w.name === GRADELINK_SHEET)) {
+    // The first list (2026-10-20) compared "Week of" exactly and missed the service's text dates: replace it.
+    const a7 = await call("GET", `/worksheets/${GRADELINK_SHEET}/range(address='A7')?$select=formulas`);
+    const f = a7.ok ? String(((await a7.json()).formulas || [[""]])[0][0]) : "";
+    if (f.startsWith(OLD_START)) await must(call("PATCH", `/worksheets/${GRADELINK_SHEET}/range(address='A7')`, { formulas: [[BILLING_FORMULA]] }));
+    return false;
+  }
   await must(call("POST", "/worksheets/add", { name: GRADELINK_SHEET }));
   const s = `/worksheets/${GRADELINK_SHEET}`;
   await must(call("PATCH", `${s}/range(address='A1:C4')`, {
