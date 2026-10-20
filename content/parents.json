@@ -27,8 +27,6 @@
       "hidden": false
     },
     {
-      "script": "Picture Retakes October 29",
-      "title": "Picture Retakes",
       "when": "October 29",
       "graphic": "/files/pic-retakes.png",
       "hidden": false
@@ -97,6 +95,11 @@
       "title": "Drop-off & Pickup",
       "description": "Campus traffic patterns for Preschool and Academy.",
       "section": "traffic"
+    },
+    {
+      "title": "Picrure Retakes",
+      "description": "If you were absent on picture day, sign up for picture retakes.",
+      "section": "#pictures"
     }
   ],
   "sections": [
