@@ -741,13 +741,15 @@ test("organize: the warnings about the Orders headings are bold red", async () =
   assert.ok(n > 0 && /Price per lunch, Lunches, Total/.test(NOTES.Orders[1][n - 1]));
   assert.ok(b.calls.some((c) => c.path === `/worksheets/Orders/range(address='T${n}')/format/font` && c.body.bold && c.body.color === "#B00020"));
   b = fakeBook();
-  await organize(b.call, "guide");
+  await organize(b.call, "headings");
   const warns = GUIDE.map(([k], i) => (k === "warn" ? i + 1 : 0)).filter(Boolean);
-  assert.equal(warns.length, 2);
+  assert.equal(warns.length, 3); // Orders headings, forms added in the editor, the rules
   assert.match(GUIDE[warns[0] - 1][2], /Price per lunch, Mon, Tue, Wed, Thu, Fri, Lunches, Total, Notes/);
   for (const r of warns) {
     assert.ok(b.calls.some((c) => c.path.endsWith(`range(address='A${r}:B${r}')/format/font`) && c.body.bold && c.body.color === "#B00020"), `row ${r}`);
   }
+  b = fakeBook();
+  await organize(b.call, "guide");
   const values = b.calls.find((c) => c.method === "PATCH" && c.body && c.body.values).body.values;
   assert.equal(values[warns[0] - 1][0], "⚠");
 });
@@ -1040,4 +1042,195 @@ test("POST /inquiry copies the row to Monday, and a Monday failure doesn't stop 
       assert.match(v.s1, /\S/);
     }
   }
+});
+
+// ------------------------------------------------------------------ forms the office adds (src/forms.js)
+import { FIXED, WAIT, columns, plan, validateResponse, responseRow, saveResponse, confirmationMail as formMail, noticeMail,
+  deleteTestResponse, colLetter } from "../src/forms.js";
+
+WAIT.ms = 0;
+const FORM = {
+  id: "field-trip", name: "Field Trip <Permission>", sheet: "Field Trip Permission", table: "Form_FieldTrip", version: "abc123",
+  closed: false,
+  questions: [
+    { key: "q1", label: "Child's name", type: "short", required: true, choices: [], help: "" },
+    { key: "q2", label: "Grade", type: "choice", required: true, choices: ["3rd Grade", "4th Grade"], help: "" },
+    { key: "q3", label: "Lunch", type: "multi", required: false, choices: ["Sandwich", "Chips", "Juice"], help: "" },
+    { key: "q4", label: "Trip day", type: "date", required: false, choices: [], help: "" },
+    { key: "q5", label: "I give permission", type: "check", required: true, choices: [], help: "" },
+    { key: "q6", label: "Notes for the teacher", type: "long", required: false, choices: [], help: "" },
+    { key: "q7", label: "Cell", type: "phone", required: false, choices: [], help: "" },
+    { key: "q8", label: "How many", type: "number", required: false, choices: [], help: "" },
+  ],
+};
+const FORMS = { forms: [FORM] };
+const RESP = { form: "field-trip", version: "abc123", name: "Pat  Smith", email: "Pat@Example.com",
+  answers: { q1: "=Sam", q2: "3rd grade", q3: ["juice", "Sandwich"], q4: "2026-11-05", q5: true, q6: "", q7: "301-555-0100", q8: "2" } };
+
+test("form response: answers checked against the published form", () => {
+  const r = validateResponse(RESP, FORMS);
+  assert.equal(r.error, undefined);
+  assert.equal(r.entry.name, "Pat Smith");
+  assert.equal(r.entry.email, "pat@example.com");
+  assert.deepEqual(r.entry.answers, ["=Sam", "3rd Grade", "Sandwich; Juice", "11/5/2026", "Yes", "", "301-555-0100", "2"]);
+  const row = responseRow(r.entry, "ABCDE", "10/20/2026 9:00 AM");
+  assert.deepEqual(row.slice(0, 7), ["10/20/2026 9:00 AM", "ABCDE", "New", "", "Pat Smith", "pat@example.com", "'=Sam"]);
+  assert.equal(row[9], "11/5/2026");
+  assert.equal(row.length, columns(FORM).length);
+  const bad = (answers, other = {}) => validateResponse({ ...RESP, ...other, answers: { ...RESP.answers, ...answers } }, FORMS).error;
+  assert.match(bad({ q1: "" }), /answer "Child's name"/);
+  assert.match(bad({ q2: "9th Grade" }), /choose an answer for "Grade"/);
+  assert.match(bad({ q5: false }), /tick "I give permission"/);
+  assert.match(bad({ q4: "2026-02-30" }), /date/);
+  assert.match(bad({ q7: "call me" }), /Cell/);
+  assert.match(bad({ q8: "two" }), /number/);
+  assert.match(bad({ q3: ["Pizza"] }), /choose again/);
+  assert.match(bad({}, { version: "old" }), /changed; please reload/);
+  assert.match(bad({}, { form: "nope" }), /isn't on the website/);
+  assert.match(bad({}, { email: "pat" }), /valid email/);
+  assert.match(validateResponse(RESP, { forms: [{ ...FORM, closed: true }] }).error, /isn't taking responses/);
+});
+
+test("form tab: same headings write, new questions add columns, anything else starts a new tab", () => {
+  const want = columns(FORM);
+  assert.deepEqual(want.slice(0, 6), FIXED);
+  assert.deepEqual(plan(want, want), { add: [] });
+  assert.deepEqual(plan(want.slice(0, 8), want), { add: want.slice(8) });
+  assert.deepEqual(plan([...want.slice(0, 7), "Grade level", ...want.slice(8)], want), { start: true }); // renamed
+  assert.deepEqual(plan([...want, "Extra"], want), { start: true }); // removed
+  assert.deepEqual(plan(want.map((h) => h.toUpperCase()), want), { add: [] });
+  assert.equal(colLetter(0), "A"); assert.equal(colLetter(25), "Z"); assert.equal(colLetter(26), "AA");
+});
+
+function formBook(tables = {}, takenSheets = []) {
+  const calls = [];
+  const ok = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
+  const call = async (method, path, body) => {
+    calls.push({ method, path, body });
+    const m = /^\/tables\/([^/]+)\/headerRowRange/.exec(path);
+    if (m) return tables[decodeURIComponent(m[1])] ? ok({ values: [tables[decodeURIComponent(m[1])]] }) : ok({}, 404);
+    if (path === "/worksheets/add") {
+      if (takenSheets.includes(body.name)) return ok({ error: "exists" }, 409);
+      takenSheets.push(body.name); return ok({ id: "s" }, 201);
+    }
+    if (path.endsWith("/tables/add")) return ok({ id: "{T1}" }, 201);
+    if (method === "PATCH" && path.startsWith("/tables/")) { tables[body.name] = columns(FORM); return ok({}); }
+    return ok({}, 201);
+  };
+  return { call, calls, tables };
+}
+
+test("form tab: the first response makes the tab; a changed form starts tab 2 and remembers it", async () => {
+  let b = formBook();
+  const store = kv();
+  let r = await saveResponse(b.call, store, FORM, ["row"]);
+  assert.deepEqual(r, { ok: true, table: "Form_FieldTrip", sheet: "Field Trip Permission" });
+  assert.ok(b.calls.some((c) => c.path === "/worksheets/add" && c.body.name === "Field Trip Permission"));
+  const head = b.calls.find((c) => c.method === "PATCH" && c.body && c.body.values && c.body.values[0][0] === "Received");
+  assert.equal(head.path, "/worksheets/Field%20Trip%20Permission/range(address='A1:N1')");
+  assert.ok(b.calls.some((c) => c.method === "PATCH" && c.path === "/tables/%7BT1%7D" && c.body.name === "Form_FieldTrip"));
+  const note = b.calls.find((c) => c.body && c.body.values && /^Responses to the "Field Trip <Permission>"/.test(c.body.values[0][0]));
+  assert.match(note.path, /range\(address='P1:P4'\)/);
+  assert.ok(b.calls.some((c) => c.path.endsWith("range(address='P4')/format/font") && c.body.bold && c.body.color === "#B00020"));
+  assert.ok(b.calls.some((c) => c.path === "/tables/Form_FieldTrip/rows/add"));
+  assert.ok(b.calls.length < 40, `${b.calls.length} calls`);
+
+  // A question added at the end: one new column, same tab.
+  const more = { ...FORM, questions: [...FORM.questions, { key: "q9", label: "T-shirt", type: "short", required: false, choices: [], help: "" }] };
+  b = formBook({ Form_FieldTrip: columns(FORM) });
+  r = await saveResponse(b.call, store, more, ["row"]);
+  assert.equal(r.table, "Form_FieldTrip");
+  assert.deepEqual(b.calls.filter((c) => c.path.endsWith("/columns/add")).map((c) => c.body.name), ["T-shirt"]);
+
+  // A question renamed: a new tab "Field Trip Permission 2", remembered for the next response.
+  const renamed = { ...FORM, questions: FORM.questions.map((q, i) => (i === 1 ? { ...q, label: "Grade level" } : q)) };
+  b = formBook({ Form_FieldTrip: columns(FORM) });
+  r = await saveResponse(b.call, store, renamed, ["row"]);
+  assert.deepEqual(r, { ok: true, table: "Form_FieldTrip_2", sheet: "Field Trip Permission 2" });
+  assert.equal(await store.get("formv:field-trip"), "2");
+  b = formBook({ Form_FieldTrip: columns(FORM), Form_FieldTrip_2: columns(renamed) });
+  r = await saveResponse(b.call, store, renamed, ["row"]);
+  assert.equal(r.table, "Form_FieldTrip_2");
+  assert.ok(!b.calls.some((c) => c.path.includes("/tables/Form_FieldTrip/")));
+
+  // An office tab already has the form's name: the form gets the next one.
+  b = formBook({}, ["Field Trip Permission"]);
+  r = await saveResponse(b.call, kv(), FORM, ["row"]);
+  assert.equal(r.sheet, "Field Trip Permission 2");
+});
+
+test("form emails: the person gets their answers; the notice goes to iba@ and ibs@ with Reply-To the person", () => {
+  const { entry } = validateResponse(RESP, FORMS);
+  const env = { REPLY_TO: "ibs@ibcministries.org", SIGNATURE: "Mrs. Napierala", FORM_NOTIFY: "iba@ibcministries.org, ibs@ibcministries.org" };
+  const m = formMail(FORM, entry, "ABCDE", env).message;
+  assert.equal(m.toRecipients[0].emailAddress.address, "pat@example.com");
+  assert.equal(m.replyTo[0].emailAddress.address, "ibs@ibcministries.org");
+  assert.match(m.subject, /^Field Trip <Permission>: response ABCDE received$/);
+  assert.match(m.body.content, /Field Trip &lt;Permission&gt;/);
+  assert.match(m.body.content, /Sandwich; Juice/);
+  assert.match(m.body.content, /\(no answer\)/);
+  const n = noticeMail(FORM, entry, "ABCDE", env, "Field Trip Permission").message;
+  assert.deepEqual(n.toRecipients.map((r) => r.emailAddress.address), ["iba@ibcministries.org", "ibs@ibcministries.org"]);
+  assert.equal(n.replyTo[0].emailAddress.address, "pat@example.com");
+  assert.match(n.body.content, /pat@example\.com/);
+  assert.match(n.body.content, /"Field Trip Permission" tab/);
+});
+
+const FENV = () => ({ ...ENV0, FORMS_URL: "https://site.test/forms/forms.json", FORM_NOTIFY: "iba@ibcministries.org,ibs@ibcministries.org",
+  LUNCH_KV: kv({ ms_refresh: "rt1" }) });
+
+test("POST /form: saved, confirmation and notice sent, number remembered for TEST clean-up", async () => {
+  const sent = [], graphCalls = [];
+  globalThis.fetch = async (url, init = {}) => {
+    url = String(url);
+    const ok = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
+    if (url.startsWith("https://site.test/forms/forms.json")) return ok(FORMS);
+    if (url.includes("/oauth2/v2.0/token")) return ok({ access_token: "at", refresh_token: "rt1", expires_in: 3600 });
+    if (url.endsWith("/me/sendMail")) { sent.push(JSON.parse(init.body)); return new Response(null, { status: 202 }); }
+    if (url.includes("/workbook/")) {
+      graphCalls.push(url);
+      if (url.includes("headerRowRange")) return ok({ values: [columns(FORM)] });
+      return ok({}, 201);
+    }
+    return ok({ error: "unexpected " + url }, 500);
+  };
+  const env = FENV();
+  const post = (b) => worker.fetch(new Request("https://lunch.test/form", { method: "POST", body: JSON.stringify(b),
+    headers: { "Content-Type": "application/json", Origin: "https://guarantee418.github.io", "CF-Connecting-IP": "9.9.9.9" } }), env);
+  let res = await post(RESP);
+  const d = await res.json();
+  assert.equal(res.status, 200);
+  assert.equal(d.ok, true);
+  assert.match(d.response_id, /^[A-Z0-9]{5}$/);
+  assert.equal(d.email_sent, true);
+  assert.equal(sent.length, 2);
+  assert.ok(graphCalls.some((u) => u.endsWith("/tables/Form_FieldTrip/rows/add")));
+  assert.deepEqual(JSON.parse(await env.LUNCH_KV.get(`formresp:${d.response_id}`)), { table: "Form_FieldTrip", sheet: "Field Trip Permission" });
+  res = await post({ ...RESP, version: "old" });
+  assert.equal(res.status, 400);
+  res = await post({ ...RESP, website: "spam" });
+  assert.equal((await res.json()).response_id, "0");
+  assert.equal(sent.length, 2);
+});
+
+test("TEST form response clean-up: only TEST names; an empty TEST tab goes too", async () => {
+  const calls = [];
+  const rows = [["Received", "Response #", "Status", "Notes", "Name", "Email"], ["x", "ABCDE", "New", "", "TEST Garrett", "a@b.c"],
+    ["x", "FGHJK", "New", "", "Pat", "p@b.c"]];
+  const call = async (method, path) => {
+    calls.push({ method, path });
+    if (path.endsWith("/range?$select=text")) return new Response(JSON.stringify({ text: rows }), { status: 200 });
+    return new Response("{}", { status: 200 });
+  };
+  const store = kv({ "formresp:ABCDE": JSON.stringify({ table: "Form_Test", sheet: "TEST Form" }),
+    "formresp:FGHJK": JSON.stringify({ table: "Form_Test", sheet: "TEST Form" }) });
+  assert.deepEqual(await deleteTestResponse(call, store, "FGHJK"), { deleted: false, error: "not a TEST response" });
+  assert.deepEqual(await deleteTestResponse(call, store, "ABCDE"), { deleted: true }); // Pat's row is still there
+  assert.ok(calls.some((c) => c.method === "DELETE" && c.path === "/tables/Form_Test/rows/itemAt(index=0)"));
+  assert.equal(await store.get("formresp:ABCDE"), null);
+  rows.splice(2, 1); calls.length = 0;
+  await store.put("formresp:ABCDE", JSON.stringify({ table: "Form_Test", sheet: "TEST Form" }));
+  assert.deepEqual(await deleteTestResponse(call, store, "ABCDE"), { deleted: true, tab_deleted: true });
+  assert.ok(calls.some((c) => c.method === "DELETE" && c.path === "/worksheets/TEST%20Form"));
+  assert.match((await deleteTestResponse(call, store, "ZZZZZ")).error, /no response/);
 });
