@@ -1567,3 +1567,35 @@ test("POST /teachers/form: notice, approval emails and the monday board", async 
   assert.ok(monday.some((q) => q.includes("create_board")) && monday.some((q) => q.includes("create_item")));
   assert.deepEqual(JSON.parse(await env.LUNCH_KV.get(`formresp:${d.response_id}`)).monday, "555");
 });
+
+import { tabNote, rewriteNotes } from "../src/forms.js";
+
+test("form tab note names who gets each form, its approvals and its monday board", () => {
+  const n = tabNote(ACT, {});
+  assert.match(n[0], /"Activity Request" form on the Teacher Portal/);
+  assert.equal(n[1], "Each teacher gets a confirmation email with their answers; ggreene@, iba@ and jschmidley@ get the details.");
+  assert.match(n[2], /^Vehicle approval \(David Febo\): asked to approve by email when "Transportation" is "School vehicle \(bus or van\)"; replies go to iba@ibcministries\.org\.$/);
+  assert.match(n[3], /^IBC approval \(IBC office\): asked to approve by email; replies go to iba@/);
+  assert.match(n[4], /monday\.com board "Teacher Portal: Activity Request"/);
+  assert.match(n[n.length - 1], /^⚠ NEVER rename/);
+  // a Kings Corner form: FORM_NOTIFY
+  assert.equal(tabNote(FORM, { FORM_NOTIFY: "iba@ibcministries.org,ibs@ibcministries.org" })[1],
+    "Each person gets a confirmation email with their answers; iba@ and ibs@ get the details.");
+});
+
+test("form_notes rewrites the note one column after each existing form table", async () => {
+  const calls = [];
+  const call = async (method, path, body) => {
+    calls.push([method, path, body]);
+    if (path.includes("Form_TeacherReimbursement/")) return new Response("{}", { status: 404 });
+    if (path.includes("headerRowRange")) return new Response(JSON.stringify({ values: [columns(ACT)] }), { status: 200 });
+    return new Response("{}", { status: 200 });
+  };
+  const store = kv({ [`formv:${ACT.id}`]: "2" });
+  const done = await rewriteNotes(call, store, [{ ...ACT, table: "Form_TeacherActivity", sheet: "Activity Request" }, TP_FORM], {});
+  assert.deepEqual(done, ["Activity Request 2", "Reimbursement Request: no tab yet"]);
+  const width = columns(ACT).length; // 6 fixed + 3 questions = 9 (A-I), J blank, note in K
+  assert.equal(width, 9);
+  assert.ok(calls.some(([m, p]) => m === "PATCH" && p === "/worksheets/Activity%20Request%202/range(address='K1:K7')"));
+  assert.ok(calls.some(([, p]) => p.startsWith("/tables/Form_TeacherActivity_2/headerRowRange")));
+});

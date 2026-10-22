@@ -78,7 +78,7 @@ export function responseRow(entry, id, received) {
 
 // Adds the row to the form's table, making the tab, adding columns or starting a new tab as needed.
 // Returns { ok, table, sheet } or { ok: false, status }.
-export async function saveResponse(call, kv, form, row) {
+export async function saveResponse(call, kv, form, row, env = {}) {
   const key = `formv:${form.id}`;
   const start = Math.max(1, parseInt((await kv.get(key)) || "1", 10));
   const want = columns(form);
@@ -86,7 +86,7 @@ export async function saveResponse(call, kv, form, row) {
     const table = tableFor(form, v);
     const h = await call("GET", `/tables/${encodeURIComponent(table)}/headerRowRange?$select=values`);
     if (h.status === 404) {
-      if (!(await makeTab(call, form, v))) {
+      if (!(await makeTab(call, form, v, env))) {
         // The tab name is taken: another response may be making this very tab right now, else (an office tab
         // with that name) try the next one.
         await new Promise((ok) => setTimeout(ok, WAIT.ms));
@@ -110,7 +110,7 @@ export async function saveResponse(call, kv, form, row) {
   return { ok: false, status: 409 };
 }
 
-async function makeTab(call, form, version) {
+async function makeTab(call, form, version, env) {
   const sheet = sheetFor(form, version), cols = columns(form);
   const add = await call("POST", "/worksheets/add", { name: sheet });
   if (!add.ok) return false;
@@ -122,18 +122,56 @@ async function makeTab(call, form, version) {
     await call("PATCH", `${s}/range(address='${colLetter(i)}:${colLetter(i)}')/format`, { columnWidth: FIXED_WIDTHS[i] });
   }
   await call("PATCH", `${s}/range(address='${colLetter(FIXED.length)}:${last}')/format`, { columnWidth: 190, wrapText: true });
-  const note = colLetter(cols.length + 1);
+  await writeNote(call, s, colLetter(cols.length + 1), tabNote(form, env));
+  return true;
+}
+
+// The reminder beside a form's table: who gets each response (the form's own list on the Teacher Portal, else
+// FORM_NOTIFY), who is asked to approve it, and the warning about the columns.
+export function tabNote(form, env = {}) {
+  const who = (form.notify && form.notify.length ? form.notify : String(env.FORM_NOTIFY || "iba@ibcministries.org,ibs@ibcministries.org")
+    .split(",")).map((a) => a.trim()).filter(Boolean).map((a) => a.replace(/@ibcministries\.org$/i, "@"));
+  const person = form.where === "the Teacher Portal" ? "teacher" : "person";
   const lines = [
     `Responses to the "${form.name}" form on ${form.where || "The Kings Corner"}, one row per response.`,
-    "Each person gets a confirmation email with their answers; iba@ and ibs@ get the details.",
-    "Change Status as you go (for example Read, Done) and use Notes for anything worth remembering.",
-    "⚠ NEVER rename, move or delete these columns. A question added in the website editor adds a column at the end; " +
-      "renaming, removing or reordering questions starts a new tab.",
+    `Each ${person} gets a confirmation email with their answers; ${listOf(who)} get${who.length === 1 ? "s" : ""} the details.`,
   ];
-  await call("PATCH", `${s}/range(address='${note}1:${note}${lines.length}')`, { values: lines.map((l) => [l]) });
-  await call("PATCH", `${s}/range(address='${note}1')/format/font`, { bold: true, color: "#1B2A4A" });
-  await call("PATCH", `${s}/range(address='${note}${lines.length}')/format/font`, { bold: true, color: "#B00020" });
-  return true;
+  for (const a of form.approvals || []) {
+    const label = `${a.title}${a.name ? ` (${a.name})` : ""}`;
+    const when = a.question ? ` when "${(form.questions.find((q) => q.key === a.question) || {}).label}" is "${a.answer}"` : "";
+    lines.push(`${label}: asked to approve by email${when}; replies go to ${form.approval_reply || "iba@ibcministries.org"}.`);
+  }
+  if (form.monday) lines.push(`Also on the monday.com board "Teacher Portal: ${form.name}".`);
+  lines.push("Change Status as you go (for example Read, Done) and use Notes for anything worth remembering.",
+    "⚠ NEVER rename, move or delete these columns. A question added in the website editor adds a column at the end; " +
+      "renaming, removing or reordering questions starts a new tab.");
+  return lines;
+}
+
+function listOf(items) {
+  return items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
+
+async function writeNote(call, s, col, lines) {
+  await call("POST", `${s}/range(address='${col}1:${col}15')/clear`, { applyTo: "All" });
+  await call("PATCH", `${s}/range(address='${col}1:${col}${lines.length}')`, { values: lines.map((l) => [l]) });
+  await call("PATCH", `${s}/range(address='${col}1')/format/font`, { bold: true, color: "#1B2A4A" });
+  await call("PATCH", `${s}/range(address='${col}${lines.length}')/format/font`, { bold: true, color: "#B00020" });
+}
+
+// Rewrites the reminder beside the table of each form that already has a tab (its tab in use, from KV), one blank
+// column after the table: for tabs made before the reminder named each form's own recipients. Returns what it did.
+export async function rewriteNotes(call, kv, forms, env = {}) {
+  const done = [];
+  for (const form of forms) {
+    const v = Math.max(1, parseInt((await kv.get(`formv:${form.id}`)) || "1", 10));
+    const h = await call("GET", `/tables/${encodeURIComponent(tableFor(form, v))}/headerRowRange?$select=values`);
+    if (!h.ok) { done.push(`${form.name}: no tab yet`); continue; }
+    const width = (((await h.json()).values || [[]])[0] || []).length;
+    await writeNote(call, `/worksheets/${encodeURIComponent(sheetFor(form, v))}`, colLetter(width + 1), tabNote(form, env));
+    done.push(sheetFor(form, v));
+  }
+  return done;
 }
 
 export function confirmationMail(form, entry, id, env) {

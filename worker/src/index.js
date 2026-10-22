@@ -37,6 +37,7 @@
 //                   student is "TEST..."; {"action":"delete_test_inquiry","id":"ABCDE"} likewise one inquiry;
 //                   {"action":"delete_test_feedback","id":"ABCDE"} one feedback response whose name is "TEST...";
 //                   {"action":"delete_test_absence","id":"ABCDE"} one absence report whose student is "TEST...";
+//                   {"action":"form_notes"} rewrites the reminder beside each office-added form's tab (who gets it);
 //                   {"action":"delete_test_form","id":"ABCDE"} one form response whose name is "TEST..." (and a
 //                   "TEST..." form's tab once it is empty)
 //   Tour sign-ups, inquiries and transcript requests are also copied to Monday.com boards when the
@@ -60,8 +61,9 @@ import { ensureStaffTab, isStaffFamily, readStaffFamilies } from "./staff.js";
 import { checkGradelink, ensureGradelinkTab, resetWeekBoxes, tryGradelink } from "./gradelink.js";
 import { TABLE as FEEDBACK_TABLE, deleteTestFeedback, ensureFeedbackTab, feedbackRow, validateFeedback } from "./feedback.js";
 import { approvalMail, approvalsFor, confirmationMail as formMail, deleteTestResponse, noticeMail as formNotice,
-  noticeRecipients, responseRow, saveResponse, validateResponse } from "./forms.js";
-import { file as teacherFile, login as teacherLogin, portalPage as teacherPortal, signedIn as teacherSignedIn } from "./teachers.js";
+  noticeRecipients, responseRow, rewriteNotes, saveResponse, validateResponse } from "./forms.js";
+import { file as teacherFile, loadPortal as loadTeacherPortal, login as teacherLogin, portalPage as teacherPortal,
+  signedIn as teacherSignedIn } from "./teachers.js";
 import { TABLE as TRANSCRIPT_TABLE, deleteTestRequest, ensureTranscriptTab, officeMail as transcriptOfficeMail, requestRow,
   requesterMail, settings as transcriptSettings, validateRequest } from "./transcripts.js";
 import { BOARDS as MONDAY_BOARDS, addFormToMonday, addToMonday, deleteFormItem, deleteFromMonday, setupMonday } from "./monday.js";
@@ -205,6 +207,16 @@ async function admin(request, env) {
     const token = await accessToken(env);
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
     return json({ ok: true, step: body.step, done: await organizeWorkbook(workbook(token, env), body.step) }, 200, {});
+  }
+  if (body.action === "form_notes") { // rewrites the reminder beside each form's tab (who gets it, approvals)
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    const kings = ((await loadJson(env.FORMS_URL)).forms || []);
+    const portal = await loadTeacherPortal(env);
+    const done = await rewriteNotes(workbook(token, env), env.LUNCH_KV, kings, env);
+    if (portal) done.push(...await rewriteNotes(workbook(token, env), env.LUNCH_KV, portal.forms || [],
+      { ...env, FORM_NOTIFY: env.TEACHER_FORM_NOTIFY || env.FORM_NOTIFY }));
+    return json({ ok: true, done }, 200, {});
   }
   if (body.action === "menu") { // how fetching the menu goes, hop by hop (no secrets)
     const hops = [];
@@ -733,7 +745,7 @@ async function formResponse(request, env, cors, forms, ctx) {
   if (!token) return json({ ok: false, error: "Online forms aren't connected yet" }, 503, cors);
 
   const id = newOrderId();
-  const saved = await saveResponse(workbook(token, env), env.LUNCH_KV, form, responseRow(entry, id, eastern(new Date(), true)));
+  const saved = await saveResponse(workbook(token, env), env.LUNCH_KV, form, responseRow(entry, id, eastern(new Date(), true)), env);
   if (!saved.ok) {
     console.error("form workbook", form.id, saved.status);
     return json({ ok: false, error: "We couldn't save your response" }, 502, cors);

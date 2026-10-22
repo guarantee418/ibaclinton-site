@@ -215,7 +215,7 @@ content:
           - name: form
             label: Form (optional)
             type: object
-            description: "Add a form to this section: give it a name and at least one question. Every form also asks the person's name and email. Each response goes to the form's own tab in the office workbook (named after the form, made by the first response); the person gets a confirmation email and iba@ and ibs@ get the details. Adding a question adds a column at the end of that tab; renaming the form, or renaming, removing or reordering questions, starts a new tab."
+            description: "Add a form to this section: give it a name and at least one question. Every form also asks the person's name and email. Each response goes to the form's own tab in the office workbook (named after the form, made by the first response); the teacher gets a confirmation email, and the people under 'Send each response to' (iba@ and ibs@ if empty) get the details. Adding a question adds a column at the end of that tab; renaming the form, or renaming, removing or reordering questions, starts a new tab."
             fields:
               - name: name
                 label: Form name

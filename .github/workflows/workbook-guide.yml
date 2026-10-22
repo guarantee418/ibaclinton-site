@@ -2,7 +2,7 @@ name: Office workbook layout
 
 # Manual only. "inspect" prints the office workbook's tabs, tables (headings and row counts) and notes;
 # no rows, so no family details. "organize" puts the tabs in order, writes the how-to guide and the notes
-# on each tab, fixes the Kitchen week box and removes empty table rows (src/guide.js); it never changes a
+# on each tab (also beside each form's tab), fixes the Kitchen week box and removes empty table rows (src/guide.js); it never changes a
 # table's columns or headings, or any row with something in it. "check-gradelink" prints what the Gradelink
 # billing tab shows for a week (students, lunches, charges; no names), putting its week box back afterwards.
 # "reset-week-boxes" sets up the Kitchen, Homerooms and Gradelink week boxes: the yellow "Pick a week" box in row 2
@@ -43,6 +43,8 @@ jobs:
           elif [ "$ACTION" = organize ]; then
             # One step per request (src/guide.js STEPS), so each stays under Cloudflare's per-request limit.
             for step in order guide headings notes notes2 kitchen rows; do post "$(jq -nc --arg s "$step" '{action:"organize",step:$s}')"; done
+            # The reminder beside each office-added form's tab (who gets it, approvals): forms.js rewriteNotes.
+            post '{"action":"form_notes"}'
           else
             # A few tabs per request (src/guide.js INSPECT_TABS), so each stays under Cloudflare's per-request limit.
             part=1; parts=1
