@@ -232,6 +232,50 @@ content:
                 label: Stop taking responses
                 type: boolean
                 description: Turn on to close the form without deleting it. The page then says the form isn't taking responses.
+              - name: notify
+                label: Send each response to
+                type: string
+                list:
+                  max: 10
+                description: School email addresses (@ibcministries.org, @ibaministries.org or @ibaclinton.com), one per line item. Leave empty to send to iba@ and ibs@. The teacher always gets a confirmation.
+              - name: approvals
+                label: Approvals
+                type: object
+                description: People who must approve each response. They get an email asking them to reply with their approval; their reply goes to the address below. Each gets its own column on the monday.com board.
+                list:
+                  max: 5
+                  collapsible:
+                    collapsed: true
+                    summary: "{title} {email}"
+                fields:
+                  - name: title
+                    label: Approval name
+                    type: string
+                    required: true
+                    description: For example "Vehicle approval" or "IBC approval".
+                  - name: name
+                    label: Person's name (optional)
+                    type: string
+                  - name: email
+                    label: Their email
+                    type: string
+                    required: true
+                  - name: only_if_question
+                    label: Only when this question… (optional)
+                    type: string
+                    description: Type the question exactly as above, for example "Transportation". Leave blank to ask every time. When it isn't needed, the person still gets the response, marked "not needed".
+                  - name: only_if_answer
+                    label: …has this answer
+                    type: string
+                    description: For example "School vehicle (bus or van)". For a Yes/No box, type Yes.
+              - name: approval_reply
+                label: Approvals reply to (optional)
+                type: string
+                description: Where approvers' replies go. Leave blank for iba@ibcministries.org.
+              - name: monday
+                label: Also add each response to monday.com
+                type: boolean
+                description: Each form gets its own board, "Teacher Portal" and the form name, made by its first response.
               - name: questions
                 label: Questions
                 type: object

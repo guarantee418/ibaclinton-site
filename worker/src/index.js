@@ -59,12 +59,12 @@ import { TABLE as ABSENCE_TABLE, absenceRow, deleteTestAbsence, ensureAbsenceTab
 import { ensureStaffTab, isStaffFamily, readStaffFamilies } from "./staff.js";
 import { checkGradelink, ensureGradelinkTab, resetWeekBoxes, tryGradelink } from "./gradelink.js";
 import { TABLE as FEEDBACK_TABLE, deleteTestFeedback, ensureFeedbackTab, feedbackRow, validateFeedback } from "./feedback.js";
-import { confirmationMail as formMail, deleteTestResponse, noticeMail as formNotice, responseRow, saveResponse,
-  validateResponse } from "./forms.js";
+import { approvalMail, approvalsFor, confirmationMail as formMail, deleteTestResponse, noticeMail as formNotice,
+  noticeRecipients, responseRow, saveResponse, validateResponse } from "./forms.js";
 import { file as teacherFile, login as teacherLogin, portalPage as teacherPortal, signedIn as teacherSignedIn } from "./teachers.js";
 import { TABLE as TRANSCRIPT_TABLE, deleteTestRequest, ensureTranscriptTab, officeMail as transcriptOfficeMail, requestRow,
   requesterMail, settings as transcriptSettings, validateRequest } from "./transcripts.js";
-import { BOARDS as MONDAY_BOARDS, addToMonday, deleteFromMonday, setupMonday } from "./monday.js";
+import { BOARDS as MONDAY_BOARDS, addFormToMonday, addToMonday, deleteFormItem, deleteFromMonday, setupMonday } from "./monday.js";
 import { STEPS as ORGANIZE_STEPS, inspect as inspectWorkbook, organize as organizeWorkbook } from "./guide.js";
 import { checkHomerooms, ensureTabs, fillTeacherEmails, weekCounts, homeroomMails, mondayToSend, readTeachers, readWeek } from "./homerooms.js";
 
@@ -93,7 +93,7 @@ export default {
       if (url.pathname === "/absence" && request.method === "POST") return await absence(request, env, cors);
       if (url.pathname === "/feedback" && request.method === "POST") return await feedback(request, env, cors);
       if (url.pathname === "/form" && request.method === "POST") {
-        return await formResponse(request, env, cors, async () => loadJson(env.FORMS_URL));
+        return await formResponse(request, env, cors, async () => loadJson(env.FORMS_URL), ctx);
       }
       if (url.pathname === "/teachers/login" && request.method === "POST") return await teacherLogin(request, env, cors, json);
       if (url.pathname === "/teachers/portal" && request.method === "GET") return await teacherPortal(request, env, cors, json);
@@ -103,7 +103,7 @@ export default {
         const portal = await teacherSignedIn(request, env, cors, json);
         if (portal instanceof Response) return portal;
         return await formResponse(request, { ...env, FORM_NOTIFY: env.TEACHER_FORM_NOTIFY || env.FORM_NOTIFY }, cors,
-          async () => ({ forms: portal.forms }));
+          async () => ({ forms: portal.forms }), ctx);
       }
       if (url.pathname === "/transcripts" && request.method === "GET") return transcripts(env, cors);
       if (url.pathname === "/transcript" && request.method === "POST") return await transcript(request, env, cors, ctx);
@@ -275,7 +275,9 @@ async function admin(request, env) {
     if (!/^[A-Z0-9]{5}$/.test(id)) return json({ ok: false, error: "id (the 5-letter response number) is required" }, 400, {});
     const token = await accessToken(env);
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    const where = JSON.parse((await env.LUNCH_KV.get(`formresp:${id}`)) || "null");
     const r = await deleteTestResponse(workbook(token, env), env.LUNCH_KV, id);
+    if (r.deleted && where && where.monday) r.monday_deleted = await deleteFormItem(env, where.monday);
     return json({ ok: r.deleted, id, ...r }, r.deleted ? 200 : 400, {});
   }
   if (body.action === "delete_test_order") { // removes a lunch order whose rows are all "TEST..."
@@ -712,7 +714,7 @@ async function feedback(request, env, cors) {
 
 // ------------------------------------------------------------------ forms the office adds (src/forms.js)
 // forms(): the published forms the response is checked against (The Kings Corner's, or the Teacher Portal's).
-async function formResponse(request, env, cors, forms) {
+async function formResponse(request, env, cors, forms, ctx) {
   if (!cors["Access-Control-Allow-Origin"]) return json({ ok: false, error: "Not allowed" }, 403, cors);
   const text = await request.text();
   if (text.length > 70000) return json({ ok: false, error: "Too large" }, 413, cors);
@@ -736,12 +738,24 @@ async function formResponse(request, env, cors, forms) {
     console.error("form workbook", form.id, saved.status);
     return json({ ok: false, error: "We couldn't save your response" }, 502, cors);
   }
-  await env.LUNCH_KV.put(`formresp:${id}`, JSON.stringify({ table: saved.table, sheet: saved.sheet }), { expirationTtl: 60 * 86400 });
+  const where = { table: saved.table, sheet: saved.sheet };
+  await env.LUNCH_KV.put(`formresp:${id}`, JSON.stringify(where), { expirationTtl: 60 * 86400 });
   const mail = await graph(token, "POST", "/me/sendMail", formMail(form, entry, id, env));
   if (!mail.ok) console.error("form mail", mail.status, await mail.text());
-  if (env.FORM_NOTIFY) {
-    const o = await graph(token, "POST", "/me/sendMail", formNotice(form, entry, id, env, saved.sheet));
+  // A Teacher Portal form may have its own recipients and approvers (src/forms.js approvalsFor).
+  const approvals = approvalsFor(form, entry);
+  if (noticeRecipients(form, env, approvals).length) {
+    const o = await graph(token, "POST", "/me/sendMail", formNotice(form, entry, id, env, saved.sheet, approvals));
     if (!o.ok) console.error("form notice", o.status, await o.text());
+  }
+  for (const a of approvals.filter((x) => x.needed)) {
+    const m = await graph(token, "POST", "/me/sendMail", approvalMail(form, entry, id, a, form.approval_reply || env.REPLY_TO));
+    if (!m.ok) console.error("form approval", m.status, await m.text());
+  }
+  if (form.monday) {
+    // after the answer, like the other Monday copies; the item id is kept so a TEST clean-up removes it too
+    await later(ctx, addFormToMonday(env, form, entry, id, eastern(new Date(), true), approvals).then((item) => item &&
+      env.LUNCH_KV.put(`formresp:${id}`, JSON.stringify({ ...where, monday: item }), { expirationTtl: 60 * 86400 })));
   }
   return json({ ok: true, response_id: id, email_sent: mail.ok }, 200, cors);
 }

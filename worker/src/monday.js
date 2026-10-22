@@ -142,3 +142,91 @@ export async function deleteFromMonday(env, kind, id) {
     return 0;
   }
 }
+
+// ------------------------------------------------------------------ forms with "Copy to monday.com" (Teacher Portal)
+// Each such form gets its own board ("Teacher Portal: Activity Request"), made by its first response and kept in KV.
+// Columns: the response number, received time, email, Status, one status column per approval ("Waiting for reply",
+// or "Not needed" when its answer wasn't given; the office marks Approved), then one per question. A question
+// added later adds its column on the next response. All missing columns are made in one request, so a response
+// stays well under the Worker's 50 outside requests.
+export const FORM_STATUS = "New", WAITING = "Waiting for reply", NOT_NEEDED = "Not needed";
+
+export function formBoardColumns(form) {
+  return [
+    { title: "Response #", type: "text" }, { title: "Received", type: "text" }, { title: "Email", type: "text" },
+    { title: "Status", type: "status" },
+    ...(form.approvals || []).map((a) => ({ title: a.title, type: "status" })),
+    ...form.questions.map((q) => ({ title: q.label, type: q.type === "long" ? "long_text" : "text" })),
+  ];
+}
+
+async function formBoard(env, form) {
+  const key = `monday:form:${form.id}`;
+  let board = await env.LUNCH_KV.get(key);
+  let have = board ? await columns(env, board) : null;
+  if (!have) {
+    const d = await api(env, "mutation ($n: String!, $k: BoardKind!) { create_board(board_name: $n, board_kind: $k, empty: true) { id } }",
+      { n: `${form.where === "the Teacher Portal" ? "Teacher Portal" : "Website"}: ${form.name}`.slice(0, 80),
+        k: env.MONDAY_BOARD_KIND || "private" });
+    board = String(d.create_board.id);
+    await env.LUNCH_KV.put(key, board);
+    await share(env, board);
+    have = [];
+  }
+  const titles = new Set(have.map((c) => c.title.toLowerCase()));
+  const missing = formBoardColumns(form).filter((c) => !titles.has(c.title.toLowerCase()));
+  if (missing.length) {
+    const vars = { b: board }, args = [];
+    const calls = missing.map((c, i) => {
+      vars[`t${i}`] = c.title.slice(0, 255);
+      args.push(`$t${i}: String!`);
+      return `c${i}: create_column(board_id: $b, title: $t${i}, column_type: ${c.type}) { id }`;
+    });
+    await api(env, `mutation ($b: ID!, ${args.join(", ")}) { ${calls.join(" ")} }`, vars);
+    have = (await columns(env, board)) || [];
+  }
+  return { board, cols: have };
+}
+
+export function formItem(form, entry, id, received, approvals, cols) {
+  const byTitle = Object.fromEntries(cols.map((c) => [c.title.toLowerCase(), c]));
+  const values = {};
+  const put = (title, v) => {
+    const c = byTitle[String(title).toLowerCase()];
+    v = String(v == null ? "" : v);
+    if (!c || !v) return;
+    if (c.type === "status") values[c.id] = { label: v.slice(0, 40) };
+    else if (c.type === "long_text") values[c.id] = { text: v };
+    else values[c.id] = v;
+  };
+  put("Response #", id); put("Received", received); put("Email", entry.email); put("Status", FORM_STATUS);
+  for (const a of approvals) put(a.title, a.needed ? WAITING : NOT_NEEDED);
+  form.questions.forEach((q, i) => put(q.label, entry.answers[i]));
+  return { name: entry.name, values };
+}
+
+// Adds the response; never throws (the form already succeeded). Returns the item id or null.
+export async function addFormToMonday(env, form, entry, id, received, approvals = []) {
+  if (!env.MONDAY_TOKEN) return null;
+  try {
+    const { board, cols } = await formBoard(env, form);
+    const item = formItem(form, entry, id, received, approvals, cols);
+    const d = await api(env, "mutation ($b: ID!, $n: String!, $v: JSON!) { create_item(board_id: $b, item_name: $n, " +
+      "column_values: $v, create_labels_if_missing: true) { id } }", { b: board, n: item.name, v: JSON.stringify(item.values) });
+    return String(d.create_item.id);
+  } catch (err) {
+    console.error("monday form", form.id, err && err.message || err);
+    return null;
+  }
+}
+
+export async function deleteFormItem(env, item) {
+  if (!env.MONDAY_TOKEN) return false;
+  try {
+    await api(env, "mutation ($i: ID!) { delete_item(item_id: $i) { id } }", { i: String(item) });
+    return true;
+  } catch (err) {
+    console.error("monday form delete", err && err.message || err);
+    return false;
+  }
+}

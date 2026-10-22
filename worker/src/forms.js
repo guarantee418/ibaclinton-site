@@ -153,19 +153,64 @@ export function confirmationMail(form, entry, id, env) {
   return { message, saveToSentItems: true };
 }
 
-export function noticeMail(form, entry, id, env, sheet) {
+// A Teacher Portal form can name its own approvers (teachers.py routing): each is asked only when its question has
+// its answer (e.g. a vehicle only when one is needed). Returns them with needed: true/false.
+export function approvalsFor(form, entry) {
+  return (form.approvals || []).map((a) => {
+    if (!a.question) return { ...a, needed: true };
+    const i = form.questions.findIndex((q) => q.key === a.question);
+    const given = String(i < 0 ? "" : entry.answers[i] || "").toLowerCase().split("; ");
+    return { ...a, needed: i < 0 || given.includes(String(a.answer).toLowerCase()) };
+  });
+}
+
+// Who gets the plain notice: the form's own list (else FORM_NOTIFY), plus approvers who aren't needed this time,
+// leaving out anyone who gets an approval request instead.
+export function noticeRecipients(form, env, approvals = []) {
+  const asked = new Set(approvals.filter((a) => a.needed).map((a) => a.email.toLowerCase()));
+  const list = (form.notify && form.notify.length ? form.notify : String(env.FORM_NOTIFY || "").split(","))
+    .concat(approvals.filter((a) => !a.needed).map((a) => a.email));
+  return [...new Set(list.map((a) => a.trim().toLowerCase()).filter((a) => a && !asked.has(a)))];
+}
+
+function approvalLines(approvals) {
+  const e = escapeHtml;
+  if (!approvals.length) return "";
+  return `<p><b>Approvals:</b><br>${approvals.map((a) => `${e(a.title)}${a.name ? ` (${e(a.name)})` : ""}: ` +
+    (a.needed ? "asked to approve" : "not needed for this one")).join("<br>")}</p>`;
+}
+
+export function approvalMail(form, entry, id, a, replyTo) {
+  const e = escapeHtml;
+  const content =
+    `<p>${a.name ? `${e(a.name)}, a` : "A"}pproval is needed for this <b>${e(form.name)}</b> from ${e(entry.name)} ` +
+    `(${e(entry.email)}), sent on ${e(form.where || "The Kings Corner")}:</p>` +
+    answerList(form, entry) +
+    `<p><b>Please reply to this email to give your approval (${e(a.title)})</b>, or to say what needs to change. ` +
+    `Your reply goes to ${e(replyTo)}.</p>`;
+  return {
+    message: {
+      subject: `Approval needed (${a.title}): ${form.name} from ${entry.name} [${id}]`,
+      body: { contentType: "HTML", content },
+      toRecipients: [{ emailAddress: { address: a.email, name: a.name || undefined } }],
+      replyTo: [{ emailAddress: { address: replyTo } }],
+    },
+    saveToSentItems: true,
+  };
+}
+
+export function noticeMail(form, entry, id, env, sheet, approvals = []) {
   const e = escapeHtml;
   const content =
     `<p>A new response to <b>${e(form.name)}</b> came in on ${e(form.where || "The Kings Corner")}:</p>` +
-    answerList(form, entry, true) +
+    answerList(form, entry, true) + approvalLines(approvals) +
     `<p>Reply to this email to answer ${e(entry.name)}. Every response is on the "${e(sheet)}" tab of the office ` +
     `workbook (response ${e(id)}).</p>`;
   return {
     message: {
       subject: `${form.name}: ${entry.name}`,
       body: { contentType: "HTML", content },
-      toRecipients: String(env.FORM_NOTIFY).split(",").map((a) => a.trim()).filter(Boolean)
-        .map((address) => ({ emailAddress: { address } })),
+      toRecipients: noticeRecipients(form, env, approvals).map((address) => ({ emailAddress: { address } })),
       replyTo: [{ emailAddress: { address: entry.email, name: entry.name } }],
     },
     saveToSentItems: true,
