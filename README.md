@@ -46,6 +46,23 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
 - TEST responses: Actions -> "Delete a TEST booking, lunch order or tour sign-up", kind "form response" (only a Name
   starting with TEST; a form tab named "TEST..." is removed once empty).
 
+## Teacher Portal (ibaclinton.com/teachers/)
+
+- A hidden, password-protected page for IBA staff that looks and works like The Kings Corner (banner and announcement
+  slides, tiles that open pop-ups, links and files, meeting notes, forms). Not linked from any page, not in the
+  sitemap, `noindex` (`hidden: yes` page key in `src/pages/teachers.html`).
+- This public repo holds only the code and the sign-in box. The content (meeting notes, files, forms, the password)
+  lives in a **private** repo, edited by the office in the same online editor (Pages CMS). `teacher-portal/` here is
+  only the starter template for that repo.
+- The private repo's workflow runs `teachers.py` (from this repo's `main`) to build `built/portal.json`. The order
+  service (`worker/src/teachers.js`) reads it with a read-only token (`TEACHER_REPO_TOKEN` secret), checks the
+  password and only then sends the page, its files (links that last 6 hours) and takes its forms
+  (`POST /teachers/form`). `site/teachers.js` signs in and shows the portal.
+- Teacher Portal forms use the same engine as The Kings Corner forms (a tab each in the office workbook), plus their
+  own routing set in the editor: who gets each response (school addresses only), approvers who are emailed to reply
+  with their approval, and an optional copy to the form's own monday.com board (`worker/src/monday.js`).
+- TEST responses: Actions -> "Delete a TEST booking, lunch order or tour sign-up", kind "form response".
+
 ## Hot lunch ordering
 
 - The Hot Lunch section of The Kings Corner comes from `content/lunch.json` via `lunch.py`: menu
