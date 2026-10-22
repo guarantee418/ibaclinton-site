@@ -17,6 +17,9 @@
 //   POST /form         a form the office added to a Kings Corner section (src/forms.js): checked against the
 //                   published site/forms/forms.json, added to that form's own tab of the office workbook (made by
 //                   the first response), emailed to the person (confirmation) and FORM_NOTIFY
+//   POST /teachers/login, GET /teachers/portal, GET /teachers/file/..., POST /teachers/form
+//                   the hidden, password-protected Teacher Portal (src/teachers.js); its content and files are
+//                   read from a private repo, and its forms are saved and emailed like /form
 //   GET  /transcripts  the transcript fees and the payment link (no names)
 //   POST /transcript   a transcript request (src/transcripts.js): added to the Transcripts tab of the office
 //                   workbook, emailed to the requester and the office
@@ -58,6 +61,7 @@ import { checkGradelink, ensureGradelinkTab, resetWeekBoxes, tryGradelink } from
 import { TABLE as FEEDBACK_TABLE, deleteTestFeedback, ensureFeedbackTab, feedbackRow, validateFeedback } from "./feedback.js";
 import { confirmationMail as formMail, deleteTestResponse, noticeMail as formNotice, responseRow, saveResponse,
   validateResponse } from "./forms.js";
+import { file as teacherFile, login as teacherLogin, portalPage as teacherPortal, signedIn as teacherSignedIn } from "./teachers.js";
 import { TABLE as TRANSCRIPT_TABLE, deleteTestRequest, ensureTranscriptTab, officeMail as transcriptOfficeMail, requestRow,
   requesterMail, settings as transcriptSettings, validateRequest } from "./transcripts.js";
 import { BOARDS as MONDAY_BOARDS, addToMonday, deleteFromMonday, setupMonday } from "./monday.js";
@@ -88,7 +92,19 @@ export default {
       if (url.pathname === "/inquiry" && request.method === "POST") return await inquiry(request, env, cors, ctx);
       if (url.pathname === "/absence" && request.method === "POST") return await absence(request, env, cors);
       if (url.pathname === "/feedback" && request.method === "POST") return await feedback(request, env, cors);
-      if (url.pathname === "/form" && request.method === "POST") return await formResponse(request, env, cors);
+      if (url.pathname === "/form" && request.method === "POST") {
+        return await formResponse(request, env, cors, async () => loadJson(env.FORMS_URL));
+      }
+      if (url.pathname === "/teachers/login" && request.method === "POST") return await teacherLogin(request, env, cors, json);
+      if (url.pathname === "/teachers/portal" && request.method === "GET") return await teacherPortal(request, env, cors, json);
+      if (url.pathname.startsWith("/teachers/file/") && request.method === "GET") return await teacherFile(url, env);
+      if (url.pathname === "/teachers/form" && request.method === "POST") {
+        if (!cors["Access-Control-Allow-Origin"]) return json({ ok: false, error: "Not allowed" }, 403, cors);
+        const portal = await teacherSignedIn(request, env, cors, json);
+        if (portal instanceof Response) return portal;
+        return await formResponse(request, { ...env, FORM_NOTIFY: env.TEACHER_FORM_NOTIFY || env.FORM_NOTIFY }, cors,
+          async () => ({ forms: portal.forms }));
+      }
       if (url.pathname === "/transcripts" && request.method === "GET") return transcripts(env, cors);
       if (url.pathname === "/transcript" && request.method === "POST") return await transcript(request, env, cors, ctx);
       if (url.pathname === "/admin" && request.method === "POST") return await admin(request, env);
@@ -695,7 +711,8 @@ async function feedback(request, env, cors) {
 }
 
 // ------------------------------------------------------------------ forms the office adds (src/forms.js)
-async function formResponse(request, env, cors) {
+// forms(): the published forms the response is checked against (The Kings Corner's, or the Teacher Portal's).
+async function formResponse(request, env, cors, forms) {
   if (!cors["Access-Control-Allow-Origin"]) return json({ ok: false, error: "Not allowed" }, 403, cors);
   const text = await request.text();
   if (text.length > 70000) return json({ ok: false, error: "Too large" }, 413, cors);
@@ -707,7 +724,7 @@ async function formResponse(request, env, cors) {
   if (await tooMany(env, ip, "rlcf")) {
     return json({ ok: false, error: "Too many responses from this connection; please try again later" }, 429, cors);
   }
-  const checked = validateResponse(body, await loadJson(env.FORMS_URL), Date.now());
+  const checked = validateResponse(body, await forms(), Date.now());
   if (checked.error) return json({ ok: false, error: checked.error }, 400, cors);
   const { form, entry } = checked;
   const token = await accessToken(env);
@@ -867,7 +884,7 @@ function graph(token, method, path, body) {
 function corsHeaders(request, env) {
   const origin = request.headers.get("Origin") || "";
   const allowed = String(env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
-  const h = { "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type", Vary: "Origin" };
+  const h = { "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, Authorization", Vary: "Origin" };
   if (allowed.includes(origin)) h["Access-Control-Allow-Origin"] = origin;
   return h;
 }

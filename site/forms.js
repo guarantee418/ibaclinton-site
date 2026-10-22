@@ -42,7 +42,10 @@
       btn.disabled = true; btn.textContent = "Sending…";
       var body = {form: f.getAttribute("data-form"), version: f.getAttribute("data-version"),
                   name: name, email: email, answers: answers, website: f.elements.website.value};
-      fetch(f.getAttribute("data-api") + "/form", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)})
+      // A Teacher Portal form goes to its own address, with the teacher's sign-in (site/teachers.js).
+      var endpoint = f.getAttribute("data-endpoint"), headers = {"Content-Type": "application/json"};
+      if (endpoint && window.tpAuth) headers.Authorization = "Bearer " + window.tpAuth();
+      fetch(f.getAttribute("data-api") + (endpoint || "/form"), {method: "POST", headers: headers, body: JSON.stringify(body)})
         .then(function (r) { return r.json(); })
         .then(function (d) {
           if (!d.ok) throw new Error(d.error || "");

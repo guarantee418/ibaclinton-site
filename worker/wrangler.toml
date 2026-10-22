@@ -50,6 +50,10 @@ ABSENCE_CC = "ibs@ibcministries.org"
 # menu) and who hears about each response (comma-separated); the person always gets a confirmation.
 FORMS_URL = "https://raw.githubusercontent.com/guarantee418/ibaclinton-site/main/site/forms/forms.json"
 FORM_NOTIFY = "iba@ibcministries.org,ibs@ibcministries.org"
+# The hidden Teacher Portal (src/teachers.js): the PRIVATE repo with its content and files (read with the
+# TEACHER_REPO_TOKEN secret) and who hears about each Teacher Portal form response (comma-separated).
+TEACHER_REPO = "guarantee418/ibaclinton-teachers"
+TEACHER_FORM_NOTIFY = "iba@ibcministries.org,ibs@ibcministries.org"
 # Monday.com copies of tour sign-ups, info requests and transcript requests (src/monday.js; needs the
 # MONDAY_TOKEN secret). "private" boards are seen only by the token's owner until shared; "public" = everyone
 # on the Monday account. Only used when the boards are first made.

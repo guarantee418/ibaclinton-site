@@ -1,0 +1,41 @@
+name: Build the Teacher Portal
+
+# Runs by itself when the office saves the Teacher Portal in the online editor (content/teachers.json).
+# Uses teachers.py from the public site repo (guarantee418/ibaclinton-site) to turn the content into
+# built/portal.json, which the school's order service shows at ibaclinton.com/teachers/ after the password.
+# Uploaded files (files/) need no build: the service reads them straight from this repo.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "content/**"
+
+permissions:
+  contents: write  # to commit built/portal.json
+
+concurrency:
+  group: build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: guarantee418/ibaclinton-site
+          ref: ${{ vars.SITE_REF || 'main' }}
+          path: _site
+      - name: Build
+        run: python3 _site/teachers.py content/teachers.json built/portal.json
+      - name: Commit the built portal
+        run: |
+          git add built/portal.json
+          git diff --cached --quiet && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "Built the Teacher Portal (automatic)"
+          for i in 1 2 3; do git pull --rebase --autostash -q && git push -q && exit 0; sleep 5; done
+          exit 1

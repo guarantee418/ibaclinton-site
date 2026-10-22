@@ -124,7 +124,7 @@ async function makeTab(call, form, version) {
   await call("PATCH", `${s}/range(address='${colLetter(FIXED.length)}:${last}')/format`, { columnWidth: 190, wrapText: true });
   const note = colLetter(cols.length + 1);
   const lines = [
-    `Responses to the "${form.name}" form on The Kings Corner, one row per response.`,
+    `Responses to the "${form.name}" form on ${form.where || "The Kings Corner"}, one row per response.`,
     "Each person gets a confirmation email with their answers; iba@ and ibs@ get the details.",
     "Change Status as you go (for example Read, Done) and use Notes for anything worth remembering.",
     "⚠ NEVER rename, move or delete these columns. A question added in the website editor adds a column at the end; " +
@@ -156,7 +156,7 @@ export function confirmationMail(form, entry, id, env) {
 export function noticeMail(form, entry, id, env, sheet) {
   const e = escapeHtml;
   const content =
-    `<p>A new response to <b>${e(form.name)}</b> came in on The Kings Corner:</p>` +
+    `<p>A new response to <b>${e(form.name)}</b> came in on ${e(form.where || "The Kings Corner")}:</p>` +
     answerList(form, entry, true) +
     `<p>Reply to this email to answer ${e(entry.name)}. Every response is on the "${e(sheet)}" tab of the office ` +
     `workbook (response ${e(id)}).</p>`;
