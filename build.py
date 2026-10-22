@@ -8,7 +8,8 @@ Each page file starts with a few `key: value` lines, then a line with `---`, the
 Keys: title, description, nav (which menu item to highlight), cta (no = hide the
 "Explore the Possibilities" band), hero (image file in img/ for the page banner), banner (no = no banner),
 fulltitle (the browser tab title, instead of "<title> | Independent Baptist Academy"), fonts (Google Fonts
-families for this page only).
+families for this page only), hidden (yes = asks search engines not to list the page and leaves it out of
+sitemap.xml; for the Teacher Portal).
 """
 import html, json, pathlib, re
 from html.parser import HTMLParser
@@ -63,12 +64,17 @@ def safe_url(value):
     value = str(value or "").strip()
     return value if value.startswith("https://") else ""
 
-def docs_list(items, root):
+def public_file(root):
+    """Where an uploaded file (site/files/) is linked from; the Teacher Portal (teachers.py) passes its own."""
+    return lambda name: f"{root}files/" + html.escape(name, quote=True)
+
+def docs_list(items, root, file_url=None):
+    file_url = file_url or public_file(root)
     lis = []
     for item in items or []:
         title, url = esc(item.get("title")), safe_url(item.get("url"))
         if not url and item.get("file"):
-            url = f"{root}files/" + html.escape(pathlib.PurePosixPath(str(item["file"])).name, quote=True)
+            url = file_url(pathlib.PurePosixPath(str(item["file"])).name)
         if title and url:
             lis.append(f'<li><a href="{url}">{title}</a></li>')
     return '<ul class="docs">' + "".join(lis) + "</ul>" if lis else ""
@@ -180,12 +186,13 @@ def absence_form(root):
         '<a href="mailto:iba@ibcministries.org">iba@ibcministries.org</a>.</p></noscript>'
         f'<script src="{root}absence.js" defer></script>')
 
-def announcement_slides(items, ids, root, today=None):
+def announcement_slides(items, ids, root, today=None, file_url=None):
     """Announcement slides after the welcome slide in the Kings Corner's purple banner (content/parents.json).
     Each has an optional graphic (uploaded to site/files); one with a graphic and no title shows the graphic alone,
     for a ready-made flyer. Slides outside their show dates are left out here, and hidden in the browser too
     (data-from/data-until), since the site is only rebuilt when something is saved."""
     today = (today or lunch.dt.datetime.now(lunch.EASTERN).date()).isoformat()
+    file_url = file_url or public_file(root)
     out = []
     for a in items or []:
         if not isinstance(a, dict):
@@ -194,7 +201,7 @@ def announcement_slides(items, ids, root, today=None):
         if (until and until < today) or a.get("hidden"):
             continue
         name = pathlib.PurePosixPath(str(a.get("graphic") or "").strip()).name
-        img = f"{root}files/" + html.escape(name, quote=True) if name.lower().endswith(lunch.IMAGE_TYPES) else ""
+        img = file_url(name) if name.lower().endswith(lunch.IMAGE_TYPES) else ""
         title, target = esc(a.get("title")), str(a.get("button_url") or "").strip()
         href = esc(safe_url(target)) or (f"#{slug(target)}" if target and slug(target) in ids else "")
         if not title and not img:
@@ -222,9 +229,26 @@ def announcement_slides(items, ids, root, today=None):
             + '</div></li>')
     return out
 
+def parents_extras(s, root):
+    """The parents page's own forms, switched on per section in the editor."""
+    extra = ""
+    if s.get("show_lunch"):
+        extra = lunch.lunch_block(json.loads((CONTENT / "lunch.json").read_text()), root, LUNCH_API)
+    if s.get("show_feedback"):
+        extra += feedback_form(root)
+    if s.get("show_absence"):
+        extra += absence_form(root)
+    return extra
+
 def parents_block(data, root):
     """The Kings Corner (parents page): hero and tile grid; each tile opens its section in a pop-up (site/kings.js).
     All text comes from content/parents.json. Without JavaScript the sections show below the tiles instead."""
+    return portal_block(data, root, "The Kings Corner", parents_extras)
+
+def portal_block(data, root, name, extras, file_url=None, form_endpoint=""):
+    """A Kings Corner-style page: The Kings Corner, and the Teacher Portal (teachers.py) with the same look.
+    extras(section, root) adds that page's own pieces to a section; file_url(name) links an uploaded file."""
+    file_url = file_url or public_file(root)
     sections = [s for s in data.get("sections") or [] if str(s.get("title") or "").strip()]
     for s in sections:
         s["_id"] = slug(s.get("anchor")) or slug(s.get("title"))
@@ -237,12 +261,12 @@ def parents_block(data, root):
     welcome = (
         '<div class="kc-in kc-hero-in"><div class="kc-hero-text">'
         + (f'<p class="kc-script">{esc(hero.get("script"))}</p>' if esc(hero.get("script")) else "")
-        + f'<h1>{esc(hero.get("title")) or "The Kings Corner"}</h1>'
+        + f'<h1>{esc(hero.get("title")) or name}</h1>'
         + (f'<p class="kc-lead">{esc(hero.get("text"))}</p>' if esc(hero.get("text")) else "")
         + button + '</div>'
         f'<img class="kc-crest" src="{root}img/kings-crest.png" alt="Independent Baptist Academy Kings crest" width="600" height="450">'
         '</div>')
-    slides = [welcome] + announcement_slides(data.get("announcements"), ids, root)
+    slides = [welcome] + announcement_slides(data.get("announcements"), ids, root, file_url=file_url)
     if len(slides) == 1:
         hero_html = f'<div class="kc-hero">{welcome}</div>'
     else:
@@ -284,17 +308,11 @@ def parents_block(data, root):
 
     blocks, form_ids = [], set()
     for s in sections:
-        extra = ""
-        if s.get("show_lunch"):
-            extra = lunch.lunch_block(json.loads((CONTENT / "lunch.json").read_text()), root, LUNCH_API)
-        if s.get("show_feedback"):
-            extra += feedback_form(root)
-        if s.get("show_absence"):
-            extra += absence_form(root)
-        extra += forms.form_html(s, root, LUNCH_API, form_ids)  # a form the office added (forms.py)
+        extra = extras(s, root)
+        extra += forms.form_html(s, root, LUNCH_API, form_ids, form_endpoint)  # a form the office added (forms.py)
         blocks.append(f'<div class="block" id="{s["_id"]}"><h2>{esc(s["title"])}</h2>'
-                      f'{clean_html(s.get("text"))}{docs_list(s.get("links"), root)}{extra}</div>')
-    back = f'Back to {esc(hero.get("title")) or "The Kings Corner"}'
+                      f'{clean_html(s.get("text"))}{docs_list(s.get("links"), root, file_url)}{extra}</div>')
+    back = f'Back to {esc(hero.get("title")) or name}'
     return (f'<div class="kc" data-back="{back}">{hero_html}{tiles_html}'
             f'\n<div class="kc-in kc-sections"><div class="blocks">\n{"\n".join(blocks)}\n</div></div>\n</div>'
             f'\n<script src="{root}kings.js" defer></script>')
@@ -335,6 +353,8 @@ def render(path, text, layout):
         if DOMAIN and GA_ID else "This website does not use advertising or tracking cookies of its own.")
     body = body.replace("{{tracking}}", tracking)
     head_extra = GTAG if DOMAIN and GA_ID else '<meta name="robots" content="noindex">'
+    if meta.get("hidden") == "yes":
+        head_extra += '\n<meta name="robots" content="noindex, nofollow">'
     if meta.get("fonts"):  # Google Fonts for this page only, e.g. "fonts: Yellowtail&family=Nunito+Sans"
         head_extra += ('\n<link rel="preconnect" href="https://fonts.googleapis.com">'
                        '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
@@ -349,7 +369,7 @@ def render(path, text, layout):
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html)
     print("wrote", out.relative_to(ROOT))
-    return None if rel.name == "404" else out.relative_to(OUT).parent.as_posix()
+    return None if rel.name == "404" or meta.get("hidden") == "yes" else out.relative_to(OUT).parent.as_posix()
 
 def write(name, text):
     (OUT / name).write_text(text)

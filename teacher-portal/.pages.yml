@@ -1,0 +1,317 @@
+# Online editor for the Teacher Portal (Pages CMS, app.pagescms.org), same as The Kings Corner's editor.
+# This repo is PRIVATE: it holds what only teachers should see. The office (Mrs. Mora, Mrs. Napierala) are invited
+# as collaborators. Saving commits to main; the "Build the Teacher Portal" workflow turns it into built/portal.json,
+# which the school's order service shows at ibaclinton.com/teachers/ after the password is given.
+# Changing this file (what the office can edit) needs Garrett's approval.
+
+media:
+  input: files
+  output: /files
+  categories: [document, image]
+  rename: safe
+
+content:
+  - name: teachers
+    label: Teacher Portal
+    type: file
+    path: content/teachers.json
+    format: json
+    fields:
+      - name: settings
+        label: Settings
+        type: object
+        fields:
+          - name: password
+            label: Portal password
+            type: string
+            description: The one password every teacher types to open the Teacher Portal. Changing it signs everyone out; tell the teachers the new one in person or by school email. Leave blank to close the portal.
+      - name: hero
+        label: Top of the page (purple banner)
+        type: object
+        fields:
+          - name: script
+            label: Small line above the title
+            type: string
+            description: For example "Welcome to". Leave blank to hide it.
+          - name: title
+            label: Title
+            type: string
+            required: true
+          - name: text
+            label: Text under the title
+            type: text
+          - name: button_text
+            label: Button text
+            type: string
+            description: Leave blank to hide the button.
+          - name: button_url
+            label: Button link
+            type: string
+            pattern:
+              regex: "^(https://.*)?$"
+              message: "Paste the full link, starting with https://"
+      - name: announcements
+        label: Announcements (slides in the purple banner)
+        description: Upcoming events and news. Each one is a slide after the welcome slide; the banner turns every few seconds and teachers can use the arrows and dots. Drag to reorder. A slide disappears by itself after its "Show until" date.
+        type: object
+        list:
+          collapsible:
+            collapsed: true
+            summary: "{title} {show_until}"
+        fields:
+          - name: script
+            label: Small line above the title
+            type: string
+            description: For example "Coming up" or "Save the date". Leave blank to hide it.
+          - name: title
+            label: Title
+            type: string
+            description: For example "Teacher In-Service". Leave blank (with a graphic) to show only the graphic, for example a flyer made in Canva.
+          - name: when
+            label: Date and time line
+            type: string
+            description: Shown in a gold box under the title, for example "Friday, November 6 · 6:00 PM". Leave blank to hide it.
+          - name: text
+            label: Text
+            type: text
+            description: One or two short sentences.
+          - name: graphic
+            label: Graphic (optional)
+            type: file
+            description: A picture or flyer (JPG or PNG). With a title it shows on the right; without a title it fills the slide.
+            options:
+              extensions: [jpg, jpeg, png, gif, webp]
+          - name: graphic_description
+            label: Describe the graphic (optional)
+            type: string
+            description: A few words for anyone who uses a screen reader, for example "Fall Festival flyer, November 6 at 6 PM".
+          - name: button_text
+            label: Button text
+            type: string
+            description: For example "Sign up" or "Read the notes". Shown only with a button link.
+          - name: button_url
+            label: Button link
+            type: string
+            description: A full link starting with https://, or a section's "Page link name" (for example meeting-notes or substitutes) to open it on this page. Leave blank for no button.
+          - name: show_from
+            label: Show from (optional)
+            type: date
+            default: ""
+            description: Leave blank to show it right away.
+            options:
+              format: yyyy-MM-dd
+          - name: show_until
+            label: Show until (optional)
+            type: date
+            default: ""
+            description: The last day it shows, usually the day of the event. Leave blank to keep it up until you delete it.
+            options:
+              format: yyyy-MM-dd
+          - name: hidden
+            label: Hide for now
+            type: boolean
+            description: Turn on to take the slide down without deleting it.
+      - name: tiles_script
+        label: Small line above the tiles
+        type: string
+        description: For example "For our faculty and staff". Leave blank to hide it.
+      - name: tiles_heading
+        label: Heading above the tiles
+        type: string
+      - name: tiles
+        label: Tiles
+        description: The cards on the page, in this order (drag to reorder). Each one opens a section (below) in a pop-up with back buttons. A section that no tile opens gets a plain tile at the end.
+        type: object
+        list:
+          collapsible:
+            collapsed: true
+            summary: "{title}"
+        fields:
+          - name: title
+            label: Title
+            type: string
+            required: true
+          - name: description
+            label: One-line description
+            type: string
+          - name: section
+            label: Goes to section
+            type: string
+            required: true
+            description: The section's "Page link name" (shown at the bottom of each section below), for example meeting-notes, reimbursements or gradelink. A full https:// link also works. A tile whose section doesn't exist is not shown.
+          - name: tag
+            label: Small tag (optional)
+            type: string
+            description: For example "Login". Leave blank for none.
+      - name: sections
+        label: Sections
+        description: What each tile opens. A section shows in a pop-up when its tile is clicked, not on the page itself.
+        type: object
+        list:
+          collapsible:
+            collapsed: true
+            summary: "{title}"
+        fields:
+          - name: title
+            label: Heading
+            type: string
+            required: true
+          - name: text
+            label: Text
+            type: rich-text
+          - name: links
+            label: Links and files
+            type: object
+            list: true
+            fields:
+              - name: title
+                label: Link text
+                type: string
+                required: true
+              - name: file
+                label: File
+                type: file
+                description: Upload a PDF, Word, Excel or PowerPoint file (or a picture), or use the web link below instead. Only signed-in teachers can open it.
+                options:
+                  extensions: [pdf, doc, docx, xls, xlsx, ppt, pptx, jpg, jpeg, png, gif, webp]
+              - name: url
+                label: Web link (instead of a file)
+                type: string
+                pattern:
+                  regex: "^(https://.*)?$"
+                  message: "Paste the full link, starting with https://"
+          - name: meetings
+            label: Meeting notes (optional)
+            type: object
+            description: Notes from teachers' meetings, shown newest first (the newest one open). Add one per meeting; delete old ones when they're no longer needed.
+            list:
+              collapsible:
+                collapsed: true
+                summary: "{date} {title}"
+            fields:
+              - name: date
+                label: Meeting date
+                type: date
+                required: true
+                options:
+                  format: yyyy-MM-dd
+              - name: title
+                label: Title
+                type: string
+                description: For example "Faculty meeting" or "In-service day".
+              - name: notes
+                label: Notes
+                type: rich-text
+              - name: file
+                label: File (optional)
+                type: file
+                description: The notes or handout as a PDF or Word file.
+                options:
+                  extensions: [pdf, doc, docx, xls, xlsx, ppt, pptx]
+              - name: file_title
+                label: Link text for the file (optional)
+                type: string
+                description: Leave blank for "Open the notes".
+          - name: form
+            label: Form (optional)
+            type: object
+            description: "Add a form to this section: give it a name and at least one question. Every form also asks the person's name and email. Each response goes to the form's own tab in the office workbook (named after the form, made by the first response); the person gets a confirmation email and iba@ and ibs@ get the details. Adding a question adds a column at the end of that tab; renaming the form, or renaming, removing or reordering questions, starts a new tab."
+            fields:
+              - name: name
+                label: Form name
+                type: string
+                description: For example "Reimbursement Request". Also the name of its tab in the office workbook. Leave blank for no form.
+              - name: intro
+                label: Text above the form (optional)
+                type: text
+              - name: button
+                label: Button text (optional)
+                type: string
+                description: For example "Sign up". Leave blank for "Send".
+              - name: closed
+                label: Stop taking responses
+                type: boolean
+                description: Turn on to close the form without deleting it. The page then says the form isn't taking responses.
+              - name: notify
+                label: Send each response to
+                type: string
+                list:
+                  max: 10
+                description: School email addresses (@ibcministries.org, @ibaministries.org or @ibaclinton.com), one per line item. Leave empty to send to iba@ and ibs@. The teacher always gets a confirmation.
+              - name: approvals
+                label: Approvals
+                type: object
+                description: People who must approve each response. They get an email asking them to reply with their approval; their reply goes to the address below. Each gets its own column on the monday.com board.
+                list:
+                  max: 5
+                  collapsible:
+                    collapsed: true
+                    summary: "{title} {email}"
+                fields:
+                  - name: title
+                    label: Approval name
+                    type: string
+                    required: true
+                    description: For example "Vehicle approval" or "IBC approval".
+                  - name: name
+                    label: Person's name (optional)
+                    type: string
+                  - name: email
+                    label: Their email
+                    type: string
+                    required: true
+                  - name: only_if_question
+                    label: Only when this question… (optional)
+                    type: string
+                    description: Type the question exactly as above, for example "Transportation". Leave blank to ask every time. When it isn't needed, the person still gets the response, marked "not needed".
+                  - name: only_if_answer
+                    label: …has this answer
+                    type: string
+                    description: For example "School vehicle (bus or van)". For a Yes/No box, type Yes.
+              - name: approval_reply
+                label: Approvals reply to (optional)
+                type: string
+                description: Where approvers' replies go. Leave blank for iba@ibcministries.org.
+              - name: monday
+                label: Also add each response to monday.com
+                type: boolean
+                description: Each form gets its own board, "Teacher Portal" and the form name, made by its first response.
+              - name: questions
+                label: Questions
+                type: object
+                description: Up to 15. Drag to reorder (reordering starts a new tab, so set the order before the form goes out).
+                list:
+                  max: 15
+                  collapsible:
+                    collapsed: true
+                    summary: "{label}"
+                fields:
+                  - name: label
+                    label: Question
+                    type: string
+                    required: true
+                    description: For example "Amount spent". This is also the column heading on the form's tab.
+                  - name: type
+                    label: Answer type
+                    type: select
+                    default: Short answer
+                    options:
+                      values: [Short answer, Long answer, Email, Phone, Date, Number, Dropdown (pick one), Checkboxes (pick any), Yes/No box]
+                  - name: choices
+                    label: Choices (for Dropdown or Checkboxes)
+                    type: string
+                    list:
+                      max: 20
+                    description: One choice per line item, for example "T-shirt size S", "M", "L".
+                  - name: required
+                    label: Required
+                    type: boolean
+                    description: For a Yes/No box, required means it must be ticked (for example "I give permission").
+                  - name: help
+                    label: Help text (optional)
+                    type: string
+                    description: A short hint under the question.
+          - name: anchor
+            label: Page link name (advanced)
+            type: string
+            description: Used in links like ibaclinton.com/teachers/#meeting-notes (opens that pop-up) and by the tiles ("Goes to section"). Leave as is; for a new section type a short name like field-trips, or leave blank.

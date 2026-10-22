@@ -1,0 +1,320 @@
+{
+  "settings": {
+    "password": ""
+  },
+  "hero": {
+    "script": "Welcome to",
+    "title": "Teacher Portal",
+    "text": "Forms, meeting notes and resources for the faculty and staff of Independent Baptist Academy.",
+    "button_text": "Open Gradelink",
+    "button_url": "https://secure.gradelink.com/gradelink"
+  },
+  "announcements": [],
+  "tiles_script": "For our faculty and staff",
+  "tiles_heading": "What do you need?",
+  "tiles": [
+    {
+      "title": "Meeting Notes",
+      "description": "Notes from recent teachers' meetings.",
+      "section": "meeting-notes"
+    },
+    {
+      "title": "Activity Forms",
+      "description": "Ask to hold a field trip, event or class activity.",
+      "section": "activity-forms"
+    },
+    {
+      "title": "Reimbursements",
+      "description": "Get paid back for school purchases.",
+      "section": "reimbursements"
+    },
+    {
+      "title": "Chaperone Agreements",
+      "description": "Agreements for parents and volunteers on trips.",
+      "section": "chaperones"
+    },
+    {
+      "title": "Substitutes",
+      "description": "Request a substitute and leave sub plans.",
+      "section": "substitutes"
+    },
+    {
+      "title": "Handbooks & Policies",
+      "description": "Staff handbook, student handbooks and policies.",
+      "section": "handbooks"
+    },
+    {
+      "title": "Calendars",
+      "description": "School year calendar and important dates.",
+      "section": "calendars"
+    },
+    {
+      "title": "Gradelink",
+      "description": "Grades, attendance and lesson plans.",
+      "section": "gradelink",
+      "tag": "Login"
+    }
+  ],
+  "sections": [
+    {
+      "title": "Meeting Notes",
+      "anchor": "meeting-notes",
+      "text": "<p>Notes from recent teachers' meetings, newest first. Questions about a meeting? Ask Mr. Greene.</p>",
+      "links": [],
+      "meetings": []
+    },
+    {
+      "title": "Activity Forms",
+      "anchor": "activity-forms",
+      "text": "<p>Planning a field trip, class party or special activity? Fill out the activity request at least two weeks ahead. The office will let you know once it is approved.</p>",
+      "links": [],
+      "form": {
+        "name": "Activity Request",
+        "button": "Send request",
+        "intro": "Send one request per activity.",
+        "questions": [
+          {
+            "label": "Activity",
+            "type": "Short answer",
+            "required": true,
+            "help": "For example \"Field trip to the National Zoo\""
+          },
+          {
+            "label": "Date",
+            "type": "Date",
+            "required": true
+          },
+          {
+            "label": "Start and end time",
+            "type": "Short answer",
+            "required": true
+          },
+          {
+            "label": "Location",
+            "type": "Short answer",
+            "required": true
+          },
+          {
+            "label": "Grades or classes going",
+            "type": "Short answer",
+            "required": true
+          },
+          {
+            "label": "Number of students",
+            "type": "Number",
+            "required": false
+          },
+          {
+            "label": "Chaperones needed",
+            "type": "Number",
+            "required": false
+          },
+          {
+            "label": "Cost per student",
+            "type": "Short answer",
+            "required": false,
+            "help": "Leave blank if there is no cost"
+          },
+          {
+            "label": "Transportation",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "None needed",
+              "School vehicle (bus or van)",
+              "Parent drivers",
+              "Other"
+            ]
+          },
+          {
+            "label": "Purpose and details",
+            "type": "Long answer",
+            "required": true
+          }
+        ],
+        "notify": [
+          "ggreene@ibcministries.org",
+          "iba@ibcministries.org",
+          "jschmidley@ibcministries.org"
+        ],
+        "approvals": [
+          {
+            "title": "Vehicle approval",
+            "name": "David Febo",
+            "email": "dfebo@ibcministries.org",
+            "only_if_question": "Transportation",
+            "only_if_answer": "School vehicle (bus or van)"
+          },
+          {
+            "title": "IBC approval",
+            "name": "IBC office",
+            "email": "ibc@ibcministries.org"
+          }
+        ],
+        "approval_reply": "iba@ibcministries.org",
+        "monday": true
+      }
+    },
+    {
+      "title": "Reimbursements",
+      "anchor": "reimbursements",
+      "text": "<p>Bought something for your classroom or a school activity? Fill out a reimbursement request and turn in the receipt to the office.</p>",
+      "links": [],
+      "form": {
+        "name": "Reimbursement Request",
+        "button": "Send request",
+        "questions": [
+          {
+            "label": "Date of purchase",
+            "type": "Date",
+            "required": true
+          },
+          {
+            "label": "Store or vendor",
+            "type": "Short answer",
+            "required": true
+          },
+          {
+            "label": "Amount",
+            "type": "Number",
+            "required": true,
+            "help": "In dollars, for example 24.99"
+          },
+          {
+            "label": "What it was for",
+            "type": "Long answer",
+            "required": true
+          },
+          {
+            "label": "Class or activity",
+            "type": "Short answer",
+            "required": true
+          },
+          {
+            "label": "Was this approved ahead of time?",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Yes",
+              "No"
+            ]
+          },
+          {
+            "label": "I will turn in the receipt to the office",
+            "type": "Yes/No box",
+            "required": true
+          }
+        ],
+        "notify": [
+          "ggreene@ibcministries.org",
+          "iba@ibcministries.org",
+          "ibs@ibcministries.org",
+          "jschmidley@ibcministries.org"
+        ]
+      }
+    },
+    {
+      "title": "Chaperone Agreements",
+      "anchor": "chaperones",
+      "text": "<p>Every parent or volunteer who chaperones a trip signs a chaperone agreement before the trip. Print the agreement below and send it home, then return the signed copies to the office.</p>",
+      "links": []
+    },
+    {
+      "title": "Substitutes",
+      "anchor": "substitutes",
+      "text": "<p>Need a substitute? Send the request as early as you can. If you are sick the morning of, call the office first, then send this form.</p>",
+      "links": [],
+      "form": {
+        "name": "Substitute Request",
+        "button": "Send request",
+        "questions": [
+          {
+            "label": "First day out",
+            "type": "Date",
+            "required": true
+          },
+          {
+            "label": "Last day out",
+            "type": "Date",
+            "required": false,
+            "help": "Only if more than one day"
+          },
+          {
+            "label": "Full or part day",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Full day",
+              "Morning only",
+              "Afternoon only",
+              "Certain periods"
+            ]
+          },
+          {
+            "label": "Periods or times",
+            "type": "Short answer",
+            "required": false,
+            "help": "Only for part of a day"
+          },
+          {
+            "label": "Reason",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Sick",
+              "Personal",
+              "Family",
+              "Professional development",
+              "School business",
+              "Other"
+            ]
+          },
+          {
+            "label": "Lesson plans are left for the substitute",
+            "type": "Yes/No box",
+            "required": false
+          },
+          {
+            "label": "Notes for the substitute or office",
+            "type": "Long answer",
+            "required": false
+          }
+        ],
+        "notify": [
+          "ggreene@ibcministries.org",
+          "iba@ibcministries.org",
+          "ibs@ibcministries.org",
+          "jschmidley@ibcministries.org"
+        ]
+      }
+    },
+    {
+      "title": "Handbooks & Policies",
+      "anchor": "handbooks",
+      "text": "<p>Handbooks and school policies.</p>",
+      "links": []
+    },
+    {
+      "title": "Calendars",
+      "anchor": "calendars",
+      "text": "<p>The school year calendar.</p>",
+      "links": [
+        {
+          "title": "IBA & Stepping Stones Calendar 2026-2027",
+          "url": "https://ibaclinton.com/files/iba-calendar-2026-2027.pdf"
+        }
+      ]
+    },
+    {
+      "title": "Gradelink",
+      "anchor": "gradelink",
+      "text": "<p>Grades, attendance and lesson plans are in Gradelink.</p>",
+      "links": [
+        {
+          "title": "Open Gradelink",
+          "url": "https://secure.gradelink.com/gradelink"
+        }
+      ]
+    }
+  ]
+}

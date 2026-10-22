@@ -1,0 +1,30 @@
+title: Teacher Portal
+fulltitle: Teacher Portal | Independent Baptist Academy
+description: Teacher Portal for the faculty and staff of Independent Baptist Academy.
+banner: no
+cta: no
+hidden: yes
+fonts: Barlow+Condensed:ital,wght@1,800&family=Nunito+Sans:wght@400;600;700;800&family=Yellowtail
+---
+<!-- Only the sign-in box is public. After the password, site/teachers.js loads the portal itself from the order
+     service (worker/src/teachers.js), which keeps it in a private repo. Not linked from any page or the sitemap. -->
+<div class="kc tp-login" id="tp" data-api="{{api}}" data-root="{{root}}">
+<div class="kc-hero"><div class="kc-in kc-hero-in"><div class="kc-hero-text">
+<p class="kc-script">Faculty &amp; Staff</p>
+<h1>Teacher Portal</h1>
+<p class="kc-lead" id="tp-msg">Forms, meeting notes and resources for IBA teachers and staff.</p>
+<form class="tp-form" id="tp-form" novalidate hidden>
+<label for="tp-pass">Portal password</label>
+<input type="password" id="tp-pass" name="password" autocomplete="current-password" maxlength="200" required>
+<label class="tp-remember"><input type="checkbox" name="remember"> Keep me signed in on this device for 30 days</label>
+<button class="kc-btn" type="submit">Sign in</button>
+<p class="tp-status" id="tp-status" role="status" aria-live="polite"></p>
+<p class="tp-help">Don’t have the password? Ask the school office.</p>
+</form>
+<noscript><p class="kc-lead">Please turn on JavaScript to sign in.</p></noscript>
+</div>
+<img class="kc-crest" src="{{root}}img/kings-crest.png" alt="Independent Baptist Academy Kings crest" width="600" height="450">
+</div></div>
+</div>
+<div id="tp-portal" hidden></div>
+<script src="{{root}}teachers.js" defer></script>

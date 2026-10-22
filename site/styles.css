@@ -292,3 +292,28 @@ html.kc-lock{overflow:hidden}
 .lunch-graphic{display:block;margin:0 0 12px}.lunch-graphic img{width:100%;border-radius:8px}
 form.info label.lunch-week-pick{font-weight:700}
 
+/* Teacher Portal (ibaclinton.com/teachers/, site/teachers.js): sign-in box in the purple banner, a sign-out bar,
+   meeting notes as fold-outs. Everything else is The Kings Corner's .kc styles. */
+.tp-form{display:grid;gap:10px;max-width:420px;margin-top:28px}
+.tp-form label{font-weight:700;font-size:17px;color:#fff}
+.tp-form input[type=password]{font:inherit;font-size:18px;padding:12px 14px;border:2px solid transparent;border-radius:12px;color:var(--ink)}
+.tp-form input[type=password]:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.tp-form .tp-remember{display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px;color:#f1e8f8}
+.tp-form .tp-remember input{width:20px;height:20px;accent-color:var(--gold)}
+.tp-form .kc-btn{margin-top:8px;justify-self:start;border:0;cursor:pointer;font-family:inherit}
+.tp-form .kc-btn:disabled{opacity:.6;cursor:wait}
+.tp-form .kc-btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.tp-status{margin:0;min-height:1.5em;font-weight:700;color:var(--gold)}
+.tp-status.tp-bad{color:#ffd0d0}
+.tp-help{margin:0;font-size:15px;color:#d9c8e6}
+.tp-bar{background:#3b1456;color:#f1e8f8;font:600 15px "Nunito Sans",system-ui,sans-serif}
+.tp-bar .kc-in{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:8px;padding-bottom:8px}
+.tp-out{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.6);border-radius:10px;padding:6px 14px;font:inherit;font-weight:700;cursor:pointer}
+.tp-out:hover{background:#ffde17;border-color:#ffde17;color:#3b1456}
+.tp-out:focus-visible{outline:3px solid #ffde17;outline-offset:2px}
+.tp-meetings{display:grid;gap:12px;margin-top:16px}
+.tp-meeting{border:1px solid var(--line);border-radius:12px;background:#fff}
+.tp-meeting summary{cursor:pointer;padding:14px 18px;font-weight:700;font-size:18px;color:var(--navy)}
+.tp-meeting summary:focus-visible{outline:3px solid var(--navy);outline-offset:2px;border-radius:12px}
+.tp-meeting .tp-date{display:inline-block;margin-right:8px;background:var(--cream);color:var(--navy-d);font-size:14px;font-weight:800;padding:3px 10px;border-radius:999px}
+.tp-notes{padding:0 18px 16px;border-top:1px solid var(--line)}

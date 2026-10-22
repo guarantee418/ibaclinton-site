@@ -56,8 +56,9 @@ def table_name(form_id):
     """The table on that tab: letters and digits only (Excel's rule), e.g. Form_FieldTripPermission."""
     return "Form_" + ("".join(p.capitalize() for p in form_id.split("-"))[:40] or "Responses")
 
-def spec(section, used=None):
-    """One section's form as plain data, or None (no form, no name or no questions)."""
+def spec(section, used=None, prefix="", where="The Kings Corner"):
+    """One section's form as plain data, or None (no form, no name or no questions). The Teacher Portal's forms
+    (teachers.py) have ids starting "teacher-", so their tables and remembered tabs never mix with the parents'."""
     f = section.get("form") if isinstance(section, dict) else None
     if not isinstance(f, dict):
         return None
@@ -85,9 +86,10 @@ def spec(section, used=None):
         if name or questions:
             print(f"  form {name!r} left out: it needs a name and at least one question")
         return None
-    form_id, n = _slug(name) or "form", 2
+    base = prefix + (_slug(name) or "form")
+    form_id, n = base, 2
     while used is not None and form_id in used:
-        form_id, n = f"{_slug(name) or 'form'}-{n}", n + 1
+        form_id, n = f"{base}-{n}", n + 1
     if used is not None:
         used.add(form_id)
     # The page and forms.json are built together; the service refuses a response from a page built with
@@ -96,15 +98,15 @@ def spec(section, used=None):
     return {"id": form_id, "name": name, "sheet": sheet_name(name), "table": table_name(form_id),
             "version": hashlib.sha256(shape.encode()).hexdigest()[:10], "closed": bool(f.get("closed")),
             "intro": _clean(f.get("intro"), 600), "button": _clean(f.get("button"), 40) or "Send",
-            "questions": questions}
+            "where": where, "questions": questions}
 
-def specs(data):
+def specs(data, prefix="", where="The Kings Corner"):
     used = set()
-    return [s for s in (spec(sec, used) for sec in data.get("sections") or [] if str(sec.get("title") or "").strip()) if s]
+    return [s for s in (spec(sec, used, prefix, where) for sec in data.get("sections") or [] if str(sec.get("title") or "").strip()) if s]
 
 def forms_file(data):
     """site/forms/forms.json: every form on The Kings Corner, for the form service."""
-    forms = [{k: v for k, v in s.items() if k not in ("intro", "button")} for s in specs(data)]
+    forms = [{k: v for k, v in s.items() if k not in ("intro", "button", "where")} for s in specs(data)]
     return json.dumps({"forms": forms}, indent=2) + "\n"
 
 def _question(q, form_id):
@@ -133,9 +135,10 @@ def _question(q, form_id):
     wide = q["type"] in ("long", "choice") or len(q["label"]) > 40 or q["help"]
     return f'<label{" class=\"full\"" if wide else ""}>{label}{opt}{help_}{field}</label>'
 
-def form_html(section, root, api, used=None):
-    """The form in a section's pop-up (site/forms.js sends it), or "" when the section has no form."""
-    s = spec(section, used)
+def form_html(section, root, api, used=None, endpoint=""):
+    """The form in a section's pop-up (site/forms.js sends it), or "" when the section has no form.
+    endpoint: the service path for a signed-in page (the Teacher Portal's "/teachers/form"); else "/form"."""
+    s = spec(section, used, "teacher-" if endpoint else "")
     if not s:
         return ""
     intro = f'<p class="cf-intro">{esc(s["intro"])}</p>' if s["intro"] else ""
@@ -144,7 +147,8 @@ def form_html(section, root, api, used=None):
     fid = esc(s["id"])
     return (
         f'<div class="cf-status" id="cf-status-{fid}" role="status" aria-live="polite"></div>'
-        f'<form class="info cf-form" id="cf-{fid}" data-api="{esc(api)}" data-form="{fid}" data-version="{s["version"]}" novalidate hidden>'
+        f'<form class="info cf-form" id="cf-{fid}" data-api="{esc(api)}" data-form="{fid}" data-version="{s["version"]}"'
+        + (f' data-endpoint="{esc(endpoint)}"' if endpoint else "") + ' novalidate hidden>'
         f'{intro}<fieldset><legend>{esc(s["name"])}</legend>'
         '<label>Your name<input name="name" autocomplete="name" maxlength="120" required></label>'
         '<label>Your email<input type="email" name="email" autocomplete="email" maxlength="120" required></label>'

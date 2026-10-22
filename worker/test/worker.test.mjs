@@ -1370,3 +1370,200 @@ test("TEST form response clean-up: only TEST names; an empty TEST tab goes too",
   assert.ok(calls.some((c) => c.method === "DELETE" && c.path === "/worksheets/TEST%20Form"));
   assert.match((await deleteTestResponse(call, store, "ZZZZZ")).error, /no response/);
 });
+
+// ------------------------------------------------------------------ Teacher Portal
+import { checkToken, makeToken, passwordHash, resetCache } from "../src/teachers.js";
+
+const TP_FORM = { ...FORM, id: "teacher-reimbursement", name: "Reimbursement Request", sheet: "Reimbursement Request",
+  table: "Form_TeacherReimbursement", where: "the Teacher Portal" };
+
+async function teacherWorld(files = {}) {
+  resetCache();
+  const portal = { html: '<div class="kc"><a href="__TP_FILES__/notes.pdf">Notes</a></div>', forms: [TP_FORM],
+    password: await passwordHash("Kings2026") };
+  const seen = { github: [], sent: [], graph: [] };
+  globalThis.fetch = async (url, init = {}) => {
+    url = String(url);
+    const ok = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
+    if (url.startsWith("https://api.github.com/repos/guarantee418/ibaclinton-teachers/contents/")) {
+      seen.github.push({ url, auth: init.headers.Authorization });
+      const path = decodeURIComponent(new URL(url).pathname.split("/contents/")[1]);
+      if (path === "built/portal.json") return ok(portal);
+      if (path in files) return new Response(files[path], { status: 200 });
+      return ok({ message: "Not Found" }, 404);
+    }
+    if (url.includes("/oauth2/v2.0/token")) return ok({ access_token: "at", refresh_token: "rt1", expires_in: 3600 });
+    if (url.endsWith("/me/sendMail")) { seen.sent.push(JSON.parse(init.body)); return new Response(null, { status: 202 }); }
+    if (url.includes("/workbook/")) {
+      seen.graph.push(url);
+      if (url.includes("headerRowRange")) return ok({ values: [columns(TP_FORM)] });
+      return ok({}, 201);
+    }
+    return ok({ error: "unexpected " + url }, 500);
+  };
+  const env = { ...FENV(), TEACHER_REPO: "guarantee418/ibaclinton-teachers", TEACHER_REPO_TOKEN: "ghtok",
+    TEACHER_FORM_NOTIFY: "office@example.org" };
+  const call = (path, init = {}) => worker.fetch(new Request("https://lunch.test" + path, { ...init,
+    headers: { Origin: "https://guarantee418.github.io", "CF-Connecting-IP": "7.7.7.7", ...(init.headers || {}) } }), env);
+  return { env, portal, seen, call };
+}
+
+test("teacher portal: password gives a token; the portal and its file pass need it", async () => {
+  const { call, seen } = await teacherWorld();
+  let r = await call("/teachers/portal");
+  assert.equal(r.status, 401);
+  assert.equal((await r.json()).signin, true);
+  r = await call("/teachers/login", { method: "POST", body: JSON.stringify({ password: "wrong" }) });
+  assert.equal(r.status, 401);
+  r = await call("/teachers/login", { method: "POST", body: JSON.stringify({ password: " Kings2026 ", remember: true }) });
+  const login = await r.json();
+  assert.equal(login.ok, true);
+  assert.equal(login.hours, 30 * 24);
+  r = await call("/teachers/portal", { headers: { Authorization: "Bearer " + login.token } });
+  const d = await r.json();
+  assert.equal(r.status, 200);
+  assert.match(d.html, /__TP_FILES__\/notes\.pdf/);
+  assert.match(d.files, /^\d+\.[\w-]{43}$/);
+  assert.equal(r.headers.get("Cache-Control"), "no-store");
+  assert.ok(seen.github.every((g) => g.auth === "Bearer ghtok"));
+  // a sign-in token isn't a file pass, and the other way round
+  r = await call("/teachers/portal", { headers: { Authorization: "Bearer " + d.files } });
+  assert.equal(r.status, 401);
+  // no answer for a page that isn't ours
+  r = await worker.fetch(new Request("https://lunch.test/teachers/login", { method: "POST", body: "{}",
+    headers: { Origin: "https://evil.example" } }), (await teacherWorld()).env);
+  assert.equal(r.status, 403);
+});
+
+test("teacher portal: tokens expire and stop working when the password changes", async () => {
+  const { env, portal } = await teacherWorld();
+  const now = Date.parse("2026-10-22T12:00:00Z");
+  const t = await makeToken(env, portal, "tp", 12, now);
+  assert.equal(await checkToken(env, portal, "tp", t, now + 11 * 3600e3), true);
+  assert.equal(await checkToken(env, portal, "tp", t, now + 13 * 3600e3), false);
+  assert.equal(await checkToken(env, portal, "tpf", t, now), false);
+  assert.equal(await checkToken(env, { ...portal, password: await passwordHash("New2027") }, "tp", t, now), false);
+  assert.equal(await checkToken(env, { ...portal, password: "" }, "tp", t, now), false); // portal closed
+  assert.equal(await checkToken(env, portal, "tp", t.slice(0, -1) + (t.endsWith("A") ? "B" : "A"), now), false);
+  assert.equal(await passwordHash("  "), "");
+});
+
+test("teacher portal: too many wrong passwords from one connection waits an hour", async () => {
+  const { call } = await teacherWorld();
+  for (let i = 0; i < 20; i++) {
+    assert.equal((await call("/teachers/login", { method: "POST", body: JSON.stringify({ password: "nope" }) })).status, 401);
+  }
+  const r = await call("/teachers/login", { method: "POST", body: JSON.stringify({ password: "Kings2026" }) });
+  assert.equal(r.status, 429);
+});
+
+test("teacher portal files: only with a fresh pass, only the allowed types, streamed from the private repo", async () => {
+  const { env, portal, call, seen } = await teacherWorld({ "files/Staff Handbook.pdf": "%PDF-1.7 test", "files/plan.docx": "PK" });
+  const pass = await makeToken(env, portal, "tpf", 6);
+  let r = await call(`/teachers/file/${pass}/Staff%20Handbook.pdf`);
+  assert.equal(r.status, 200);
+  assert.equal(r.headers.get("Content-Type"), "application/pdf");
+  assert.match(r.headers.get("Content-Disposition"), /^inline; filename\*=UTF-8''Staff%20Handbook\.pdf$/);
+  assert.equal(await r.text(), "%PDF-1.7 test");
+  assert.ok(seen.github.some((g) => g.url.includes("/contents/files/Staff%20Handbook.pdf?ref=main")));
+  r = await call(`/teachers/file/${pass}/plan.docx`);
+  assert.match(r.headers.get("Content-Disposition"), /^attachment/);
+  assert.equal((await call(`/teachers/file/${pass}/missing.pdf`)).status, 404);
+  assert.equal((await call(`/teachers/file/${pass}/script.js`)).status, 404);
+  assert.equal((await call(`/teachers/file/${pass}/..%2Fbuilt%2Fportal.json`)).status, 404);
+  assert.equal((await call(`/teachers/file/${await makeToken(env, portal, "tp", 6)}/plan.docx`)).status, 403);
+  assert.equal((await call(`/teachers/file/123.abc/plan.docx`)).status, 403);
+});
+
+test("teacher portal forms: signed-in only, saved like a Kings Corner form, notice to TEACHER_FORM_NOTIFY", async () => {
+  const { env, portal, call, seen } = await teacherWorld();
+  const body = JSON.stringify({ ...RESP, form: TP_FORM.id });
+  let r = await call("/teachers/form", { method: "POST", body });
+  assert.equal(r.status, 401);
+  assert.equal(seen.sent.length, 0);
+  const token = await makeToken(env, portal, "tp", 1);
+  r = await call("/teachers/form", { method: "POST", body, headers: { Authorization: "Bearer " + token } });
+  const d = await r.json();
+  assert.equal(r.status, 200, JSON.stringify(d));
+  assert.ok(seen.graph.some((u) => u.endsWith("/tables/Form_TeacherReimbursement/rows/add")));
+  assert.equal(seen.sent.length, 2);
+  const notice = seen.sent[1].message;
+  assert.deepEqual(notice.toRecipients.map((x) => x.emailAddress.address), ["office@example.org"]);
+  assert.match(notice.body.content, /came in on the Teacher Portal/);
+  // a Kings Corner form name isn't accepted here
+  r = await call("/teachers/form", { method: "POST", body: JSON.stringify(RESP), headers: { Authorization: "Bearer " + token } });
+  assert.equal(r.status, 400);
+});
+
+import { approvalMail, approvalsFor, noticeMail as formNoticeMail, noticeRecipients } from "../src/forms.js";
+import { formBoardColumns, formItem } from "../src/monday.js";
+
+const ACT = { ...TP_FORM, id: "teacher-activity-request", name: "Activity Request",
+  questions: [{ key: "q1", label: "Activity", type: "short", required: true, choices: [], help: "" },
+    { key: "q2", label: "Transportation", type: "choice", required: true, choices: ["None needed", "School vehicle (bus or van)"], help: "" },
+    { key: "q3", label: "Purpose and details", type: "long", required: false, choices: [], help: "" }],
+  notify: ["ggreene@ibcministries.org", "iba@ibcministries.org", "jschmidley@ibcministries.org"],
+  approvals: [{ title: "Vehicle approval", name: "David Febo", email: "dfebo@ibcministries.org", question: "q2",
+    answer: "School vehicle (bus or van)" }, { title: "IBC approval", name: "IBC office", email: "ibc@ibcministries.org" }],
+  approval_reply: "iba@ibcministries.org", monday: true };
+const bus = { name: "TEST Teacher", email: "t@ibcministries.org", answers: ["Zoo trip", "School vehicle (bus or van)", "Animals"] };
+const walk = { ...bus, answers: ["Zoo trip", "None needed", ""] };
+
+test("activity request: approvers asked only when needed; everyone else gets the notice", () => {
+  let a = approvalsFor(ACT, bus);
+  assert.deepEqual(a.map((x) => x.needed), [true, true]);
+  assert.deepEqual(noticeRecipients(ACT, {}, a), ["ggreene@ibcministries.org", "iba@ibcministries.org", "jschmidley@ibcministries.org"]);
+  a = approvalsFor(ACT, walk);
+  assert.deepEqual(a.map((x) => x.needed), [false, true]);
+  assert.deepEqual(noticeRecipients(ACT, {}, a), ["ggreene@ibcministries.org", "iba@ibcministries.org",
+    "jschmidley@ibcministries.org", "dfebo@ibcministries.org"]);
+  assert.match(formNoticeMail(ACT, walk, "ABCDE", {}, "Activity Request", a).message.body.content, /Vehicle approval \(David Febo\): not needed/);
+  const m = approvalMail(ACT, bus, "ABCDE", a[1], "iba@ibcministries.org").message;
+  assert.equal(m.toRecipients[0].emailAddress.address, "ibc@ibcministries.org");
+  assert.equal(m.replyTo[0].emailAddress.address, "iba@ibcministries.org");
+  assert.match(m.subject, /^Approval needed \(IBC approval\): Activity Request from TEST Teacher \[ABCDE\]$/);
+  // a form without its own list keeps FORM_NOTIFY
+  assert.deepEqual(noticeRecipients(FORM, { FORM_NOTIFY: "iba@ibcministries.org, ibs@ibcministries.org" }, []),
+    ["iba@ibcministries.org", "ibs@ibcministries.org"]);
+});
+
+test("activity request monday item: approval columns say waiting or not needed", () => {
+  const cols = formBoardColumns(ACT).map((c, i) => ({ id: `c${i}`, ...c }));
+  assert.deepEqual(cols.map((c) => c.title).slice(3, 6), ["Status", "Vehicle approval", "IBC approval"]);
+  const it = formItem(ACT, walk, "ABCDE", "10/22/2026 9:00 AM", approvalsFor(ACT, walk), cols);
+  assert.equal(it.name, "TEST Teacher");
+  assert.deepEqual(it.values.c4, { label: "Not needed" });
+  assert.deepEqual(it.values.c5, { label: "Waiting for reply" });
+  assert.equal(it.values.c0, "ABCDE");
+  assert.equal(it.values.c9, undefined); // blank answer left out
+});
+
+test("POST /teachers/form: notice, approval emails and the monday board", async () => {
+  const w = await teacherWorld();
+  w.portal.forms = [ACT];
+  const realFetch = globalThis.fetch, monday = [];
+  globalThis.fetch = async (url, init = {}) => {
+    if (String(url) === "https://api.monday.com/v2") {
+      const q = JSON.parse(init.body).query;
+      monday.push(q);
+      const data = q.includes("create_board") ? { create_board: { id: "77" } } : q.includes("create_item") ? { create_item: { id: "555" } }
+        : q.includes("boards(") ? { boards: [{ id: "77", columns: formBoardColumns(ACT).map((c, i) => ({ id: `c${i}`, ...c })) }] } : {};
+      return new Response(JSON.stringify({ data }), { status: 200 });
+    }
+    if (String(url).includes("headerRowRange")) return new Response(JSON.stringify({ values: [columns(ACT)] }), { status: 200 });
+    return realFetch(url, init);
+  };
+  const env = { ...w.env, MONDAY_TOKEN: "mt" };
+  const token = await makeToken(env, w.portal, "tp", 1);
+  const r = await worker.fetch(new Request("https://lunch.test/teachers/form", { method: "POST",
+    body: JSON.stringify({ form: ACT.id, version: ACT.version, name: "TEST Teacher", email: "t@ibcministries.org",
+      answers: { q1: "Zoo trip", q2: "School vehicle (bus or van)", q3: "Animals" } }),
+    headers: { Origin: "https://guarantee418.github.io", Authorization: "Bearer " + token } }), env);
+  const d = await r.json();
+  assert.equal(r.status, 200, JSON.stringify(d));
+  const to = w.seen.sent.map((s) => s.message.toRecipients.map((x) => x.emailAddress.address).join(","));
+  assert.deepEqual(to, ["t@ibcministries.org", "ggreene@ibcministries.org,iba@ibcministries.org,jschmidley@ibcministries.org",
+    "dfebo@ibcministries.org", "ibc@ibcministries.org"]);
+  assert.ok(monday.some((q) => q.includes("create_board")) && monday.some((q) => q.includes("create_item")));
+  assert.deepEqual(JSON.parse(await env.LUNCH_KV.get(`formresp:${d.response_id}`)).monday, "555");
+});
