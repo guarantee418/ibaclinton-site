@@ -1494,3 +1494,76 @@ test("teacher portal forms: signed-in only, saved like a Kings Corner form, noti
   r = await call("/teachers/form", { method: "POST", body: JSON.stringify(RESP), headers: { Authorization: "Bearer " + token } });
   assert.equal(r.status, 400);
 });
+
+import { approvalMail, approvalsFor, noticeMail as formNoticeMail, noticeRecipients } from "../src/forms.js";
+import { formBoardColumns, formItem } from "../src/monday.js";
+
+const ACT = { ...TP_FORM, id: "teacher-activity-request", name: "Activity Request",
+  questions: [{ key: "q1", label: "Activity", type: "short", required: true, choices: [], help: "" },
+    { key: "q2", label: "Transportation", type: "choice", required: true, choices: ["None needed", "School vehicle (bus or van)"], help: "" },
+    { key: "q3", label: "Purpose and details", type: "long", required: false, choices: [], help: "" }],
+  notify: ["ggreene@ibcministries.org", "iba@ibcministries.org", "jschmidley@ibcministries.org"],
+  approvals: [{ title: "Vehicle approval", name: "David Febo", email: "dfebo@ibcministries.org", question: "q2",
+    answer: "School vehicle (bus or van)" }, { title: "IBC approval", name: "IBC office", email: "ibc@ibcministries.org" }],
+  approval_reply: "iba@ibcministries.org", monday: true };
+const bus = { name: "TEST Teacher", email: "t@ibcministries.org", answers: ["Zoo trip", "School vehicle (bus or van)", "Animals"] };
+const walk = { ...bus, answers: ["Zoo trip", "None needed", ""] };
+
+test("activity request: approvers asked only when needed; everyone else gets the notice", () => {
+  let a = approvalsFor(ACT, bus);
+  assert.deepEqual(a.map((x) => x.needed), [true, true]);
+  assert.deepEqual(noticeRecipients(ACT, {}, a), ["ggreene@ibcministries.org", "iba@ibcministries.org", "jschmidley@ibcministries.org"]);
+  a = approvalsFor(ACT, walk);
+  assert.deepEqual(a.map((x) => x.needed), [false, true]);
+  assert.deepEqual(noticeRecipients(ACT, {}, a), ["ggreene@ibcministries.org", "iba@ibcministries.org",
+    "jschmidley@ibcministries.org", "dfebo@ibcministries.org"]);
+  assert.match(formNoticeMail(ACT, walk, "ABCDE", {}, "Activity Request", a).message.body.content, /Vehicle approval \(David Febo\): not needed/);
+  const m = approvalMail(ACT, bus, "ABCDE", a[1], "iba@ibcministries.org").message;
+  assert.equal(m.toRecipients[0].emailAddress.address, "ibc@ibcministries.org");
+  assert.equal(m.replyTo[0].emailAddress.address, "iba@ibcministries.org");
+  assert.match(m.subject, /^Approval needed \(IBC approval\): Activity Request from TEST Teacher \[ABCDE\]$/);
+  // a form without its own list keeps FORM_NOTIFY
+  assert.deepEqual(noticeRecipients(FORM, { FORM_NOTIFY: "iba@ibcministries.org, ibs@ibcministries.org" }, []),
+    ["iba@ibcministries.org", "ibs@ibcministries.org"]);
+});
+
+test("activity request monday item: approval columns say waiting or not needed", () => {
+  const cols = formBoardColumns(ACT).map((c, i) => ({ id: `c${i}`, ...c }));
+  assert.deepEqual(cols.map((c) => c.title).slice(3, 6), ["Status", "Vehicle approval", "IBC approval"]);
+  const it = formItem(ACT, walk, "ABCDE", "10/22/2026 9:00 AM", approvalsFor(ACT, walk), cols);
+  assert.equal(it.name, "TEST Teacher");
+  assert.deepEqual(it.values.c4, { label: "Not needed" });
+  assert.deepEqual(it.values.c5, { label: "Waiting for reply" });
+  assert.equal(it.values.c0, "ABCDE");
+  assert.equal(it.values.c9, undefined); // blank answer left out
+});
+
+test("POST /teachers/form: notice, approval emails and the monday board", async () => {
+  const w = await teacherWorld();
+  w.portal.forms = [ACT];
+  const realFetch = globalThis.fetch, monday = [];
+  globalThis.fetch = async (url, init = {}) => {
+    if (String(url) === "https://api.monday.com/v2") {
+      const q = JSON.parse(init.body).query;
+      monday.push(q);
+      const data = q.includes("create_board") ? { create_board: { id: "77" } } : q.includes("create_item") ? { create_item: { id: "555" } }
+        : q.includes("boards(") ? { boards: [{ id: "77", columns: formBoardColumns(ACT).map((c, i) => ({ id: `c${i}`, ...c })) }] } : {};
+      return new Response(JSON.stringify({ data }), { status: 200 });
+    }
+    if (String(url).includes("headerRowRange")) return new Response(JSON.stringify({ values: [columns(ACT)] }), { status: 200 });
+    return realFetch(url, init);
+  };
+  const env = { ...w.env, MONDAY_TOKEN: "mt" };
+  const token = await makeToken(env, w.portal, "tp", 1);
+  const r = await worker.fetch(new Request("https://lunch.test/teachers/form", { method: "POST",
+    body: JSON.stringify({ form: ACT.id, version: ACT.version, name: "TEST Teacher", email: "t@ibcministries.org",
+      answers: { q1: "Zoo trip", q2: "School vehicle (bus or van)", q3: "Animals" } }),
+    headers: { Origin: "https://guarantee418.github.io", Authorization: "Bearer " + token } }), env);
+  const d = await r.json();
+  assert.equal(r.status, 200, JSON.stringify(d));
+  const to = w.seen.sent.map((s) => s.message.toRecipients.map((x) => x.emailAddress.address).join(","));
+  assert.deepEqual(to, ["t@ibcministries.org", "ggreene@ibcministries.org,iba@ibcministries.org,jschmidley@ibcministries.org",
+    "dfebo@ibcministries.org", "ibc@ibcministries.org"]);
+  assert.ok(monday.some((q) => q.includes("create_board")) && monday.some((q) => q.includes("create_item")));
+  assert.deepEqual(JSON.parse(await env.LUNCH_KV.get(`formresp:${d.response_id}`)).monday, "555");
+});
