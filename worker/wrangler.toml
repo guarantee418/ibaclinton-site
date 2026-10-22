@@ -58,6 +58,9 @@ TEACHER_FORM_NOTIFY = "iba@ibcministries.org,ibs@ibcministries.org"
 # MONDAY_TOKEN secret). "private" boards are seen only by the token's owner until shared; "public" = everyone
 # on the Monday account. Only used when the boards are first made.
 MONDAY_BOARD_KIND = "private"
+# The boards of forms with "Also add to monday.com" (Teacher Portal forms): public, seen by everyone on the Monday
+# account (Garrett, 2026-10-22).
+FORM_BOARD_KIND = "public"
 # Monday users added to each board (by their Monday login email; someone not on the Monday account is skipped).
 MONDAY_SHARE = "iba@ibcministries.org,ibs@ibcministries.org,ibs@ibaclinton.com"
 # Filled in by the workflow from GitHub secrets (not secret, but kept out of this public repo):

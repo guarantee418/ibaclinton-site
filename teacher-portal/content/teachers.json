@@ -204,6 +204,12 @@
             "type": "Yes/No box",
             "required": true
           }
+        ],
+        "notify": [
+          "ggreene@ibcministries.org",
+          "iba@ibcministries.org",
+          "ibs@ibcministries.org",
+          "jschmidley@ibcministries.org"
         ]
       }
     },
@@ -273,6 +279,12 @@
             "type": "Long answer",
             "required": false
           }
+        ],
+        "notify": [
+          "ggreene@ibcministries.org",
+          "iba@ibcministries.org",
+          "ibs@ibcministries.org",
+          "jschmidley@ibcministries.org"
         ]
       }
     },
