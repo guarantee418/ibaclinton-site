@@ -72,6 +72,12 @@ jobs:
           curl -sS -X POST "$(cat url.txt)/admin" -H "X-Setup-Key: $LUNCH_SETUP_KEY" \
             -H "Content-Type: application/json" -d "$body" || true
           echo
+      - name: Put the menu on the Homerooms tab
+        # A request of its own: Cloudflare allows 50 workbook calls per request and setup uses most of them.
+        run: |
+          curl -sS -X POST "$(cat url.txt)/admin" -H "X-Setup-Key: $LUNCH_SETUP_KEY" \
+            -H "Content-Type: application/json" -d '{"action":"homeroom_menus"}' || true
+          echo
       - name: Make the Monday.com boards (only with the MONDAY_TOKEN secret)
         # One board per call; makes only what is missing and prints the board ids.
         if: env.MONDAY_TOKEN != ''
