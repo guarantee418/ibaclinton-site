@@ -1599,3 +1599,26 @@ test("form_notes rewrites the note one column after each existing form table", a
   assert.ok(calls.some(([m, p]) => m === "PATCH" && p === "/worksheets/Activity%20Request%202/range(address='K1:K7')"));
   assert.ok(calls.some(([, p]) => p.startsWith("/tables/Form_TeacherActivity_2/headerRowRange")));
 });
+
+// ------------------------------------------------------------------ Homerooms menu row
+test("homeroom menus: one row per week, choices joined, no-school days marked, past weeks kept", async () => {
+  const { menuRows, MENU_ROW } = await import("../src/homerooms.js");
+  const menu = { weeks: [
+    { week_start: "2026-11-02", days: [{ key: "mon", meal: "Tacos" }, { key: "tue", meal: "", options: ["Cheese pizza", "Pepperoni pizza"] }],
+      no_school: [{ day: "Friday" }] },
+    { week_start: "2026-10-26", days: [{ key: "mon", meal: "Hotdogs & Chips" }, { key: "thu", meal: "Grilled Chicken" }] },
+  ] };
+  // 10/19 is no longer on the website but stays; 10/26 is replaced by the website's version.
+  const rows = menuRows(menu, [[46314, "Old", "", "", "", ""], ["10/26/2026", "Stale", "", "", "", ""]]);
+  assert.deepEqual(rows, [
+    ["=DATE(2026,10,19)", "Old", "", "", "", ""],
+    ["=DATE(2026,10,26)", "Hotdogs & Chips", "", "", "Grilled Chicken", ""],
+    ["=DATE(2026,11,2)", "Tacos", "Cheese pizza / Pepperoni pizza", "", "", "No school"],
+  ]);
+  // an older menu.json with one week at the top level still works
+  assert.equal(menuRows({ week_start: "2026-10-26", days: [{ key: "wed", meal: "Philly" }] })[0][3], "Philly");
+  // row 6: Menu, then one lookup per day, Mon under C reading column N
+  assert.equal(MENU_ROW[0][0], "Menu");
+  assert.match(MENU_ROW[0][2], /XLOOKUP\(\$B\$3,\$M\$10:\$M\$60,N\$10:N\$60,""\)&""/);
+  assert.match(MENU_ROW[0][6], /R\$10:R\$60/);
+});

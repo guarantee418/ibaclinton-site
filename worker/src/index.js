@@ -30,6 +30,7 @@
 //                   Homerooms and Gradelink tabs (and the Conferences tab) to the workbook if missing (and, with
 //                   "teacher_emails", fills blank teacher emails); {"action":"homerooms","week":"YYYY-MM-DD",
 //                   "test_to":"someone@..."} sends that week's homeroom emails to test_to only;
+//                   {"action":"homeroom_menus"} rewrites the menu list on the Homerooms tab from the website's menu;
 //                   {"action":"delete_test_booking","id":"ABCDE"} removes one conference booking whose
 //                   student is "TEST..."; {"action":"delete_test_order","id":"ABCDE"} removes a lunch order
 //                   whose rows are all "TEST..." (Actions -> "Delete a TEST booking or lunch order");
@@ -68,7 +69,8 @@ import { TABLE as TRANSCRIPT_TABLE, deleteTestRequest, ensureTranscriptTab, offi
   requesterMail, settings as transcriptSettings, validateRequest } from "./transcripts.js";
 import { BOARDS as MONDAY_BOARDS, addFormToMonday, addToMonday, deleteFormItem, deleteFromMonday, setupMonday } from "./monday.js";
 import { STEPS as ORGANIZE_STEPS, inspect as inspectWorkbook, organize as organizeWorkbook } from "./guide.js";
-import { checkHomerooms, ensureTabs, fillTeacherEmails, weekCounts, homeroomMails, mondayToSend, readTeachers, readWeek } from "./homerooms.js";
+import { checkHomerooms, ensureTabs, fillTeacherEmails, weekCounts, homeroomMails, homeroomMenus, mondayToSend, readTeachers,
+  readWeek } from "./homerooms.js";
 
 const SCOPES = "offline_access User.Read Mail.Send Files.ReadWrite";
 const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri"];
@@ -129,11 +131,17 @@ function workbook(token, env) {
   return (method, sub, body) => graph(token, method, base + sub, body);
 }
 
+// The menu list on the Homerooms tab (row 6 shows the week's meals from it). Never fails the caller.
+async function refreshMenus(call, env) {
+  try { return await homeroomMenus(call, await loadMenu(env)); } catch (err) { console.error("homeroom menus", err); return null; }
+}
+
 export async function homeroomRun(env, week, testTo = "") {
   const token = await accessToken(env);
   if (!token) return { ok: false, error: "not connected" };
   const call = workbook(token, env);
   const added = await ensureTabs(call);
+  await refreshMenus(call, env);
   if (!testTo && await env.LUNCH_KV.get(`homerooms:${week}`)) return { ok: true, week, already_sent: true };
   const students = await readWeek(call, week);
   const teachers = await readTeachers(call);
@@ -166,7 +174,8 @@ async function admin(request, env) {
     if (await ensureStaffTab(call)) added.push("Staff Families");
     if (await ensureGradelinkTab(call)) added.push("Gradelink");
     const filled = body.teacher_emails ? await fillTeacherEmails(call, body.teacher_emails) : 0;
-    return json({ ok: true, tabs_added: added, teacher_emails_filled: filled, homerooms_tab: await checkHomerooms(call),
+    const menus = await refreshMenus(call, env);
+    return json({ ok: true, tabs_added: added, teacher_emails_filled: filled, homerooms_tab: await checkHomerooms(call), menu_weeks: menus,
       gradelink_tab: await checkGradelink(call) }, 200, {});
   }
   if (body.action === "monday") { // makes one Monday.com board ("board": inquiry, tour, transcript) and its columns if missing
@@ -194,6 +203,12 @@ async function admin(request, env) {
     const rowsFor = (text) => { const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(text || "").trim());
       return m ? weeks[`${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`] || 0 : null; };
     return json({ ok: true, ...(await tryGradelink(call, body.week || "", rowsFor)) }, 200, {});
+  }
+  if (body.action === "homeroom_menus") { // the menu list on the Homerooms tab, after the office saves a menu
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    const weeks = await refreshMenus(workbook(token, env), env);
+    return json({ ok: weeks !== null, menu_weeks: weeks }, weeks === null ? 500 : 200, {});
   }
   if (body.action === "inspect") { // the workbook's tabs, tables and notes (no rows), see src/guide.js
     const token = await accessToken(env);

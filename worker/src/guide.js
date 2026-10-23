@@ -4,7 +4,7 @@
 // tables (headings and row count) and the notes beside them. It never returns rows, so no family details.
 // Its output lands in the public Actions log, so it also leaves out the Teachers tab's names and emails.
 // A few tabs per request ("part" 1, 2, ...): all of them at once took more than Cloudflare's 50 outside calls.
-import { HOMEROOMS_FORMULA, HOMEROOMS_SHEET } from "./homerooms.js";
+import { HOMEROOMS_SHEET, homeroomMenuRow } from "./homerooms.js";
 
 export const INSPECT_TABS = 4;
 
@@ -36,7 +36,7 @@ export async function inspect(call, part = 1) {
     let addr = "";
     if (w.name === "How to use" || w.name === "Kitchen") addr = "A1:I60";
     else if (lastCol) addr = `${colLetter(lastCol + 1)}1:${colLetter(lastCol + 4)}15`;
-    else if (w.name === "Homerooms") addr = "A1:H5";
+    else if (w.name === "Homerooms") addr = "A1:H6"; // row 6 is the menu; names start in row 7
     else if (w.name === "Gradelink") addr = "A1:I6"; // the billing list below has names
     else if (w.name === "Teachers") addr = "D1:H10"; // notes only: teacher emails stay out of the (public) logs
     else addr = "A1:H8";
@@ -121,7 +121,8 @@ export const NOTES = {
     "How to use this tab (full steps: How to use tab)",
     "• Lunches by grade, youngest first, for the next week with orders (from this week on). Another week: type its Monday in the yellow Pick a week box; delete it to go back.",
     "• Teachers get the same list by email every Monday at 7:00 AM.",
-    "• Nothing to type. Leave column K (the grade order) and the rows below the headings as they are.",
+    "• Row 6 shows that week's menu, from the website (the list at M8, kept up to date by the service).",
+    "• Nothing to type. Leave column K (the grade order), the menu list at M8 and the rows below the headings as they are.",
   ]],
   Gradelink: ["K1", [
     "How to use this tab (full steps: How to use tab)",
@@ -229,7 +230,8 @@ export const GUIDE = [
   ["head", "Hot lunch: Homerooms tab"],
   ["step", "1", "Shows lunches grouped by grade, youngest first, taken from the Orders tab, for the next week that has orders, starting with this week (on Saturday and Sunday, the coming week). It changes by itself; to see another week, type its Monday in the yellow 'Pick a week' box and delete it to go back."],
   ["step", "2", "Every Monday at 7:00 AM each homeroom teacher gets the list for their grades by email (Cc ibs@ibcministries.org). A teacher with no lunches that week gets no email."],
-  ["step", "3", "Nothing else to type here. Leave column K (the grade order the list uses) and everything below the headings as it is."],
+  ["step", "3", "Row 6, under Mon to Fri, shows that week's menu. It comes from the menu posted on the website: the service keeps a list of each week's menu at M8 on this tab, updated whenever the menu is saved."],
+  ["step", "4", "Nothing else to type here. Leave column K (the grade order the list uses), the menu list at M8 and everything below the headings as it is."],
   ["gap"],
   ["head", "Hot lunch billing: Gradelink tab"],
   ["step", "1", "Shows what to charge in Gradelink for one lunch week: one row per student (two orders for the same student are added together), brothers and sisters together by family name, with Lunches, Price per lunch, Charge and a memo to copy into Gradelink. 'Total to bill' at the top is the whole week."],
@@ -357,11 +359,10 @@ export async function organize(call, step) {
       done.push(...await kitchenCounts(call, sheet("Kitchen")));
       done.push(...await kitchenChoices(call, sheet("Kitchen")));
     }
-  } else if (step === "homerooms") { // the Homerooms list: Yes / No under each day instead of X / 0
+  } else if (step === "homerooms") { // the Homerooms list (Yes / No under each day) from row 7, the menu in row 6
     if (have.has(HOMEROOMS_SHEET)) {
-      await must(call("PATCH", `${sheet(HOMEROOMS_SHEET)}/range(address='A6')`, { formulas: [[HOMEROOMS_FORMULA]] }));
-      await call("PATCH", `${sheet(HOMEROOMS_SHEET)}/range(address='C:G')/format`, { horizontalAlignment: "Center" });
-      done.push("homerooms list (Yes / No)");
+      await homeroomMenuRow(call);
+      done.push("homerooms menu row and list (Yes / No)");
     }
   } else if (step === "rows") { // empty rows left in the tables after deletions
     for (const t of TABLES) {
