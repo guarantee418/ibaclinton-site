@@ -33,7 +33,9 @@ export const HOMEROOMS_FORMULA =
 
 // Row 6, under Mon-Fri: that week's menu (Garrett, 2026-10-23). The meals come from a small list the service keeps
 // on the same tab (MENU_TOP), one row per lunch week, filled in from the website's menu (homeroomMenus).
-export const MENU_TOP = 8, MENU_FIRST = 10, MENU_LAST = 60; // M8 title, M9 headings, M10:R60 weeks
+// Below row 15: the organize notes step clears M1:M15 (the tab's note sits at M1).
+export const MENU_TOP = 18, MENU_FIRST = 20, MENU_LAST = 70; // M18 title, M19 headings, M20:R70 weeks
+const MENU_CLEAR = 8; // rows 8-17 held the first version of the list; written blank
 export const MENU_ROW = [["Menu", "", ...["N", "O", "P", "Q", "R"].map((c) =>
   `=IF($B$3="","",XLOOKUP($B$3,$M$${MENU_FIRST}:$M$${MENU_LAST},${c}$${MENU_FIRST}:${c}$${MENU_LAST},"")&"")`)]];
 
@@ -65,16 +67,16 @@ export function menuRows(menu, existing = []) {
     .map(([iso, meals]) => { const [y, m, d] = iso.split("-").map(Number); return [`=DATE(${y},${m},${d})`, ...meals]; });
 }
 
-// Writes the menu list on the Homerooms tab (M8:R60). Returns how many weeks it holds.
+// Writes the menu list on the Homerooms tab (M18:R70). Returns how many weeks it holds.
 export async function homeroomMenus(call, menu) {
   const s = `/worksheets/${HOMEROOMS_SHEET}`;
   const r = await call("GET", `${s}/range(address='M${MENU_FIRST}:R${MENU_LAST}')?$select=values`);
   const existing = r.ok ? ((await r.json()).values || []).filter((row) => row[0] !== "" && row[0] != null) : [];
   const rows = menuRows(menu, existing);
   const blank = ["", "", "", "", "", ""];
-  const all = [["Menus by week (the service fills this in from the website; please leave it)", "", "", "", "", ""],
+  const all = [...Array(MENU_TOP - MENU_CLEAR).fill(blank), ["Menus by week (the service fills this in from the website; please leave it)", "", "", "", "", ""],
     ["Week of", ...DAYS], ...rows, ...Array(MENU_LAST - MENU_FIRST + 1 - rows.length).fill(blank)];
-  await must(call("PATCH", `${s}/range(address='M${MENU_TOP}:R${MENU_LAST}')`, { formulas: all }));
+  await must(call("PATCH", `${s}/range(address='M${MENU_CLEAR}:R${MENU_LAST}')`, { formulas: all }));
   await call("PATCH", `${s}/range(address='M${MENU_FIRST}:M${MENU_LAST}')`, { numberFormat: Array(MENU_LAST - MENU_FIRST + 1).fill(["m/d/yyyy"]) });
   await call("PATCH", `${s}/range(address='M${MENU_TOP + 1}:R${MENU_TOP + 1}')/format/font`, { bold: true });
   return rows.length;
