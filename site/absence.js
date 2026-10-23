@@ -1,4 +1,4 @@
-// Report Student Absence form in The King's Court (see worker/src/absences.js). The service checks every report
+// Report Student Absence form in The Kings Corner (see worker/src/absences.js). The service checks every report
 // again, saves it on the Absences tab of the office workbook and emails the parent, the office and the teacher.
 (function () {
   var f = document.getElementById("ab-form"), status = document.getElementById("ab-status");

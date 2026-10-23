@@ -1,6 +1,6 @@
 // The Teacher Portal (ibaclinton.com/teachers/): the page only holds the sign-in box. With the right password the
 // order service (worker/src/teachers.js) gives a sign-in token, and with it the portal itself (built by
-// teachers.py from the private repo). It then works like The King's Court: kings.js opens each tile's pop-up,
+// teachers.py from the private repo). It then works like The Kings Corner: kings.js opens each tile's pop-up,
 // kings-slides.js turns the announcements and forms.js sends the forms (with the token).
 (function () {
   var box = document.getElementById("tp"), holder = document.getElementById("tp-portal");

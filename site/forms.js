@@ -1,4 +1,4 @@
-// Forms the office adds to The King's Court sections (forms.py builds them; worker/src/forms.js saves them on the
+// Forms the office adds to The Kings Corner sections (forms.py builds them; worker/src/forms.js saves them on the
 // form's own tab of the office workbook and emails a confirmation). The service checks every answer again.
 (function () {
   if (window.cfForms || !window.fetch) return;

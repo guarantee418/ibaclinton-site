@@ -1,6 +1,6 @@
 // Hot lunch order service for ibaclinton.com (Cloudflare Worker).
 //
-//   POST /order     an order from The King's Court form: checked against the published menu,
+//   POST /order     an order from The Kings Corner form: checked against the published menu,
 //                   added to the "Orders" table of the office workbook, confirmation emailed
 //   GET  /conferences  which conference times are taken, by teacher (no names)
 //   POST /conference   a parent-teacher conference booking (src/conferences.js): checked against the
@@ -12,9 +12,9 @@
 //                   workbook, emailed to the family (confirmation) and the office
 //   POST /absence      a Report Student Absence form (src/absences.js): added to the Absences tab of the office
 //                   workbook, emailed to the parent (confirmation) and the office, Cc the homeroom teacher
-//   POST /feedback     a Feedback for Administration form from The King's Court (src/feedback.js): added to
+//   POST /feedback     a Feedback for Administration form from The Kings Corner (src/feedback.js): added to
 //                   the Feedback tab of the office workbook (no email)
-//   POST /form         a form the office added to a King's Court section (src/forms.js): checked against the
+//   POST /form         a form the office added to a Kings Corner section (src/forms.js): checked against the
 //                   published site/forms/forms.json, added to that form's own tab of the office workbook (made by
 //                   the first response), emailed to the person (confirmation) and FORM_NOTIFY
 //   POST /teachers/login, GET /teachers/portal, GET /teachers/file/..., POST /teachers/form
@@ -725,7 +725,7 @@ async function feedback(request, env, cors) {
 }
 
 // ------------------------------------------------------------------ forms the office adds (src/forms.js)
-// forms(): the published forms the response is checked against (The King's Court's, or the Teacher Portal's).
+// forms(): the published forms the response is checked against (The Kings Corner's, or the Teacher Portal's).
 async function formResponse(request, env, cors, forms, ctx) {
   if (!cors["Access-Control-Allow-Origin"]) return json({ ok: false, error: "Not allowed" }, 403, cors);
   const text = await request.text();

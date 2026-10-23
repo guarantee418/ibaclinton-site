@@ -8,14 +8,14 @@ How the portal works:
 
 - ibaclinton.com/teachers/ (hidden: not linked anywhere, not in the sitemap, search engines asked not to list it)
   shows only a password box (`src/pages/teachers.html`, `site/teachers.js` in the site repo).
-- The office edits the portal in the online editor (Pages CMS, the same as The King's Court) by choosing this
+- The office edits the portal in the online editor (Pages CMS, the same as The Kings Corner) by choosing this
   private repo: settings (the password), banner, announcements, tiles, sections, links and files, meeting notes
   and forms. Files go in `files/`.
 - Each save runs "Build the Teacher Portal" (`.github/workflows/build.yml`), which runs `teachers.py` from the
   site repo and commits `built/portal.json`.
 - The order service (`worker/src/teachers.js` in the site repo) reads `built/portal.json` and `files/` with the
   read-only `TEACHER_REPO_TOKEN`, checks the password, and only then sends the portal and its files to the browser.
-  Form responses go to their own tabs in IBA Portal Forms.xlsx (like The King's Court forms), with a confirmation to
+  Form responses go to their own tabs in IBA Portal Forms.xlsx (like The Kings Corner forms), with a confirmation to
   the teacher and the details to `TEACHER_FORM_NOTIFY`.
 
 ## Setting it up (Garrett)

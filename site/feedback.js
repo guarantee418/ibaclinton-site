@@ -1,4 +1,4 @@
-// Feedback for Administration form on The King's Court (see worker/src/feedback.js). The service checks every
+// Feedback for Administration form on The Kings Corner (see worker/src/feedback.js). The service checks every
 // response again and saves it on the Feedback tab of the office workbook; no email is sent.
 (function () {
   var f = document.getElementById("fb-form"), status = document.getElementById("fb-status");

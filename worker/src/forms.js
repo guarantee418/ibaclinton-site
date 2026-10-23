@@ -1,4 +1,4 @@
-// Forms the office adds to The King's Court sections in the online editor (forms.py; site/forms.js sends them),
+// Forms the office adds to The Kings Corner sections in the online editor (forms.py; site/forms.js sends them),
 // on the same service and workbook as hot lunch, conferences, tours, transcripts, Request Info and feedback.
 //
 // The questions come from the published site/forms/forms.json (FORMS_URL), never from the browser. Each form has
@@ -133,7 +133,7 @@ export function tabNote(form, env = {}) {
     .split(",")).map((a) => a.trim()).filter(Boolean).map((a) => a.replace(/@ibcministries\.org$/i, "@"));
   const person = form.where === "the Teacher Portal" ? "teacher" : "person";
   const lines = [
-    `Responses to the "${form.name}" form on ${form.where || "The King's Court"}, one row per response.`,
+    `Responses to the "${form.name}" form on ${form.where || "The Kings Corner"}, one row per response.`,
     `Each ${person} gets a confirmation email with their answers; ${listOf(who)} get${who.length === 1 ? "s" : ""} the details.`,
   ];
   for (const a of form.approvals || []) {
@@ -222,7 +222,7 @@ export function approvalMail(form, entry, id, a, replyTo) {
   const e = escapeHtml;
   const content =
     `<p>${a.name ? `${e(a.name)}, a` : "A"}pproval is needed for this <b>${e(form.name)}</b> from ${e(entry.name)} ` +
-    `(${e(entry.email)}), sent on ${e(form.where || "The King's Court")}:</p>` +
+    `(${e(entry.email)}), sent on ${e(form.where || "The Kings Corner")}:</p>` +
     answerList(form, entry) +
     `<p><b>Please reply to this email to give your approval (${e(a.title)})</b>, or to say what needs to change. ` +
     `Your reply goes to ${e(replyTo)}.</p>`;
@@ -240,7 +240,7 @@ export function approvalMail(form, entry, id, a, replyTo) {
 export function noticeMail(form, entry, id, env, sheet, approvals = []) {
   const e = escapeHtml;
   const content =
-    `<p>A new response to <b>${e(form.name)}</b> came in on ${e(form.where || "The King's Court")}:</p>` +
+    `<p>A new response to <b>${e(form.name)}</b> came in on ${e(form.where || "The Kings Corner")}:</p>` +
     answerList(form, entry, true) + approvalLines(approvals) +
     `<p>Reply to this email to answer ${e(entry.name)}. Every response is on the "${e(sheet)}" tab of the office ` +
     `workbook (response ${e(id)}).</p>`;

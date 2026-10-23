@@ -19,7 +19,7 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
 ## Online editor for the school office (Pages CMS)
 
 - Mrs. Mora and Mrs. Napierala edit the **Hot Lunch** menu (`content/lunch.json`) and the whole
-  **King's Court** parents page (`content/parents.json`: the purple banner's text and button, the tiles (title,
+  **Kings Corner** parents page (`content/parents.json`: the purple banner's text and button, the tiles (title,
   description, which section each opens in a pop-up (`site/kings.js`), optional tag), every section's heading, text, links and PDFs, tile and
   section order; PDFs uploaded to `site/files/`) at app.pagescms.org
   (`ibaclinton.com/admin/` links there). They are invited by email as collaborators, no GitHub account.
@@ -30,9 +30,9 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
 - Everything typed in the editor is HTML-escaped by `build.py`, and only `https://` links are used.
   Section text is rich text: `build.py` keeps only simple formatting (bold, italics, lists, links).
 
-## Forms the office adds (The King's Court)
+## Forms the office adds (The Kings Corner)
 
-- Any King's Court section can have a **Form** in the editor: a name, optional text above it, button text, "Stop
+- Any Kings Corner section can have a **Form** in the editor: a name, optional text above it, button text, "Stop
   taking responses", and up to 15 questions (Short answer, Long answer, Email, Phone, Date, Number, Dropdown,
   Checkboxes, Yes/No box; required; help text). Every form also asks the person's name and email. Approved by
   Garrett 2026-10-20: forms go live when the office saves them.
@@ -48,7 +48,7 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
 
 ## Teacher Portal (ibaclinton.com/teachers/)
 
-- A hidden, password-protected page for IBA staff that looks and works like The King's Court (banner and announcement
+- A hidden, password-protected page for IBA staff that looks and works like The Kings Corner (banner and announcement
   slides, tiles that open pop-ups, links and files, meeting notes, forms). Not linked from any page, not in the
   sitemap, `noindex` (`hidden: yes` page key in `src/pages/teachers.html`).
 - This public repo holds only the code and the sign-in box. The content (meeting notes, files, forms, the password)
@@ -58,14 +58,14 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
   service (`worker/src/teachers.js`) reads it with a read-only token (`TEACHER_REPO_TOKEN` secret), checks the
   password and only then sends the page, its files (links that last 6 hours) and takes its forms
   (`POST /teachers/form`). `site/teachers.js` signs in and shows the portal.
-- Teacher Portal forms use the same engine as The King's Court forms (a tab each in the office workbook), plus their
+- Teacher Portal forms use the same engine as The Kings Corner forms (a tab each in the office workbook), plus their
   own routing set in the editor: who gets each response (school addresses only), approvers who are emailed to reply
   with their approval, and an optional copy to the form's own monday.com board (`worker/src/monday.js`).
 - TEST responses: Actions -> "Delete a TEST booking, lunch order or tour sign-up", kind "form response".
 
 ## Hot lunch ordering
 
-- The Hot Lunch section of The King's Court comes from `content/lunch.json` via `lunch.py`: menu
+- The Hot Lunch section of The Kings Corner comes from `content/lunch.json` via `lunch.py`: menu
   table, prices, deadline (9:00 AM the Friday before the week, unless the office types another) and (when `LUNCH_API` in `build.py` is set) the online order form
   (`site/lunch.js`). `site/lunch/menu.json` is the published menu the order service checks against.
 - The office lists **several weeks** (`weeks` in `content/lunch.json`): each shows as its own card (banners alternate

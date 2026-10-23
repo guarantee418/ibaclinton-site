@@ -46,7 +46,7 @@ INQUIRY_NOTIFY = "iba@ibcministries.org,ggreene@ibcministries.org"
 ABSENCE_NOTIFY = "iba@ibcministries.org"
 # Also Cc'd on every absence report (comma-separated).
 ABSENCE_CC = "ibs@ibcministries.org"
-# Forms the office adds to The King's Court (src/forms.js): the published form list (read from GitHub, like the
+# Forms the office adds to The Kings Corner (src/forms.js): the published form list (read from GitHub, like the
 # menu) and who hears about each response (comma-separated); the person always gets a confirmation.
 FORMS_URL = "https://raw.githubusercontent.com/guarantee418/ibaclinton-site/main/site/forms/forms.json"
 FORM_NOTIFY = "iba@ibcministries.org,ibs@ibcministries.org"

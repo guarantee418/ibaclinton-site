@@ -224,7 +224,7 @@ content:
             description: For a panel where several teachers meet each family together, list them with commas, for example Mr. Napierala, Mr. Damm, Mr. Greene. Each gets the booking email. Leave blank for one teacher.
 
   - name: parents
-    label: The King's Court (parents page)
+    label: The Kings Corner (parents page)
     type: file
     path: content/parents.json
     format: json
@@ -318,7 +318,7 @@ content:
       - name: tiles_script
         label: Small line above the tiles
         type: string
-        description: For example "Inside the Court". Leave blank to hide it.
+        description: For example "Inside the Corner". Leave blank to hide it.
       - name: tiles_heading
         label: Heading above the tiles
         type: string
