@@ -166,7 +166,7 @@ async function formBoard(env, form) {
   let have = board ? await columns(env, board) : null;
   if (!have) {
     const d = await api(env, "mutation ($n: String!, $k: BoardKind!) { create_board(board_name: $n, board_kind: $k, empty: true) { id } }",
-      { n: `${form.where === "the Teacher Portal" ? "Teacher Portal" : "Website"}: ${form.name}`.slice(0, 80),
+      { n: `${String(form.id || "").startsWith("teacher-") ? "Teacher Portal" : "Website"}: ${form.name}`.slice(0, 80),
         k: env.FORM_BOARD_KIND || env.MONDAY_BOARD_KIND || "private" });
     board = String(d.create_board.id);
     await env.LUNCH_KV.put(key, board);

@@ -12,7 +12,7 @@ media:
 
 content:
   - name: teachers
-    label: Teacher Portal
+    label: The King's Court (teachers page)
     type: file
     path: content/teachers.json
     format: json

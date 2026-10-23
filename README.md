@@ -46,7 +46,7 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
 - TEST responses: Actions -> "Delete a TEST booking, lunch order or tour sign-up", kind "form response" (only a Name
   starting with TEST; a form tab named "TEST..." is removed once empty).
 
-## Teacher Portal (ibaclinton.com/teachers/)
+## Teacher Portal (ibaclinton.com/teachers/), shown to teachers as "The King's Court"
 
 - A hidden, password-protected page for IBA staff that looks and works like The Kings Corner (banner and announcement
   slides, tiles that open pop-ups, links and files, meeting notes, forms). Not linked from any page, not in the

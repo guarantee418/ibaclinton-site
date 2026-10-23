@@ -27,7 +27,7 @@ import build
 import forms
 
 ROOT = "../"  # the page is ibaclinton.com/teachers/
-NAME = "Teacher Portal"
+NAME = "The King's Court"  # what teachers see; "Teacher Portal" in code and notes
 FORM_ENDPOINT = "/teachers/form"
 # Uploaded files are served by the service; site/teachers.js swaps this for the signed address.
 FILES = "__TP_FILES__/"
@@ -136,7 +136,7 @@ def form_specs(data):
     for sec in data.get("sections") or []:
         if not str(sec.get("title") or "").strip():
             continue
-        s = forms.spec(sec, used, "teacher-", "the Teacher Portal")
+        s = forms.spec(sec, used, "teacher-", "The King's Court")
         if s:
             out.append({**s, **routing(sec, s)})
     return out

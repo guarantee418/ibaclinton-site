@@ -83,7 +83,7 @@ function bearer(request) {
 // The portal for a signed-in request, or a Response to send back instead.
 export async function signedIn(request, env, cors, json) {
   const portal = await loadPortal(env);
-  if (!portal) return json({ ok: false, error: "The Teacher Portal isn't set up yet" }, 503, cors);
+  if (!portal) return json({ ok: false, error: "The King's Court isn't set up yet" }, 503, cors);
   if (!(await checkToken(env, portal, "tp", bearer(request)))) {
     return json({ ok: false, error: "Please sign in again", signin: true }, 401, cors);
   }
@@ -101,7 +101,7 @@ export async function login(request, env, cors, json) {
   const fails = parseInt((await env.LUNCH_KV.get(`rltp:${ip}`)) || "0", 10);
   if (fails >= MAX_FAILS) return json({ ok: false, error: "Too many tries; please wait an hour or ask the office" }, 429, cors);
   const portal = await loadPortal(env);
-  if (!portal || !portal.password) return json({ ok: false, error: "The Teacher Portal isn't open yet" }, 503, cors);
+  if (!portal || !portal.password) return json({ ok: false, error: "The King's Court isn't open yet" }, 503, cors);
   if ((await passwordHash(String(body.password || "").slice(0, 200))) !== portal.password) {
     await env.LUNCH_KV.put(`rltp:${ip}`, String(fails + 1), { expirationTtl: 3600 });
     return json({ ok: false, error: "That password isn't right" }, 401, cors);
@@ -129,10 +129,10 @@ export async function file(url, env) {
   if (!type || /[\\/\u0000-\u001f]|^\./.test(name)) return deny(404, "Not found");
   const portal = await loadPortal(env);
   if (!portal || !(await checkToken(env, portal, "tpf", m[1]))) {
-    return deny(403, "This link has expired. Go back to the Teacher Portal (ibaclinton.com/teachers/) and open the file again.");
+    return deny(403, "This link has expired. Go back to The King's Court (ibaclinton.com/teachers/) and open the file again.");
   }
   const r = await gitHub(env, `files/${name}`);
-  if (r.status === 404) return deny(404, "That file isn't on the Teacher Portal any more.");
+  if (r.status === 404) return deny(404, "That file isn't on The King's Court any more.");
   if (!r.ok) return deny(502, "The file couldn't be loaded; please try again.");
   return new Response(r.body, { headers: {
     "Content-Type": type, "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex",
