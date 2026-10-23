@@ -1,7 +1,7 @@
 {
   "hero": {
     "script": "Welcome to",
-    "title": "The Kings Corner",
+    "title": "The King's Court",
     "text": "Your family's hub for everything happening at IBA: calendars, handbooks, lunch orders, conferences, and more.",
     "button_text": "Log in to Gradelink",
     "button_url": "https://secure.gradelink.com/lkg/Gradelink.xml"
@@ -21,7 +21,7 @@
       "script": "Every week",
       "title": "Hot Lunch",
       "when": "Orders close Friday at 9:00 AM",
-      "text": "See this week's menu and order hot lunch for next week right here on The Kings Corner.",
+      "text": "See this week's menu and order hot lunch for next week right here on The King's Court.",
       "button_text": "Order lunch",
       "button_url": "hot-lunch",
       "hidden": false
@@ -38,7 +38,7 @@
       "hidden": false
     }
   ],
-  "tiles_script": "Inside the Corner",
+  "tiles_script": "Inside the Court",
   "tiles_heading": "Find what you need",
   "tiles": [
     {

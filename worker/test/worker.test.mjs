@@ -1475,7 +1475,7 @@ test("teacher portal files: only with a fresh pass, only the allowed types, stre
   assert.equal((await call(`/teachers/file/123.abc/plan.docx`)).status, 403);
 });
 
-test("teacher portal forms: signed-in only, saved like a Kings Corner form, notice to TEACHER_FORM_NOTIFY", async () => {
+test("teacher portal forms: signed-in only, saved like a King's Court form, notice to TEACHER_FORM_NOTIFY", async () => {
   const { env, portal, call, seen } = await teacherWorld();
   const body = JSON.stringify({ ...RESP, form: TP_FORM.id });
   let r = await call("/teachers/form", { method: "POST", body });
@@ -1490,7 +1490,7 @@ test("teacher portal forms: signed-in only, saved like a Kings Corner form, noti
   const notice = seen.sent[1].message;
   assert.deepEqual(notice.toRecipients.map((x) => x.emailAddress.address), ["office@example.org"]);
   assert.match(notice.body.content, /came in on the Teacher Portal/);
-  // a Kings Corner form name isn't accepted here
+  // a King's Court form name isn't accepted here
   r = await call("/teachers/form", { method: "POST", body: JSON.stringify(RESP), headers: { Authorization: "Bearer " + token } });
   assert.equal(r.status, 400);
 });
@@ -1578,7 +1578,7 @@ test("form tab note names who gets each form, its approvals and its monday board
   assert.match(n[3], /^IBC approval \(IBC office\): asked to approve by email; replies go to iba@/);
   assert.match(n[4], /monday\.com board "Teacher Portal: Activity Request"/);
   assert.match(n[n.length - 1], /^⚠ NEVER rename/);
-  // a Kings Corner form: FORM_NOTIFY
+  // a King's Court form: FORM_NOTIFY
   assert.equal(tabNote(FORM, { FORM_NOTIFY: "iba@ibcministries.org,ibs@ibcministries.org" })[1],
     "Each person gets a confirmation email with their answers; iba@ and ibs@ get the details.");
 });

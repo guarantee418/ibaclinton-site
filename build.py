@@ -79,7 +79,7 @@ def docs_list(items, root, file_url=None):
             lis.append(f'<li><a href="{url}">{title}</a></li>')
     return '<ul class="docs">' + "".join(lis) + "</ul>" if lis else ""
 
-# The Kings Corner (parents page, content/parents.json): the office edits the hero, the tiles and every section
+# The King's Court (parents page, content/parents.json): the office edits the hero, the tiles and every section
 # in the online editor.
 # Section text is rich text (HTML) from the editor; only simple formatting tags and https,
 # mailto and tel links are kept.
@@ -187,7 +187,7 @@ def absence_form(root):
         f'<script src="{root}absence.js" defer></script>')
 
 def announcement_slides(items, ids, root, today=None, file_url=None):
-    """Announcement slides after the welcome slide in the Kings Corner's purple banner (content/parents.json).
+    """Announcement slides after the welcome slide in the King's Court's purple banner (content/parents.json).
     Each has an optional graphic (uploaded to site/files); one with a graphic and no title shows the graphic alone,
     for a ready-made flyer. Slides outside their show dates are left out here, and hidden in the browser too
     (data-from/data-until), since the site is only rebuilt when something is saved."""
@@ -241,12 +241,12 @@ def parents_extras(s, root):
     return extra
 
 def parents_block(data, root):
-    """The Kings Corner (parents page): hero and tile grid; each tile opens its section in a pop-up (site/kings.js).
+    """The King's Court (parents page): hero and tile grid; each tile opens its section in a pop-up (site/kings.js).
     All text comes from content/parents.json. Without JavaScript the sections show below the tiles instead."""
-    return portal_block(data, root, "The Kings Corner", parents_extras)
+    return portal_block(data, root, "The King's Court", parents_extras)
 
 def portal_block(data, root, name, extras, file_url=None, form_endpoint=""):
-    """A Kings Corner-style page: The Kings Corner, and the Teacher Portal (teachers.py) with the same look.
+    """A King's Court-style page: The King's Court, and the Teacher Portal (teachers.py) with the same look.
     extras(section, root) adds that page's own pieces to a section; file_url(name) links an uploaded file."""
     file_url = file_url or public_file(root)
     sections = [s for s in data.get("sections") or [] if str(s.get("title") or "").strip()]

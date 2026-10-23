@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Build the Teacher Portal: a hidden, password-protected page for IBA staff that looks and works like
-The Kings Corner (tiles that open sections in pop-ups, announcement slides, links and files, forms).
+The King's Court (tiles that open sections in pop-ups, announcement slides, links and files, forms).
 
 Its content is NOT in this public repo. It lives in the private repo guarantee418/ibaclinton-teachers
-(content/teachers.json and files/, edited by the office in the same online editor as The Kings Corner). That
+(content/teachers.json and files/, edited by the office in the same online editor as The King's Court). That
 repo's workflow checks out this repo and runs
 
     python3 teachers.py content/teachers.json built/portal.json

@@ -1,4 +1,4 @@
-"""Forms the office adds to The Kings Corner sections in the online editor (.pages.yml, "Form" on a section).
+"""Forms the office adds to The King's Court sections in the online editor (.pages.yml, "Form" on a section).
 
 A section's form has a name, optional text above it, a button text, a "stop taking responses" switch and up to
 MAX_QUESTIONS questions (each a label, a type, choices for the pick types, required, help text). Every form also
@@ -56,7 +56,7 @@ def table_name(form_id):
     """The table on that tab: letters and digits only (Excel's rule), e.g. Form_FieldTripPermission."""
     return "Form_" + ("".join(p.capitalize() for p in form_id.split("-"))[:40] or "Responses")
 
-def spec(section, used=None, prefix="", where="The Kings Corner"):
+def spec(section, used=None, prefix="", where="The King's Court"):
     """One section's form as plain data, or None (no form, no name or no questions). The Teacher Portal's forms
     (teachers.py) have ids starting "teacher-", so their tables and remembered tabs never mix with the parents'."""
     f = section.get("form") if isinstance(section, dict) else None
@@ -100,12 +100,12 @@ def spec(section, used=None, prefix="", where="The Kings Corner"):
             "intro": _clean(f.get("intro"), 600), "button": _clean(f.get("button"), 40) or "Send",
             "where": where, "questions": questions}
 
-def specs(data, prefix="", where="The Kings Corner"):
+def specs(data, prefix="", where="The King's Court"):
     used = set()
     return [s for s in (spec(sec, used, prefix, where) for sec in data.get("sections") or [] if str(sec.get("title") or "").strip()) if s]
 
 def forms_file(data):
-    """site/forms/forms.json: every form on The Kings Corner, for the form service."""
+    """site/forms/forms.json: every form on The King's Court, for the form service."""
     forms = [{k: v for k, v in s.items() if k not in ("intro", "button", "where")} for s in specs(data)]
     return json.dumps({"forms": forms}, indent=2) + "\n"
 

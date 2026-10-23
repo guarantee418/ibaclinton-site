@@ -1,4 +1,4 @@
-// The Kings Corner's purple banner as a slider: the welcome slide, then the office's announcements
+// The King's Court's purple banner as a slider: the welcome slide, then the office's announcements
 // (content/parents.json). Adds the arrows and dots, turns every 7 seconds (not while the mouse or keyboard is on it,
 // nor for visitors who ask for less motion), and hides announcements outside their show dates (Eastern time),
 // because the page is only rebuilt when something is saved. Without JavaScript the slides swipe sideways.

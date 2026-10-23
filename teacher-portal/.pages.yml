@@ -1,4 +1,4 @@
-# Online editor for the Teacher Portal (Pages CMS, app.pagescms.org), same as The Kings Corner's editor.
+# Online editor for the Teacher Portal (Pages CMS, app.pagescms.org), same as The King's Court's editor.
 # This repo is PRIVATE: it holds what only teachers should see. The office (Mrs. Mora, Mrs. Napierala) are invited
 # as collaborators. Saving commits to main; the "Build the Teacher Portal" workflow turns it into built/portal.json,
 # which the school's order service shows at ibaclinton.com/teachers/ after the password is given.

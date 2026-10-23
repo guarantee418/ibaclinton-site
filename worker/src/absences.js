@@ -1,4 +1,4 @@
-// Report Student Absence (The Kings Corner's "Report an Absence" pop-up), on the same service and workbook as
+// Report Student Absence (The King's Court's "Report an Absence" pop-up), on the same service and workbook as
 // hot lunch, conferences, tours, transcripts, Request Info and feedback. It replaced a Microsoft Form.
 //
 // Each report is one row of the "Reports" table on the Absences tab of the office workbook (the service adds that

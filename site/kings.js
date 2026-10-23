@@ -1,4 +1,4 @@
-// The Kings Corner (parents page): each tile opens its section in a pop-up instead of scrolling down the page.
+// The King's Court (parents page): each tile opens its section in a pop-up instead of scrolling down the page.
 // Each pop-up has a back button at the top and bottom; the browser's back button and Esc close it too.
 // Old links like parents/#hot-lunch (and the staff link parents/?staff#hot-lunch) open that section's pop-up.
 // Without JavaScript (or without <dialog> support) the sections stay listed below the tiles, as before.

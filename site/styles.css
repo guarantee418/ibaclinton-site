@@ -189,7 +189,7 @@ form.info .tr-who{grid-template-columns:1fr}
 #tr-status:empty{display:none}
 #ab-status:empty{display:none}#ab-status{margin:1rem 0}.ab-form{margin-top:1rem}#fb-status:empty{display:none}#fb-status{margin:1rem 0}.fb-form{margin-top:1rem}.cf-status:empty{display:none}.cf-status{margin:1rem 0}.cf-form{margin-top:1rem}.cf-intro{margin:0}.cf-fine{margin:0;color:var(--muted);font-size:.9rem}form.info .cf-group{display:flex;flex-direction:column;gap:.45rem;font-size:.92rem}form.info .cf-label{font-weight:600}form.info label.cf-check{flex-direction:row;align-items:flex-start;gap:.55rem;font-weight:400}form.info .cf-check input{margin:.2rem 0 0;padding:0;width:auto}form.info .cf-help{font-weight:400;color:var(--muted);font-size:.88rem}form.info .fb-note{grid-column:1/-1;margin:0;color:var(--muted);font-size:.92rem}
 
-/* The Kings Corner (parents page only; everything below is scoped to .kc). Purple and gold from the Kings crest;
+/* The King's Court (parents page only; everything below is scoped to .kc). Purple and gold from the Kings crest;
    gold is only ever a background or used on purple, never text on a light background. */
 .kc{--navy:#541f78;--navy-d:#3b1456;--gold:#ffde17;--cream:#f4eefa;--ink:#2a1a38;--muted:#4a3a58;--line:#e6dcef;
   --serif:"Nunito Sans",system-ui,sans-serif;--sans:"Nunito Sans",system-ui,sans-serif;--kc-cond:"Barlow Condensed","Arial Narrow",sans-serif;--kc-script:"Yellowtail",cursive;
@@ -248,7 +248,7 @@ form.info .tr-who{grid-template-columns:1fr}
 .kc .btn:hover{background:#fff1a0;border-color:#fff1a0}
 .kc form.info legend{font:800 1.1rem var(--sans)}
 .kc .notice{border-radius:10px}
-/* Kings Corner pop-ups (site/kings.js): each section opens over the page with back buttons. */
+/* King's Court pop-ups (site/kings.js): each section opens over the page with back buttons. */
 .kc-js .kc-sections{display:none}
 html.kc-lock{overflow:hidden}
 .kc-pop{width:min(880px,calc(100% - 32px));max-height:calc(100% - 48px);padding:0;border:0;border-top:6px solid var(--gold);border-radius:14px;background:#fff;color:var(--ink);box-shadow:0 20px 60px rgba(42,26,56,.35);overflow:auto;overscroll-behavior:contain}
@@ -293,7 +293,7 @@ html.kc-lock{overflow:hidden}
 form.info label.lunch-week-pick{font-weight:700}
 
 /* Teacher Portal (ibaclinton.com/teachers/, site/teachers.js): sign-in box in the purple banner, a sign-out bar,
-   meeting notes as fold-outs. Everything else is The Kings Corner's .kc styles. */
+   meeting notes as fold-outs. Everything else is The King's Court's .kc styles. */
 .tp-form{display:grid;gap:10px;max-width:420px;margin-top:28px}
 .tp-form label{font-weight:700;font-size:17px;color:#fff}
 .tp-form input[type=password]{font:inherit;font-size:18px;padding:12px 14px;border:2px solid transparent;border-radius:12px;color:var(--ink)}
