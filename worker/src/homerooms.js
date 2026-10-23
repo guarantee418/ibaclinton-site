@@ -31,6 +31,65 @@ export const HOMEROOMS_FORMULA =
   "IFERROR(SORTBY(u,IFERROR(XMATCH(CHOOSECOLS(u,1),$K$6:$K$20),99),1,CHOOSECOLS(u,2),1)," +
   "\"No lunch orders for this week yet.\"))";
 
+// Row 6, under Mon-Fri: that week's menu (Garrett, 2026-10-23). The meals come from a small list the service keeps
+// on the same tab (MENU_TOP), one row per lunch week, filled in from the website's menu (homeroomMenus).
+export const MENU_TOP = 8, MENU_FIRST = 10, MENU_LAST = 60; // M8 title, M9 headings, M10:R60 weeks
+export const MENU_ROW = [["Menu", "", ...["N", "O", "P", "Q", "R"].map((c) =>
+  `=IF($B$3="","",XLOOKUP($B$3,$M$${MENU_FIRST}:$M$${MENU_LAST},${c}$${MENU_FIRST}:${c}$${MENU_LAST},"")&"")`)]];
+
+// What one menu day shows: the meal, or its choices ("Cheese pizza / Pepperoni pizza").
+export function mealText(day) {
+  if (!day) return "";
+  const opts = Array.isArray(day.options) ? day.options.filter(Boolean) : [];
+  return String(day.meal || opts.join(" / ") || "").trim();
+}
+
+// The rows for the menu list: every week in menu.json (or its single week), plus weeks already in the list that
+// the website no longer shows (past weeks stay, so a picked past week still has its menu). Newest last, at most
+// MENU_LAST - MENU_FIRST + 1 weeks.
+export function menuRows(menu, existing = []) {
+  const weeks = menu && Array.isArray(menu.weeks) && menu.weeks.length ? menu.weeks : menu && menu.week_start ? [menu] : [];
+  const byWeek = new Map();
+  for (const r of existing) {
+    const iso = excelDate(r[0]);
+    if (iso) byWeek.set(iso, r.slice(1, 6).map((v) => (v == null ? "" : String(v))));
+  }
+  for (const w of weeks) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(w.week_start || ""))) continue;
+    const days = new Map((w.days || []).map((d) => [d.key, mealText(d)]));
+    const off = new Set((w.no_school || []).map((d) => String(d.day || "").slice(0, 3).toLowerCase()));
+    byWeek.set(w.week_start, DAYS.map((d) => days.get(d.toLowerCase()) || (off.has(d.toLowerCase()) ? "No school" : "")));
+  }
+  const max = MENU_LAST - MENU_FIRST + 1;
+  return [...byWeek.entries()].sort(([a], [b]) => a.localeCompare(b)).slice(-max)
+    .map(([iso, meals]) => { const [y, m, d] = iso.split("-").map(Number); return [`=DATE(${y},${m},${d})`, ...meals]; });
+}
+
+// Writes the menu list on the Homerooms tab (M8:R60). Returns how many weeks it holds.
+export async function homeroomMenus(call, menu) {
+  const s = `/worksheets/${HOMEROOMS_SHEET}`;
+  const r = await call("GET", `${s}/range(address='M${MENU_FIRST}:R${MENU_LAST}')?$select=values`);
+  const existing = r.ok ? ((await r.json()).values || []).filter((row) => row[0] !== "" && row[0] != null) : [];
+  const rows = menuRows(menu, existing);
+  const blank = ["", "", "", "", "", ""];
+  const all = [["Menus by week (the service fills this in from the website; please leave it)", "", "", "", "", ""],
+    ["Week of", ...DAYS], ...rows, ...Array(MENU_LAST - MENU_FIRST + 1 - rows.length).fill(blank)];
+  await must(call("PATCH", `${s}/range(address='M${MENU_TOP}:R${MENU_LAST}')`, { formulas: all }));
+  await call("PATCH", `${s}/range(address='M${MENU_FIRST}:M${MENU_LAST}')`, { numberFormat: Array(MENU_LAST - MENU_FIRST + 1).fill(["m/d/yyyy"]) });
+  await call("PATCH", `${s}/range(address='M${MENU_TOP + 1}:R${MENU_TOP + 1}')/format/font`, { bold: true });
+  return rows.length;
+}
+
+// Puts the menu row under the day headings (row 6) and moves the student list down to row 7. Safe to repeat.
+export async function homeroomMenuRow(call) {
+  const s = `/worksheets/${HOMEROOMS_SHEET}`;
+  await must(call("PATCH", `${s}/range(address='A6:G6')`, { formulas: MENU_ROW }));
+  await must(call("PATCH", `${s}/range(address='A7')`, { formulas: [[HOMEROOMS_FORMULA]] }));
+  await call("PATCH", `${s}/range(address='A6:G6')/format`, { wrapText: true, verticalAlignment: "Top" });
+  await call("PATCH", `${s}/range(address='A6:G6')/format/font`, { italic: true, color: "#541F78" });
+  await call("PATCH", `${s}/range(address='C:G')/format`, { columnWidth: 110, horizontalAlignment: "Center" });
+}
+
 // ------------------------------------------------------------------ workbook tabs
 export async function ensureTabs(call) {
   const r = await call("GET", "/worksheets?$select=name");
@@ -65,7 +124,7 @@ export async function ensureTabs(call) {
     await must(call("PATCH", `${s}/range(address='B3')`, { numberFormat: [["m/d/yyyy"]] }));
     await must(call("PATCH", `${s}/range(address='A5:G5')`, { values: [["Grade", "Student", ...DAYS]] }));
     await must(call("PATCH", `${s}/range(address='K5:K20')`, { values: [["Grade order"], ...GRADES.map(([g]) => [g])] }));
-    await must(call("PATCH", `${s}/range(address='A6')`, { formulas: [[HOMEROOMS_FORMULA]] }));
+    await homeroomMenuRow(call);
     await call("PATCH", `${s}/range(address='A1')/format/font`, { bold: true, size: 14 });
     await call("PATCH", `${s}/range(address='A5:G5')/format/font`, { bold: true });
     await call("PATCH", `${s}/range(address='A:B')/format`, { columnWidth: 130 });
@@ -76,7 +135,7 @@ export async function ensureTabs(call) {
 
 // What the Homerooms list shows now, without any names: "list (n rows)", the empty-week text or an error.
 export async function checkHomerooms(call) {
-  const r = await call("GET", `/worksheets/${HOMEROOMS_SHEET}/range(address='A6:A300')?$select=values`);
+  const r = await call("GET", `/worksheets/${HOMEROOMS_SHEET}/range(address='A7:A300')?$select=values`);
   if (!r.ok) return `unreadable (${r.status})`;
   const col = ((await r.json()).values || []).map((row) => row[0]).filter((v) => v !== "" && v != null);
   if (!col.length) return "empty";

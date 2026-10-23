@@ -48,3 +48,13 @@ jobs:
           git commit -m "Published lunch menu / conference schedule / tours / forms (automatic)"
           for i in 1 2 3; do git pull --rebase --autostash -q && git push -q && exit 0; sleep 5; done
           exit 1
+      - name: Put the menu on the office workbook's Homerooms tab
+        # The service reads the menu just committed above and writes it beside the Homerooms list (row 6 shows
+        # the week's meals). A failure here doesn't undo the publish; the next deploy or Monday run catches up.
+        continue-on-error: true
+        env:
+          LUNCH_SETUP_KEY: ${{ secrets.LUNCH_SETUP_KEY }}
+        run: |
+          sleep 20  # let GitHub serve the new menu.json
+          curl -sS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" -H "X-Setup-Key: $LUNCH_SETUP_KEY" \
+            -H "Content-Type: application/json" -d '{"action":"homeroom_menus"}'
