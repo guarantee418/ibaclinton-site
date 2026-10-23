@@ -1,0 +1,49 @@
+name: Fix a lunch order
+
+# Manual only. Two narrow fixes on the Orders tab of the office workbook (worker/src/orderfix.js):
+# - "delete duplicate order": removes one order by its number, only if every one of its rows repeats a row of
+#   another order exactly (same Week of, Student, Grade and days). Anything else is refused.
+# - "fill blank week": office-typed rows with no "Week of" get that Monday, and the price if it is blank too.
+# The log shows counts only, no names.
+on:
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: "What to fix"
+        type: choice
+        options: [delete duplicate order, fill blank week]
+        default: delete duplicate order
+      id:
+        description: "Order number (5 letters/digits), for delete duplicate order"
+        required: false
+      week:
+        description: "Monday as YYYY-MM-DD, for fill blank week"
+        required: false
+      price:
+        description: "Price per lunch, for fill blank week (8, or 5 for preschool, 4 for staff)"
+        required: false
+        default: "8"
+
+permissions:
+  contents: read
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    env:
+      LUNCH_SETUP_KEY: ${{ secrets.LUNCH_SETUP_KEY }}
+      KIND: ${{ inputs.kind }}
+      ID: ${{ inputs.id }}
+      WEEK: ${{ inputs.week }}
+      PRICE: ${{ inputs.price }}
+    steps:
+      - name: Fix
+        run: |
+          if [ "$KIND" = "fill blank week" ]; then
+            body=$(jq -nc --arg w "$WEEK" --arg p "$PRICE" '{action:"fill_blank_week",week:$w,price:($p|tonumber)}')
+          else
+            body=$(jq -nc --arg id "$ID" '{action:"delete_duplicate_order",id:$id}')
+          fi
+          curl -fsS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" \
+            -H "X-Setup-Key: $LUNCH_SETUP_KEY" -H "Content-Type: application/json" -d "$body"
+          echo
