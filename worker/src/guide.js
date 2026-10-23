@@ -4,6 +4,8 @@
 // tables (headings and row count) and the notes beside them. It never returns rows, so no family details.
 // Its output lands in the public Actions log, so it also leaves out the Teachers tab's names and emails.
 // A few tabs per request ("part" 1, 2, ...): all of them at once took more than Cloudflare's 50 outside calls.
+import { HOMEROOMS_FORMULA, HOMEROOMS_SHEET } from "./homerooms.js";
+
 export const INSPECT_TABS = 4;
 
 export async function inspect(call, part = 1) {
@@ -301,7 +303,7 @@ export const GUIDE = [
 ];
 
 // One step per call: each stays under Cloudflare's limit on outside calls per request (50 on the free plan).
-export const STEPS = ["order", "guide", "headings", "notes", "notes2", "kitchen", "rows"];
+export const STEPS = ["order", "guide", "headings", "notes", "notes2", "kitchen", "homerooms", "rows"];
 
 export async function organize(call, step) {
   const list = await call("GET", "/worksheets?$select=name,position");
@@ -354,6 +356,12 @@ export async function organize(call, step) {
       }
       done.push(...await kitchenCounts(call, sheet("Kitchen")));
       done.push(...await kitchenChoices(call, sheet("Kitchen")));
+    }
+  } else if (step === "homerooms") { // the Homerooms list: Yes / No under each day instead of X / 0
+    if (have.has(HOMEROOMS_SHEET)) {
+      await must(call("PATCH", `${sheet(HOMEROOMS_SHEET)}/range(address='A6')`, { formulas: [[HOMEROOMS_FORMULA]] }));
+      await call("PATCH", `${sheet(HOMEROOMS_SHEET)}/range(address='C:G')/format`, { horizontalAlignment: "Center" });
+      done.push("homerooms list (Yes / No)");
     }
   } else if (step === "rows") { // empty rows left in the tables after deletions
     for (const t of TABLES) {

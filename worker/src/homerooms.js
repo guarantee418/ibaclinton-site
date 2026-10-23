@@ -23,9 +23,12 @@ export const GRADES = [
 ];
 const GRADE_ORDER = new Map(GRADES.map(([g], i) => [g, i]));
 
-const HOMEROOMS_FORMULA =
+// Day cells read Yes / No (Garrett, 2026-10-23; the Orders tab keeps its X), or the lunch choice when a day has
+// choices. FILTER turns an empty Orders cell into 0, so anything that isn't text is a No.
+export const HOMEROOMS_FORMULA =
   "=LET(f,Orders[Week of]=$B$3,t,CHOOSECOLS(FILTER(Orders[[Student]:[Fri]],f),2,1,5,6,7,8,9)," +
-  "IFERROR(SORTBY(t,IFERROR(XMATCH(CHOOSECOLS(t,1),$K$6:$K$20),99),1,CHOOSECOLS(t,2),1)," +
+  "d,CHOOSECOLS(t,3,4,5,6,7),y,IF(ISTEXT(d)*(d<>\"\"),IF(UPPER(d)=\"X\",\"Yes\",d),\"No\"),u,HSTACK(CHOOSECOLS(t,1,2),y)," +
+  "IFERROR(SORTBY(u,IFERROR(XMATCH(CHOOSECOLS(u,1),$K$6:$K$20),99),1,CHOOSECOLS(u,2),1)," +
   "\"No lunch orders for this week yet.\"))";
 
 // ------------------------------------------------------------------ workbook tabs
