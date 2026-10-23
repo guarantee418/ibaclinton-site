@@ -77,9 +77,7 @@ export async function homeroomMenus(call, menu) {
   const all = [...Array(MENU_TOP - MENU_CLEAR).fill(blank), ["Menus by week (the service fills this in from the website; please leave it)", "", "", "", "", ""],
     ["Week of", ...DAYS], ...rows, ...Array(MENU_LAST - MENU_FIRST + 1 - rows.length).fill(blank)];
   await must(call("PATCH", `${s}/range(address='M${MENU_CLEAR}:R${MENU_LAST}')`, { formulas: all }));
-  await call("PATCH", `${s}/range(address='M${MENU_FIRST}:M${MENU_LAST}')`, { numberFormat: Array(MENU_LAST - MENU_FIRST + 1).fill(["m/d/yyyy"]) });
-  await call("PATCH", `${s}/range(address='M${MENU_TOP + 1}:R${MENU_TOP + 1}')/format/font`, { bold: true });
-  return rows.length;
+  return rows.length; // its date format and bold headings are set by homeroomMenuRow (organize)
 }
 
 // Puts the menu row under the day headings (row 6) and moves the student list down to row 7. Safe to repeat.
@@ -90,6 +88,8 @@ export async function homeroomMenuRow(call) {
   await call("PATCH", `${s}/range(address='A6:G6')/format`, { wrapText: true, verticalAlignment: "Top" });
   await call("PATCH", `${s}/range(address='A6:G6')/format/font`, { italic: true, color: "#541F78" });
   await call("PATCH", `${s}/range(address='C:G')/format`, { columnWidth: 110, horizontalAlignment: "Center" });
+  await call("PATCH", `${s}/range(address='M${MENU_FIRST}:M${MENU_LAST}')`, { numberFormat: Array(MENU_LAST - MENU_FIRST + 1).fill(["m/d/yyyy"]) });
+  await call("PATCH", `${s}/range(address='M${MENU_TOP + 1}:R${MENU_TOP + 1}')/format/font`, { bold: true });
 }
 
 // ------------------------------------------------------------------ workbook tabs

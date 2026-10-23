@@ -175,8 +175,7 @@ async function admin(request, env) {
     if (await ensureStaffTab(call)) added.push("Staff Families");
     if (await ensureGradelinkTab(call)) added.push("Gradelink");
     const filled = body.teacher_emails ? await fillTeacherEmails(call, body.teacher_emails) : 0;
-    const menus = await refreshMenus(call, env);
-    return json({ ok: true, tabs_added: added, teacher_emails_filled: filled, homerooms_tab: await checkHomerooms(call), menu_weeks: menus,
+    return json({ ok: true, tabs_added: added, teacher_emails_filled: filled, homerooms_tab: await checkHomerooms(call),
       gradelink_tab: await checkGradelink(call) }, 200, {});
   }
   if (body.action === "monday") { // makes one Monday.com board ("board": inquiry, tour, transcript) and its columns if missing
