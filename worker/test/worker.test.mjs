@@ -524,6 +524,50 @@ test("deleteTestOrder removes all rows of a TEST order, bottom first, and nothin
   assert.deepEqual(deleted, ["/tables/Orders/rows/itemAt(index=3)", "/tables/Orders/rows/itemAt(index=1)"]);
 });
 
+import { deleteDuplicateOrder, fillBlankWeek } from "../src/orderfix.js";
+
+const OHEAD = ["Submitted", "Week of", "Order #", "Parent", "Email", "Phone", "Student", "Grade", "Preschool",
+  "Price per lunch", "Mon", "Tue", "Wed", "Thu", "Fri", "Lunches", "Total", "Notes"];
+const orow = (week, id, student, grade, days, price = "$8.00") => ["", week, id, "P", "", "", student, grade, "No", price,
+  ...["Mon", "Tue", "Wed", "Thu", "Fri"].map((d) => (days.includes(d) ? "X" : "")), "", "", ""];
+
+test("deleteDuplicateOrder removes only an order that repeats another order exactly", async () => {
+  const deleted = [];
+  const call = async (method, path) => {
+    if (method === "GET") return new Response(JSON.stringify({ text: [OHEAD,
+      orow("10/26/2026", "FIRST", "Ava K", "5th Grade", ["Mon", "Tue"]),
+      orow("10/26/2026", "OTHER", "Sam", "3rd Grade", ["Mon"]),
+      orow("10/26/2026", "AGAIN", "ava k ", "5th Grade", ["Mon", "Tue"]),
+      orow("10/26/2026", "DIFFS", "Ava K", "5th Grade", ["Mon"])] }));
+    deleted.push(path); return new Response(null, { status: 204 });
+  };
+  assert.deepEqual(await deleteDuplicateOrder(call, "Orders", "DIFFS"),
+    { deleted: 0, error: "not a duplicate: a row has no identical row in another order" });
+  assert.deepEqual(await deleteDuplicateOrder(call, "Orders", "OTHER"),
+    { deleted: 0, error: "not a duplicate: a row has no identical row in another order" });
+  assert.deepEqual(await deleteDuplicateOrder(call, "Orders", "NOPE1"), { deleted: 0, error: "no order with that number" });
+  assert.deepEqual(await deleteDuplicateOrder(call, "Orders", "AGAIN"), { deleted: 1 });
+  assert.deepEqual(deleted, ["/tables/Orders/rows/itemAt(index=2)"]);
+});
+
+test("fillBlankWeek fills only the blank Week of and price of office-typed rows", async () => {
+  const writes = [];
+  const call = async (method, path, body) => {
+    if (method === "GET") return new Response(JSON.stringify({ text: [OHEAD,
+      orow("10/26/2026", "FIRST", "Ava K", "5th Grade", ["Mon"]),
+      orow("", "", "Tylia P", "8th Grade", ["Mon"], ""),
+      orow("", "", "", "", []),
+      orow("", "", "Priced", "8th Grade", ["Tue"], "$5.00")] }));
+    writes.push([path, body.values[0][0]]); return new Response("{}");
+  };
+  assert.deepEqual(await fillBlankWeek(call, "Orders", "2026-10-26", 8), { filled: 2 });
+  assert.deepEqual(writes, [
+    ["/tables/Orders/rows/itemAt(index=1)/range/cell(row=0,column=1)", "10/26/2026"],
+    ["/tables/Orders/rows/itemAt(index=1)/range/cell(row=0,column=9)", 8],
+    ["/tables/Orders/rows/itemAt(index=3)/range/cell(row=0,column=1)", "10/26/2026"],
+  ]);
+});
+
 // ------------------------------------------------------------------ school tours
 import { takenCounts, tourConflict, validateSignup, signupRow, familyMail, officeMail } from "../src/tours.js";
 
