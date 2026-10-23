@@ -1663,6 +1663,6 @@ test("homeroom menus: one row per week, choices joined, no-school days marked, p
   assert.equal(menuRows({ week_start: "2026-10-26", days: [{ key: "wed", meal: "Philly" }] })[0][3], "Philly");
   // row 6: Menu, then one lookup per day, Mon under C reading column N
   assert.equal(MENU_ROW[0][0], "Menu");
-  assert.match(MENU_ROW[0][2], /XLOOKUP\(\$B\$3,\$M\$10:\$M\$60,N\$10:N\$60,""\)&""/);
-  assert.match(MENU_ROW[0][6], /R\$10:R\$60/);
+  assert.match(MENU_ROW[0][2], /XLOOKUP\(\$B\$3,\$M\$20:\$M\$70,N\$20:N\$70,""\)&""/);
+  assert.match(MENU_ROW[0][6], /R\$20:R\$70/);
 });
