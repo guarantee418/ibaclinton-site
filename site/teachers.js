@@ -35,7 +35,7 @@
   function show(d) {
     // Uploaded files go through the service with a short-lived pass.
     var files = api + "/teachers/file/" + encodeURIComponent(d.files) + "/";
-    holder.innerHTML = '<div class="tp-bar"><div class="kc-in"><span>Signed in to the Teacher Portal</span>' +
+    holder.innerHTML = '<div class="tp-bar"><div class="kc-in"><span>Signed in to The King’s Court</span>' +
       '<button type="button" class="tp-out">Sign out</button></div></div>' + String(d.html).split("__TP_FILES__/").join(files);
     holder.querySelector(".tp-out").addEventListener("click", function () { keep(""); location.replace(location.pathname); });
     box.parentNode.removeChild(box); // kings.js works on the first .kc on the page: the portal's

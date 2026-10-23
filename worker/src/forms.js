@@ -131,7 +131,7 @@ async function makeTab(call, form, version, env) {
 export function tabNote(form, env = {}) {
   const who = (form.notify && form.notify.length ? form.notify : String(env.FORM_NOTIFY || "iba@ibcministries.org,ibs@ibcministries.org")
     .split(",")).map((a) => a.trim()).filter(Boolean).map((a) => a.replace(/@ibcministries\.org$/i, "@"));
-  const person = form.where === "the Teacher Portal" ? "teacher" : "person";
+  const person = String(form.id || "").startsWith("teacher-") ? "teacher" : "person";
   const lines = [
     `Responses to the "${form.name}" form on ${form.where || "The Kings Corner"}, one row per response.`,
     `Each ${person} gets a confirmation email with their answers; ${listOf(who)} get${who.length === 1 ? "s" : ""} the details.`,

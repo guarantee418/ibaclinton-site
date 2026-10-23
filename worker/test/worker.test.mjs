@@ -1375,7 +1375,7 @@ test("TEST form response clean-up: only TEST names; an empty TEST tab goes too",
 import { checkToken, makeToken, passwordHash, resetCache } from "../src/teachers.js";
 
 const TP_FORM = { ...FORM, id: "teacher-reimbursement", name: "Reimbursement Request", sheet: "Reimbursement Request",
-  table: "Form_TeacherReimbursement", where: "the Teacher Portal" };
+  table: "Form_TeacherReimbursement", where: "The King's Court" };
 
 async function teacherWorld(files = {}) {
   resetCache();
@@ -1489,7 +1489,7 @@ test("teacher portal forms: signed-in only, saved like a Kings Corner form, noti
   assert.equal(seen.sent.length, 2);
   const notice = seen.sent[1].message;
   assert.deepEqual(notice.toRecipients.map((x) => x.emailAddress.address), ["office@example.org"]);
-  assert.match(notice.body.content, /came in on the Teacher Portal/);
+  assert.match(notice.body.content, /came in on The King&#39;s Court/);
   // a Kings Corner form name isn't accepted here
   r = await call("/teachers/form", { method: "POST", body: JSON.stringify(RESP), headers: { Authorization: "Bearer " + token } });
   assert.equal(r.status, 400);
@@ -1572,7 +1572,7 @@ import { tabNote, rewriteNotes } from "../src/forms.js";
 
 test("form tab note names who gets each form, its approvals and its monday board", () => {
   const n = tabNote(ACT, {});
-  assert.match(n[0], /"Activity Request" form on the Teacher Portal/);
+  assert.match(n[0], /"Activity Request" form on The King's Court/);
   assert.equal(n[1], "Each teacher gets a confirmation email with their answers; ggreene@, iba@ and jschmidley@ get the details.");
   assert.match(n[2], /^Vehicle approval \(David Febo\): asked to approve by email when "Transportation" is "School vehicle \(bus or van\)"; replies go to iba@ibcministries\.org\.$/);
   assert.match(n[3], /^IBC approval \(IBC office\): asked to approve by email; replies go to iba@/);
