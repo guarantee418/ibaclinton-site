@@ -71,6 +71,7 @@ import { BOARDS as MONDAY_BOARDS, addFormToMonday, addToMonday, deleteFormItem, 
 import { STEPS as ORGANIZE_STEPS, inspect as inspectWorkbook, organize as organizeWorkbook } from "./guide.js";
 import { checkHomerooms, ensureTabs, fillTeacherEmails, weekCounts, homeroomMails, homeroomMenus, mondayToSend, readTeachers,
   readWeek } from "./homerooms.js";
+import { deleteDuplicateOrder, fillBlankWeek } from "./orderfix.js";
 
 const SCOPES = "offline_access User.Read Mail.Send Files.ReadWrite";
 const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri"];
@@ -314,6 +315,24 @@ async function admin(request, env) {
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
     const r = await deleteTestOrder(workbook(token, env), env.TABLE || "Orders", id);
     return json({ ok: r.deleted > 0, id, ...r }, r.deleted > 0 ? 200 : 400, {});
+  }
+  if (body.action === "delete_duplicate_order") { // removes a lunch order that only repeats another order's rows
+    const id = String(body.id || "").trim().toUpperCase();
+    if (!/^[A-Z0-9]{5}$/.test(id)) return json({ ok: false, error: "id (the 5-letter order number) is required" }, 400, {});
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    const r = await deleteDuplicateOrder(workbook(token, env), env.TABLE || "Orders", id);
+    return json({ ok: r.deleted > 0, id, ...r }, r.deleted > 0 ? 200 : 400, {});
+  }
+  if (body.action === "fill_blank_week") { // office-typed order rows with no "Week of" get that week (and price)
+    const week = String(body.week || ""), price = Number(body.price);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(week) || !(price > 0 && price <= 20)) {
+      return json({ ok: false, error: "week (YYYY-MM-DD) and price (e.g. 8) are required" }, 400, {});
+    }
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    const r = await fillBlankWeek(workbook(token, env), env.TABLE || "Orders", week, price);
+    return json({ ok: r.filled > 0, week, ...r }, r.filled > 0 ? 200 : 400, {});
   }
   if (body.action === "homerooms") {
     const week = String(body.week || ""), to = String(body.test_to || "").trim();
