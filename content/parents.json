@@ -31,6 +31,12 @@
       "when": "October 29",
       "graphic": "/files/pic-retakes.png",
       "hidden": false
+    },
+    {
+      "title": "Spirit Week",
+      "when": "November 2-6",
+      "graphic": "/files/school-screens-4.png",
+      "hidden": false
     }
   ],
   "tiles_script": "Inside the Corner",
