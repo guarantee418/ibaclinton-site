@@ -161,16 +161,7 @@
       "title": "Student Handbooks",
       "links": [
         {
-          "title": "Preschool Handbook",
-          "file": "files/Preschool-Handbook.pdf"
-        },
-        {
-          "title": "Elementary Handbook",
-          "file": "files/Elementary-Handbook-2024-2025.pdf"
-        },
-        {
-          "title": "Jr & Sr High School Handbook",
-          "file": "files/High-School-Handbook-2024-2025.pdf"
+          "title": "Preschool - 12th Grade Handbook"
         }
       ],
       "show_lunch": false,
@@ -225,11 +216,7 @@
       "links": [
         {
           "title": "IBA Spirit Days",
-          "file": "files/2025-2026-Spirit-Day-Calendar.pdf"
-        },
-        {
-          "title": "Preschool Spirit Days",
-          "file": "files/K3-K5-Spirit-Days.pdf"
+          "file": "/files/spirit-days-2026-2027.pdf"
         }
       ],
       "show_lunch": false,
