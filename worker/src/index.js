@@ -340,6 +340,12 @@ async function admin(request, env) {
     const r = await fillBlankWeek(workbook(token, env), env.TABLE || "Orders", week, price);
     return json({ ok: r.filled > 0, week, ...r }, r.filled > 0 ? 200 : 400, {});
   }
+  if (body.action === "homerooms_late") { // this week's lists to the teachers, when the Monday 7 AM run didn't send them
+    const week = String(body.week || ""), now = new Date();
+    const monday = new Date(now.getTime() - ((now.getUTCDay() + 6) % 7) * 86400000).toISOString().slice(0, 10);
+    if (week !== monday) return json({ ok: false, error: `only this week (${monday}) can be sent late` }, 400, {});
+    return json(await homeroomRun(env, week), 200, {});
+  }
   if (body.action === "homerooms") {
     const week = String(body.week || ""), to = String(body.test_to || "").trim();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(week) || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
