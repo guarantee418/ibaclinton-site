@@ -139,7 +139,9 @@ export function tabNote(form, env = {}) {
   for (const a of form.approvals || []) {
     const label = `${a.title}${a.name ? ` (${a.name})` : ""}`;
     const when = a.question ? ` when "${(form.questions.find((q) => q.key === a.question) || {}).label}" is "${a.answer}"` : "";
-    lines.push(`${label}: asked to approve by email${when}; replies go to ${form.approval_reply || "iba@ibcministries.org"}.`);
+    lines.push(form.one_email
+      ? `${label}: on the same email${when}, approves by Reply All.`
+      : `${label}: asked to approve by email${when}; replies go to ${form.approval_reply || "iba@ibcministries.org"}.`);
   }
   if (form.monday) lines.push(`Also on the monday.com board "Teacher Portal: ${form.name}".`);
   lines.push("Change Status as you go (for example Read, Done) and use Notes for anything worth remembering.",
@@ -192,22 +194,25 @@ export function confirmationMail(form, entry, id, env) {
 }
 
 // A Teacher Portal form can name its own approvers (teachers.py routing): each is asked only when its question has
-// its answer (e.g. a vehicle only when one is needed). Returns them with needed: true/false.
+// its answer (e.g. a vehicle only when one is needed; several answers separated by ";", e.g. "School; Both").
+// Returns them with needed: true/false.
 export function approvalsFor(form, entry) {
   return (form.approvals || []).map((a) => {
     if (!a.question) return { ...a, needed: true };
     const i = form.questions.findIndex((q) => q.key === a.question);
     const given = String(i < 0 ? "" : entry.answers[i] || "").toLowerCase().split("; ");
-    return { ...a, needed: i < 0 || given.includes(String(a.answer).toLowerCase()) };
+    const wanted = String(a.answer).toLowerCase().split(/\s*;\s*/).filter(Boolean);
+    return { ...a, needed: i < 0 || wanted.some((w) => given.includes(w)) };
   });
 }
 
 // Who gets the plain notice: the form's own list (else FORM_NOTIFY), plus approvers who aren't needed this time,
-// leaving out anyone who gets an approval request instead.
+// leaving out anyone who gets an approval request instead. A form with one_email (Garrett, 2026-10-26: Activity
+// Request) sends no separate approval requests: the needed approvers are on the one email too, and answer by Reply All.
 export function noticeRecipients(form, env, approvals = []) {
-  const asked = new Set(approvals.filter((a) => a.needed).map((a) => a.email.toLowerCase()));
+  const asked = new Set(form.one_email ? [] : approvals.filter((a) => a.needed).map((a) => a.email.toLowerCase()));
   const list = (form.notify && form.notify.length ? form.notify : String(env.FORM_NOTIFY || "").split(","))
-    .concat(approvals.filter((a) => !a.needed).map((a) => a.email));
+    .concat(approvals.filter((a) => (form.one_email ? a.needed : !a.needed)).map((a) => a.email));
   return [...new Set(list.map((a) => a.trim().toLowerCase()).filter((a) => a && !asked.has(a)))];
 }
 
@@ -239,6 +244,28 @@ export function approvalMail(form, entry, id, a, replyTo) {
 
 export function noticeMail(form, entry, id, env, sheet, approvals = []) {
   const e = escapeHtml;
+  const needed = approvals.filter((a) => a.needed);
+  if (form.one_email && needed.length) {
+    // One email to everyone; Reply-To lists them all, so Reply and Reply All both reach every leader.
+    const to = noticeRecipients(form, env, approvals);
+    const content =
+      `<p>A new <b>${e(form.name)}</b> from ${e(entry.name)} (${e(entry.email)}) came in on ` +
+      `${e(form.where || "The Kings Corner")}:</p>` + answerList(form, entry, true) +
+      `<p><b>Approvals needed for this one:</b><br>${needed.map((a) => `${e(a.title)}${a.name ? `: ${e(a.name)}` : ""}`)
+        .join("<br>")}</p>` +
+      `<p><b>Please Reply All with "Approved" or "Not approved"</b> (and why), so every leader sees it. ` +
+      `${e(entry.name)} isn't on this email; the office lets them know. Every response is on the "${e(sheet)}" tab ` +
+      `of the office workbook (response ${e(id)}).</p>`;
+    return {
+      message: {
+        subject: `Approval needed: ${form.name} from ${entry.name} [${id}]`,
+        body: { contentType: "HTML", content },
+        toRecipients: to.map((address) => ({ emailAddress: { address } })),
+        replyTo: to.map((address) => ({ emailAddress: { address } })),
+      },
+      saveToSentItems: true,
+    };
+  }
   const content =
     `<p>A new response to <b>${e(form.name)}</b> came in on ${e(form.where || "The Kings Corner")}:</p>` +
     answerList(form, entry, true) + approvalLines(approvals) +

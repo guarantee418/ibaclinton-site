@@ -292,7 +292,7 @@ export const GUIDE = [
   ["head", "The King's Court forms (teachers)"],
   ["step", "1", "The King's Court (the teachers' page, ibaclinton.com/teachers/, password only) has its own forms, such as Activity Request, Reimbursement Request and Substitute Request. They are edited the same way, in The King's Court's editor, and each gets its own tab here just like the forms above."],
   ["step", "2", "Each King's Court form says in the editor who gets every response ('Send each response to'). The note beside its tab here lists them too. The teacher always gets a confirmation."],
-  ["step", "3", "Some forms need approvals (for example the Activity Request: IBC every time, and Mr. Febo when a school vehicle is needed). Those people get an 'Approval needed' email and reply to iba@ with their answer. Write the approval in Notes, or mark it on the form's monday.com board."],
+  ["step", "3", "Some forms need approvals. The Activity Request goes out as one 'Approval needed' email to Mr. Greene, Mr. Schmidley, iba@ and ibc@ (and Mr. Febo when a ministry vehicle is needed). It lists whose approval is needed: Mr. Greene for school activities, Mr. Schmidley for church activities (both for 'Both'), Mr. Febo for the vehicle and IBC every time. Leaders answer with Reply All. Write the approvals in Notes, or mark them on the form's monday.com board, and let the teacher know."],
   ["step", "4", "The Activity Request also goes on the monday.com board 'Teacher Portal: Activity Request', with a column for each approval ('Waiting for reply' or 'Not needed'). Change it to Approved when the reply comes in."],
   ["gap"],
   ["head", "Rules that keep the website working"],

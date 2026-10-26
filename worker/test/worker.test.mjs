@@ -1666,3 +1666,34 @@ test("homeroom menus: one row per week, choices joined, no-school days marked, p
   assert.match(MENU_ROW[0][2], /XLOOKUP\(\$B\$3,\$M\$20:\$M\$70,N\$20:N\$70,""\)&""/);
   assert.match(MENU_ROW[0][6], /R\$20:R\$70/);
 });
+
+// ------------------------------------------------------------------ one email, Reply All (Activity Request, 2026-10-26)
+test("one_email: one approval email to the list and the needed approvers, Reply-To all of them, no separate requests", async () => {
+  const { approvalsFor, noticeMail, noticeRecipients, tabNote } = await import("../src/forms.js");
+  const form = { id: "teacher-activity-request", name: "Activity Request", where: "The King's Court", one_email: true,
+    notify: ["boss@example.org", "church@example.org", "office@example.org", "ibc@example.org"],
+    questions: [{ key: "q1", label: "Ministry area" }, { key: "q2", label: "Ministry vehicle needed?" }],
+    approvals: [
+      { title: "School approval", name: "Boss", email: "boss@example.org", question: "q1", answer: "School; Both" },
+      { title: "Church approval", name: "Church", email: "church@example.org", question: "q1", answer: "Church; Both" },
+      { title: "Vehicle approval", name: "Driver", email: "driver@example.org", question: "q2", answer: "Yes, a ministry vehicle (bus or van)" },
+      { title: "IBC approval", email: "ibc@example.org" }] };
+  const entry = (area, veh) => ({ name: "Pat Smith", email: "pat@example.org", answers: [area, veh] });
+  const need = (e) => approvalsFor(form, e).filter((a) => a.needed).map((a) => a.title);
+  assert.deepEqual(need(entry("School", "No")), ["School approval", "IBC approval"]);
+  assert.deepEqual(need(entry("Church", "No")), ["Church approval", "IBC approval"]);
+  assert.deepEqual(need(entry("Both", "Yes, a ministry vehicle (bus or van)")),
+    ["School approval", "Church approval", "Vehicle approval", "IBC approval"]);
+  // the vehicle approver is on the email only when a vehicle is needed
+  assert.ok(!noticeRecipients(form, {}, approvalsFor(form, entry("School", "No"))).includes("driver@example.org"));
+  const e = entry("School", "Yes, a ministry vehicle (bus or van)");
+  const m = noticeMail(form, e, "AB12C", {}, "Activity Request 2", approvalsFor(form, e)).message;
+  const to = m.toRecipients.map((r) => r.emailAddress.address);
+  assert.deepEqual(to.sort(), ["boss@example.org", "church@example.org", "driver@example.org", "ibc@example.org", "office@example.org"]);
+  assert.deepEqual(m.replyTo.map((r) => r.emailAddress.address).sort(), to);
+  assert.match(m.subject, /^Approval needed: Activity Request from Pat Smith \[AB12C\]$/);
+  assert.match(m.body.content, /Reply All/);
+  assert.match(m.body.content, /Vehicle approval: Driver/);
+  assert.doesNotMatch(m.body.content, /Church approval/);
+  assert.match(tabNote(form, {}).join(" "), /approves by Reply All/);
+});
