@@ -213,7 +213,8 @@ async function admin(request, env) {
   if (body.action === "delete_empty_tab") { // removes a retired tab, only when its table has no rows with data
     const token = await accessToken(env);
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
-    const r = await deleteEmptyTab(workbook(token, env), body.tab);
+    const expect = Number.isInteger(body.expect_rows) && body.expect_rows >= 0 ? body.expect_rows : 0;
+    const r = await deleteEmptyTab(workbook(token, env), body.tab, expect);
     return json({ ok: !r.error, ...r }, r.error ? 400 : 200, {});
   }
   if (body.action === "inspect") { // the workbook's tabs, tables and notes (no rows), see src/guide.js

@@ -1713,6 +1713,10 @@ test("delete_empty_tab: only a tab whose table has no rows with data, never the 
   f = fake([["10/22/2026", "8U4RF", "New"], ["", "", ""]]);
   const r = await deleteEmptyTab(f.call, "Substitute Request");
   assert.equal(r.rows, 1); assert.ok(!f.calls.some((c) => c.startsWith("DELETE")));
+  // with the owner's say-so for a known leftover row: exactly that many, else nothing
+  assert.deepEqual(await deleteEmptyTab(f.call, "Substitute Request", 1), { deleted: true, rows: 1 });
+  f = fake([["a"], ["b"]]);
+  assert.equal((await deleteEmptyTab(f.call, "Substitute Request", 1)).deleted, false);
   f = fake([]);
   assert.match((await deleteEmptyTab(f.call, "orders")).error, /own tabs/);
   assert.ok(!f.calls.length);

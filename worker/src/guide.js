@@ -505,7 +505,8 @@ async function must(p) {
 
 // Deletes one tab the office no longer uses (e.g. a retired form's), only when its table has no row with anything in
 // it (blank rows don't count) and it isn't one of the workbook's own tabs (ORDER). Returns {deleted} or {error}.
-export async function deleteEmptyTab(call, name) {
+// expectRows (Garrett's say-so for a tab with known leftover rows, e.g. a test): delete only if it has exactly that many.
+export async function deleteEmptyTab(call, name, expectRows = 0) {
   name = String(name || "").trim();
   if (!name) return { error: "no tab name" };
   if (ORDER.some((t) => t.toLowerCase() === name.toLowerCase())) return { error: `"${name}" is one of the workbook's own tabs` };
@@ -518,7 +519,9 @@ export async function deleteEmptyTab(call, name) {
     if (!r.ok) return { error: `table ${tb.name} ${r.status}` };
     rows += ((await r.json()).values || []).filter((row) => row.some((v) => String(v ?? "").trim() !== "")).length;
   }
-  if (rows) return { deleted: false, rows, error: `"${name}" still has ${rows} row(s) with data; nothing deleted` };
+  if (rows !== expectRows) {
+    return { deleted: false, rows, error: `"${name}" has ${rows} row(s) with data, not ${expectRows}; nothing deleted` };
+  }
   const d = await call("DELETE", s);
-  return d.ok ? { deleted: true, rows: 0 } : { error: `delete ${d.status}` };
+  return d.ok ? { deleted: true, rows } : { error: `delete ${d.status}` };
 }
