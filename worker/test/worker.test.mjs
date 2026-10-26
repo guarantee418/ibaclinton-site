@@ -1698,3 +1698,22 @@ test("one_email: one approval email to the list and the needed approvers, Reply-
   assert.doesNotMatch(m.body.content, /Church approval/);
   assert.match(tabNote(form, {}).join(" "), /approves by Reply All/);
 });
+
+test("delete_empty_tab: only a tab whose table has no rows with data, never the workbook's own tabs", async () => {
+  const { deleteEmptyTab } = await import("../src/guide.js");
+  const fake = (rows) => { const calls = [];
+    const call = async (method, path) => { calls.push(`${method} ${path}`);
+      if (path.endsWith("/tables?$select=name")) return { ok: true, status: 200, json: async () => ({ value: [{ name: "Form_X" }] }) };
+      if (path.includes("dataBodyRange")) return { ok: true, status: 200, json: async () => ({ values: rows }) };
+      return { ok: true, status: 204, json: async () => ({}) }; };
+    return { call, calls }; };
+  let f = fake([["", "", ""]]);
+  assert.deepEqual(await deleteEmptyTab(f.call, "Substitute Request"), { deleted: true, rows: 0 });
+  assert.ok(f.calls.includes("DELETE /worksheets/Substitute%20Request"));
+  f = fake([["10/22/2026", "8U4RF", "New"], ["", "", ""]]);
+  const r = await deleteEmptyTab(f.call, "Substitute Request");
+  assert.equal(r.rows, 1); assert.ok(!f.calls.some((c) => c.startsWith("DELETE")));
+  f = fake([]);
+  assert.match((await deleteEmptyTab(f.call, "orders")).error, /own tabs/);
+  assert.ok(!f.calls.length);
+});
