@@ -8,9 +8,10 @@ compatibility_date = "2025-09-01"
 workers_dev = true
 
 # Homeroom lunch lists, Mondays 7:00 AM Eastern (11:00 UTC in summer time, 12:00 in winter;
-# the Worker sends only on the run that falls at 7 AM Eastern).
+# the Worker sends only on the run that falls at 7 AM Eastern). The day is spelled MON on purpose:
+# Cloudflare counts 1 as Sunday, so "* * 1" ran on Sundays and nothing was sent (10/26/2026).
 [triggers]
-crons = ["0 11 * * 1", "0 12 * * 1"]
+crons = ["0 11 * * MON", "0 12 * * MON"]
 
 # KV namespace for Microsoft's sign-in token and short-lived values. The workflow fills in the id.
 [[kv_namespaces]]
