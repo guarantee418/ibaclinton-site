@@ -1,0 +1,28 @@
+name: Send this week's homeroom lunch lists (late)
+
+# Manual only. Sends this week's homeroom lunch lists to the teachers (Cc ibs@), the same emails as
+# the Monday 7:00 AM run, for a Monday when that run didn't send them. Only the current week, and
+# never twice: a week that was already sent answers "already_sent".
+on:
+  workflow_dispatch:
+    inputs:
+      week:
+        description: "Monday of this week (YYYY-MM-DD)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    env:
+      LUNCH_SETUP_KEY: ${{ secrets.LUNCH_SETUP_KEY }}
+      WEEK: ${{ inputs.week }}
+    steps:
+      - name: Send
+        run: |
+          body=$(jq -nc --arg w "$WEEK" '{action:"homerooms_late",week:$w}')
+          curl -fsS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" \
+            -H "X-Setup-Key: $LUNCH_SETUP_KEY" -H "Content-Type: application/json" -d "$body"
+          echo
