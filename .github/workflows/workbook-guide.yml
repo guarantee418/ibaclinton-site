@@ -23,6 +23,10 @@ on:
       tab:
         description: "delete-empty-tab only: the tab's name, exactly as in Excel"
         required: false
+      rows:
+        description: "delete-empty-tab only: rows with data you expect it to have (0 = empty; Garrett's say-so for more)"
+        required: false
+        default: "0"
 
 permissions:
   contents: read
@@ -35,6 +39,7 @@ jobs:
       ACTION: ${{ inputs.action }}
       WEEK: ${{ inputs.week }}
       TAB: ${{ inputs.tab }}
+      ROWS: ${{ inputs.rows }}
     steps:
       - name: Run
         run: |
@@ -46,7 +51,7 @@ jobs:
           elif [ "$ACTION" = delete-empty-tab ]; then
             # Deletes nothing when the tab still has rows with data (it says how many) or is one of the workbook's own.
             curl -sS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" -H "X-Setup-Key: $LUNCH_SETUP_KEY" \
-              -H "Content-Type: application/json" -d "$(jq -nc --arg t "$TAB" '{action:"delete_empty_tab",tab:$t}')" | jq -c .
+              -H "Content-Type: application/json" -d "$(jq -nc --arg t "$TAB" --argjson r "${ROWS:-0}" '{action:"delete_empty_tab",tab:$t,expect_rows:$r}')" | jq -c .
           elif [ "$ACTION" = reset-week-boxes ]; then
             # The Kitchen, Homerooms and Gradelink week boxes get their formulas back; prints the week each shows.
             post '{"action":"week_boxes"}'
