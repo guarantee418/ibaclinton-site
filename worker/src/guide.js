@@ -83,7 +83,7 @@ export function colNumber(a) {
 // each tab's table, the Kitchen week box, and empty rows left at the bottom of the tables
 // after deletions (a table keeps at least one row). Safe to run again; it writes the same thing each time.
 
-const ORDER = ["How to use", "Orders", "Kitchen", "Homerooms", "Gradelink", "Teachers", "Staff Families", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"];
+export const ORDER = ["How to use", "Orders", "Kitchen", "Homerooms", "Gradelink", "Teachers", "Staff Families", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"];
 const NAVY = "#1B2A4A";
 const RED = "#B00020";
 const MONDAY = "TODAY()-WEEKDAY(TODAY(),3)+IF(WEEKDAY(TODAY(),2)>5,7,0)";
@@ -501,4 +501,24 @@ async function must(p) {
   const r = await p;
   if (!r.ok) throw new Error(`workbook ${r.status} ${(await r.text()).slice(0, 200)}`);
   return r;
+}
+
+// Deletes one tab the office no longer uses (e.g. a retired form's), only when its table has no row with anything in
+// it (blank rows don't count) and it isn't one of the workbook's own tabs (ORDER). Returns {deleted} or {error}.
+export async function deleteEmptyTab(call, name) {
+  name = String(name || "").trim();
+  if (!name) return { error: "no tab name" };
+  if (ORDER.some((t) => t.toLowerCase() === name.toLowerCase())) return { error: `"${name}" is one of the workbook's own tabs` };
+  const s = `/worksheets/${encodeURIComponent(name)}`;
+  const t = await call("GET", `${s}/tables?$select=name`);
+  if (!t.ok) return { error: t.status === 404 ? `no tab named "${name}"` : `tab ${t.status}` };
+  let rows = 0;
+  for (const tb of (await t.json()).value || []) {
+    const r = await call("GET", `/tables/${encodeURIComponent(tb.name)}/dataBodyRange?$select=values`);
+    if (!r.ok) return { error: `table ${tb.name} ${r.status}` };
+    rows += ((await r.json()).values || []).filter((row) => row.some((v) => String(v ?? "").trim() !== "")).length;
+  }
+  if (rows) return { deleted: false, rows, error: `"${name}" still has ${rows} row(s) with data; nothing deleted` };
+  const d = await call("DELETE", s);
+  return d.ok ? { deleted: true, rows: 0 } : { error: `delete ${d.status}` };
 }

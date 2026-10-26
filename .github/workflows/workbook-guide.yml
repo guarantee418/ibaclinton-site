@@ -7,16 +7,21 @@ name: Office workbook layout
 # billing tab shows for a week (students, lunches, charges; no names), putting its week box back afterwards.
 # "reset-week-boxes" sets up the Kitchen, Homerooms and Gradelink week boxes: the yellow "Pick a week" box in row 2
 # (kept if filled) and "Week of" back to its formula (that week, or the next week with orders).
+# "delete-empty-tab" removes the tab named in "tab" (e.g. a retired form's), only if its table has no rows with
+# data and it isn't one of the workbook's own tabs; otherwise it says why and deletes nothing.
 on:
   workflow_dispatch:
     inputs:
       action:
         description: "What to do"
         type: choice
-        options: [inspect, organize, check-gradelink, reset-week-boxes]
+        options: [inspect, organize, check-gradelink, reset-week-boxes, delete-empty-tab]
         default: inspect
       week:
         description: "check-gradelink only: Monday to show for a moment (YYYY-MM-DD), or blank for the box as it is"
+        required: false
+      tab:
+        description: "delete-empty-tab only: the tab's name, exactly as in Excel"
         required: false
 
 permissions:
@@ -29,6 +34,7 @@ jobs:
       LUNCH_SETUP_KEY: ${{ secrets.LUNCH_SETUP_KEY }}
       ACTION: ${{ inputs.action }}
       WEEK: ${{ inputs.week }}
+      TAB: ${{ inputs.tab }}
     steps:
       - name: Run
         run: |
@@ -37,6 +43,10 @@ jobs:
           if [ "$ACTION" = check-gradelink ]; then
             # What the Gradelink billing tab shows for one week: counts and totals only, no names.
             post "$(jq -nc --arg w "$WEEK" '{action:"gradelink",week:$w}')"
+          elif [ "$ACTION" = delete-empty-tab ]; then
+            # Deletes nothing when the tab still has rows with data (it says how many) or is one of the workbook's own.
+            curl -sS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" -H "X-Setup-Key: $LUNCH_SETUP_KEY" \
+              -H "Content-Type: application/json" -d "$(jq -nc --arg t "$TAB" '{action:"delete_empty_tab",tab:$t}')" | jq -c .
           elif [ "$ACTION" = reset-week-boxes ]; then
             # The Kitchen, Homerooms and Gradelink week boxes get their formulas back; prints the week each shows.
             post '{"action":"week_boxes"}'

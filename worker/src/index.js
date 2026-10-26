@@ -68,7 +68,7 @@ import { file as teacherFile, loadPortal as loadTeacherPortal, login as teacherL
 import { TABLE as TRANSCRIPT_TABLE, deleteTestRequest, ensureTranscriptTab, officeMail as transcriptOfficeMail, requestRow,
   requesterMail, settings as transcriptSettings, validateRequest } from "./transcripts.js";
 import { BOARDS as MONDAY_BOARDS, addFormToMonday, addToMonday, deleteFormItem, deleteFromMonday, setupMonday } from "./monday.js";
-import { STEPS as ORGANIZE_STEPS, inspect as inspectWorkbook, organize as organizeWorkbook } from "./guide.js";
+import { STEPS as ORGANIZE_STEPS, deleteEmptyTab, inspect as inspectWorkbook, organize as organizeWorkbook } from "./guide.js";
 import { checkHomerooms, ensureTabs, fillTeacherEmails, weekCounts, homeroomMails, homeroomMenus, mondayToSend, readTeachers,
   readWeek } from "./homerooms.js";
 import { deleteDuplicateOrder, fillBlankWeek } from "./orderfix.js";
@@ -209,6 +209,12 @@ async function admin(request, env) {
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
     const weeks = await refreshMenus(workbook(token, env), env);
     return json({ ok: weeks !== null, menu_weeks: weeks }, weeks === null ? 500 : 200, {});
+  }
+  if (body.action === "delete_empty_tab") { // removes a retired tab, only when its table has no rows with data
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    const r = await deleteEmptyTab(workbook(token, env), body.tab);
+    return json({ ok: !r.error, ...r }, r.error ? 400 : 200, {});
   }
   if (body.action === "inspect") { // the workbook's tabs, tables and notes (no rows), see src/guide.js
     const token = await accessToken(env);
