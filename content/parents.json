@@ -31,11 +31,6 @@
       "when": "October 29",
       "graphic": "/files/pic-retakes.png",
       "hidden": false
-    },
-    {
-      "title": "Duo Day",
-      "graphic": "/files/64.png",
-      "hidden": false
     }
   ],
   "tiles_script": "Inside the Corner",
