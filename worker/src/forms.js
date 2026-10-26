@@ -246,22 +246,25 @@ export function noticeMail(form, entry, id, env, sheet, approvals = []) {
   const e = escapeHtml;
   const needed = approvals.filter((a) => a.needed);
   if (form.one_email && needed.length) {
-    // One email to everyone; Reply-To lists them all, so Reply and Reply All both reach every leader.
+    // One email to everyone, the teacher Cc'd (Garrett, 2026-10-26); Reply-To lists them all, so Reply and Reply All
+    // both reach every leader and the teacher who sent it.
     const to = noticeRecipients(form, env, approvals);
+    const teacher = String(entry.email || "").trim().toLowerCase();
+    const cc = teacher && !to.includes(teacher) ? [teacher] : [];
     const content =
       `<p>A new <b>${e(form.name)}</b> from ${e(entry.name)} (${e(entry.email)}) came in on ` +
       `${e(form.where || "The Kings Corner")}:</p>` + answerList(form, entry, true) +
       `<p><b>Approvals needed for this one:</b><br>${needed.map((a) => `${e(a.title)}${a.name ? `: ${e(a.name)}` : ""}`)
         .join("<br>")}</p>` +
-      `<p><b>Please Reply All with "Approved" or "Not approved"</b> (and why), so every leader sees it. ` +
-      `${e(entry.name)} isn't on this email; the office lets them know. Every response is on the "${e(sheet)}" tab ` +
-      `of the office workbook (response ${e(id)}).</p>`;
+      `<p><b>Please Reply All with "Approved" or "Not approved"</b> (and why), so every leader and ${e(entry.name)} ` +
+      `(Cc'd) see it. Every response is on the "${e(sheet)}" tab of the office workbook (response ${e(id)}).</p>`;
     return {
       message: {
         subject: `Approval needed: ${form.name} from ${entry.name} [${id}]`,
         body: { contentType: "HTML", content },
         toRecipients: to.map((address) => ({ emailAddress: { address } })),
-        replyTo: to.map((address) => ({ emailAddress: { address } })),
+        ccRecipients: cc.map((address) => ({ emailAddress: { address, name: entry.name } })),
+        replyTo: to.concat(cc).map((address) => ({ emailAddress: { address } })),
       },
       saveToSentItems: true,
     };

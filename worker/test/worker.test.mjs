@@ -1690,7 +1690,8 @@ test("one_email: one approval email to the list and the needed approvers, Reply-
   const m = noticeMail(form, e, "AB12C", {}, "Activity Request 2", approvalsFor(form, e)).message;
   const to = m.toRecipients.map((r) => r.emailAddress.address);
   assert.deepEqual(to.sort(), ["boss@example.org", "church@example.org", "driver@example.org", "ibc@example.org", "office@example.org"]);
-  assert.deepEqual(m.replyTo.map((r) => r.emailAddress.address).sort(), to);
+  assert.deepEqual(m.ccRecipients.map((r) => r.emailAddress.address), ["pat@example.org"]);
+  assert.deepEqual(m.replyTo.map((r) => r.emailAddress.address).sort(), [...to, "pat@example.org"].sort());
   assert.match(m.subject, /^Approval needed: Activity Request from Pat Smith \[AB12C\]$/);
   assert.match(m.body.content, /Reply All/);
   assert.match(m.body.content, /Vehicle approval: Driver/);
