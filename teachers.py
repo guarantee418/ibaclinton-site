@@ -101,7 +101,8 @@ def routing(section, spec):
     approvals  people asked to approve each response by replying to approval_reply (iba@), each optionally only
                when a question has a certain answer (e.g. a vehicle only when "School vehicle needed?" is Yes);
                when that answer isn't given they get the plain notice instead
-    monday     also add each response to the form's own monday.com board"""
+    monday     also add each response to the form's own monday.com board
+    one_email  no separate approval emails: one email to the list and the needed approvers, who answer by Reply All"""
     f, name = section.get("form") or {}, spec["name"]
     notify = []
     for v in f.get("notify") or []:
@@ -127,7 +128,7 @@ def routing(section, spec):
         approvals.append({"title": title or "Approval", "name": forms._clean(a.get("name"), 60), "email": email, **rule})
     return {"notify": notify[:MAX_NOTIFY], "approvals": approvals,
             "approval_reply": school_email(f.get("approval_reply"), f"form {name!r}") or APPROVAL_REPLY,
-            "monday": bool(f.get("monday"))}
+            "monday": bool(f.get("monday")), "one_email": bool(f.get("one_email"))}
 
 
 def form_specs(data):

@@ -793,7 +793,7 @@ async function formResponse(request, env, cors, forms, ctx) {
     const o = await graph(token, "POST", "/me/sendMail", formNotice(form, entry, id, env, saved.sheet, approvals));
     if (!o.ok) console.error("form notice", o.status, await o.text());
   }
-  for (const a of approvals.filter((x) => x.needed)) {
+  for (const a of form.one_email ? [] : approvals.filter((x) => x.needed)) {
     const m = await graph(token, "POST", "/me/sendMail", approvalMail(form, entry, id, a, form.approval_reply || env.REPLY_TO));
     if (!m.ok) console.error("form approval", m.status, await m.text());
   }

@@ -267,11 +267,15 @@ content:
                   - name: only_if_answer
                     label: …has this answer
                     type: string
-                    description: For example "School vehicle (bus or van)". For a Yes/No box, type Yes.
+                    description: For example "School vehicle (bus or van)". For a Yes/No box, type Yes. Several answers, separated by a semicolon, for example "School; Both".
               - name: approval_reply
                 label: Approvals reply to (optional)
                 type: string
                 description: Where approvers' replies go. Leave blank for iba@ibcministries.org.
+              - name: one_email
+                label: Approvals in one email (Reply All)
+                type: boolean
+                description: Instead of a separate approval email to each person, send one email to everyone above plus the approvals needed, listing whose approval is needed. Leaders answer by Reply All.
               - name: monday
                 label: Also add each response to monday.com
                 type: boolean
