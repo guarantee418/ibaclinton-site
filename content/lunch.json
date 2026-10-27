@@ -1,27 +1,28 @@
 {
   "weeks": [
     {
-      "week_start": "2026-10-26",
+      "week_start": "2026-11-02",
       "menu": [
         {
           "day": "Monday",
-          "meal": "Hotdogs & Chips"
+          "meal": "Pizza & Chips"
         },
         {
           "day": "Tuesday",
-          "meal": "Chicken Quesadillas & Spanish Rice"
+          "meal": "Orange Chicken & Rice"
         },
         {
           "day": "Wednesday",
-          "meal": "Philly Cheesesteaks & Fries"
+          "meal": "Nachos"
         },
         {
           "day": "Thursday",
-          "meal": "Grilled Chicken & Potatoes"
+          "meal": "Chicken Sandwich & Fries"
+        },
+        {
+          "day": "Friday",
+          "meal": "Hotdogs & Chips"
         }
-      ],
-      "no_school": [
-        "Friday"
       ]
     }
   ],
