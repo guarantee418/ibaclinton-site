@@ -354,56 +354,99 @@
             "required": true
           },
           {
-            "label": "How are you connected to IBA?",
-            "type": "Dropdown (pick one)",
-            "required": true,
-            "choices": [
-              "Current IBA parent",
-              "IBA alumni",
-              "Church member",
-              "IBA staff member",
-              "Friend of the school",
-              "Other"
-            ]
-          },
-          {
             "label": "Student's name",
             "type": "Short answer",
             "required": true
-          },
-          {
-            "label": "Grade the student would enter",
-            "type": "Dropdown (pick one)",
-            "required": true,
-            "choices": [
-              "K3 (Preschool)",
-              "K4 (Preschool)",
-              "K5",
-              "1st grade",
-              "2nd grade",
-              "3rd grade",
-              "4th grade",
-              "5th grade",
-              "6th grade",
-              "7th grade",
-              "8th grade",
-              "9th grade",
-              "10th grade",
-              "11th grade",
-              "12th grade",
-              "Not sure"
-            ]
-          },
-          {
-            "label": "Student's age",
-            "type": "Number",
-            "required": false
           },
           {
             "label": "How do you know this family?",
             "type": "Short answer",
             "required": true,
             "help": "For example: neighbor, church, co-worker, sports team."
+          },
+          {
+            "label": "The student is respectful to adults.",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Strongly disagree",
+              "Disagree",
+              "N/A",
+              "Agree",
+              "Strongly agree"
+            ]
+          },
+          {
+            "label": "The student gets along well with other children.",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Strongly disagree",
+              "Disagree",
+              "N/A",
+              "Agree",
+              "Strongly agree"
+            ]
+          },
+          {
+            "label": "The student works hard in school.",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Strongly disagree",
+              "Disagree",
+              "N/A",
+              "Agree",
+              "Strongly agree"
+            ]
+          },
+          {
+            "label": "The student follows rules and instructions.",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Strongly disagree",
+              "Disagree",
+              "N/A",
+              "Agree",
+              "Strongly agree"
+            ]
+          },
+          {
+            "label": "The student would be a good influence on classmates.",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Strongly disagree",
+              "Disagree",
+              "N/A",
+              "Agree",
+              "Strongly agree"
+            ]
+          },
+          {
+            "label": "The student attends church regularly.",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Strongly disagree",
+              "Disagree",
+              "N/A",
+              "Agree",
+              "Strongly agree"
+            ]
+          },
+          {
+            "label": "The student's family values a Christian education.",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Strongly disagree",
+              "Disagree",
+              "N/A",
+              "Agree",
+              "Strongly agree"
+            ]
           },
           {
             "label": "How would you describe the student's character?",
@@ -416,28 +459,6 @@
             "type": "Long answer",
             "required": false,
             "help": "Sports, music, art, reading, math, etc."
-          },
-          {
-            "label": "How is the student doing in school?",
-            "type": "Dropdown (pick one)",
-            "required": false,
-            "choices": [
-              "Doing very well",
-              "Doing well",
-              "Struggling in some areas",
-              "Not sure"
-            ]
-          },
-          {
-            "label": "Does the student attend church?",
-            "type": "Dropdown (pick one)",
-            "required": false,
-            "choices": [
-              "Yes, regularly",
-              "Sometimes",
-              "No",
-              "Not sure"
-            ]
           },
           {
             "label": "Best way for us to reach the family",
