@@ -96,6 +96,11 @@
       "section": "supply-lists"
     },
     {
+      "title": "Recommend a Family",
+      "description": "Know a family who would love IBA? Tell us about them.",
+      "section": "refer"
+    },
+    {
       "title": "Feedback for Administration",
       "description": "Share a question, concern, suggestion, or word of thanks.",
       "section": "feedback"
@@ -331,6 +336,150 @@
         "closed": false
       },
       "anchor": "traffic"
+    },
+    {
+      "title": "Recommend a Family",
+      "text": "Do you know a family who would love Independent Baptist Academy? We would be glad to hear about them. Tell us a little about the student, and leave your own contact information so we can follow up with you if we have questions. Thank you for helping our school family grow!",
+      "show_lunch": false,
+      "show_absence": false,
+      "show_feedback": false,
+      "form": {
+        "name": "Student Referral",
+        "button": "Send my recommendation",
+        "closed": false,
+        "questions": [
+          {
+            "label": "Your phone number",
+            "type": "Phone",
+            "required": true
+          },
+          {
+            "label": "Student's name",
+            "type": "Short answer",
+            "required": true
+          },
+          {
+            "label": "How do you know this family?",
+            "type": "Short answer",
+            "required": true,
+            "help": "For example: neighbor, church, co-worker, sports team."
+          },
+          {
+            "label": "The student is respectful to adults.",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Strongly disagree",
+              "Disagree",
+              "N/A",
+              "Agree",
+              "Strongly agree"
+            ]
+          },
+          {
+            "label": "The student gets along well with other children.",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Strongly disagree",
+              "Disagree",
+              "N/A",
+              "Agree",
+              "Strongly agree"
+            ]
+          },
+          {
+            "label": "The student works hard in school.",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Strongly disagree",
+              "Disagree",
+              "N/A",
+              "Agree",
+              "Strongly agree"
+            ]
+          },
+          {
+            "label": "The student follows rules and instructions.",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Strongly disagree",
+              "Disagree",
+              "N/A",
+              "Agree",
+              "Strongly agree"
+            ]
+          },
+          {
+            "label": "The student would be a good influence on classmates.",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Strongly disagree",
+              "Disagree",
+              "N/A",
+              "Agree",
+              "Strongly agree"
+            ]
+          },
+          {
+            "label": "The student attends church regularly.",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Strongly disagree",
+              "Disagree",
+              "N/A",
+              "Agree",
+              "Strongly agree"
+            ]
+          },
+          {
+            "label": "The student's family values a Christian education.",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Strongly disagree",
+              "Disagree",
+              "N/A",
+              "Agree",
+              "Strongly agree"
+            ]
+          },
+          {
+            "label": "Tell us about the student's family.",
+            "type": "Long answer",
+            "required": false,
+            "help": "For example: parents, brothers and sisters, church, what matters to them."
+          },
+          {
+            "label": "How would you describe the student's character?",
+            "type": "Long answer",
+            "required": true,
+            "help": "For example: kind, respectful, a hard worker, a leader."
+          },
+          {
+            "label": "What are the student's interests or strengths?",
+            "type": "Long answer",
+            "required": false,
+            "help": "Sports, music, art, reading, math, etc."
+          },
+          {
+            "label": "Why do you think IBA would be a good fit for this student?",
+            "type": "Long answer",
+            "required": true
+          },
+          {
+            "label": "Anything else we should know?",
+            "type": "Long answer",
+            "required": false,
+            "help": "Interests, sports, siblings, special needs, timing, etc."
+          }
+        ]
+      },
+      "anchor": "refer"
     },
     {
       "title": "Feedback for Administration",
