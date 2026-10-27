@@ -449,6 +449,12 @@
             ]
           },
           {
+            "label": "Tell us about the student's family.",
+            "type": "Long answer",
+            "required": false,
+            "help": "For example: parents, brothers and sisters, church, what matters to them."
+          },
+          {
             "label": "How would you describe the student's character?",
             "type": "Long answer",
             "required": true,
