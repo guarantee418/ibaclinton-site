@@ -461,17 +461,6 @@
             "help": "Sports, music, art, reading, math, etc."
           },
           {
-            "label": "Best way for us to reach the family",
-            "type": "Dropdown (pick one)",
-            "required": false,
-            "choices": [
-              "Phone call",
-              "Text message",
-              "Email",
-              "Please go through me first"
-            ]
-          },
-          {
             "label": "Why do you think IBA would be a good fit for this student?",
             "type": "Long answer",
             "required": true
