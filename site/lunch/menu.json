@@ -1,52 +1,54 @@
 {
-  "week_start": "2026-10-26",
-  "week_end": "2026-10-30",
-  "week_label": "October 26 \u2013 29",
-  "deadline": "2026-10-23T13:00:00+00:00",
-  "deadline_label": "Friday, October 23 at 9:00 AM",
+  "week_start": "2026-11-02",
+  "week_end": "2026-11-06",
+  "week_label": "November 2 \u2013 6",
+  "deadline": "2026-10-30T13:00:00+00:00",
+  "deadline_label": "Friday, October 30 at 9:00 AM",
   "note": "",
   "graphic": "",
   "days": [
     {
       "key": "mon",
       "day": "Monday",
-      "meal": "Hotdogs & Chips",
+      "meal": "Pizza & Chips",
       "options": [],
-      "date": "2026-10-26",
-      "date_label": "Oct 26"
+      "date": "2026-11-02",
+      "date_label": "Nov 2"
     },
     {
       "key": "tue",
       "day": "Tuesday",
-      "meal": "Chicken Quesadillas & Spanish Rice",
+      "meal": "Orange Chicken & Rice",
       "options": [],
-      "date": "2026-10-27",
-      "date_label": "Oct 27"
+      "date": "2026-11-03",
+      "date_label": "Nov 3"
     },
     {
       "key": "wed",
       "day": "Wednesday",
-      "meal": "Philly Cheesesteaks & Fries",
+      "meal": "Nachos",
       "options": [],
-      "date": "2026-10-28",
-      "date_label": "Oct 28"
+      "date": "2026-11-04",
+      "date_label": "Nov 4"
     },
     {
       "key": "thu",
       "day": "Thursday",
-      "meal": "Grilled Chicken & Potatoes",
+      "meal": "Chicken Sandwich & Fries",
       "options": [],
-      "date": "2026-10-29",
-      "date_label": "Oct 29"
-    }
-  ],
-  "no_school": [
+      "date": "2026-11-05",
+      "date_label": "Nov 5"
+    },
     {
+      "key": "fri",
       "day": "Friday",
-      "date": "2026-10-30",
-      "date_label": "Oct 30"
+      "meal": "Hotdogs & Chips",
+      "options": [],
+      "date": "2026-11-06",
+      "date_label": "Nov 6"
     }
   ],
+  "no_school": [],
   "prices": {
     "regular": 8.0,
     "preschool": 5.0,
@@ -137,54 +139,56 @@
   ],
   "weeks": [
     {
-      "week_start": "2026-10-26",
-      "week_end": "2026-10-30",
-      "week_label": "October 26 \u2013 29",
-      "deadline": "2026-10-23T13:00:00+00:00",
-      "deadline_label": "Friday, October 23 at 9:00 AM",
+      "week_start": "2026-11-02",
+      "week_end": "2026-11-06",
+      "week_label": "November 2 \u2013 6",
+      "deadline": "2026-10-30T13:00:00+00:00",
+      "deadline_label": "Friday, October 30 at 9:00 AM",
       "note": "",
       "graphic": "",
       "days": [
         {
           "key": "mon",
           "day": "Monday",
-          "meal": "Hotdogs & Chips",
+          "meal": "Pizza & Chips",
           "options": [],
-          "date": "2026-10-26",
-          "date_label": "Oct 26"
+          "date": "2026-11-02",
+          "date_label": "Nov 2"
         },
         {
           "key": "tue",
           "day": "Tuesday",
-          "meal": "Chicken Quesadillas & Spanish Rice",
+          "meal": "Orange Chicken & Rice",
           "options": [],
-          "date": "2026-10-27",
-          "date_label": "Oct 27"
+          "date": "2026-11-03",
+          "date_label": "Nov 3"
         },
         {
           "key": "wed",
           "day": "Wednesday",
-          "meal": "Philly Cheesesteaks & Fries",
+          "meal": "Nachos",
           "options": [],
-          "date": "2026-10-28",
-          "date_label": "Oct 28"
+          "date": "2026-11-04",
+          "date_label": "Nov 4"
         },
         {
           "key": "thu",
           "day": "Thursday",
-          "meal": "Grilled Chicken & Potatoes",
+          "meal": "Chicken Sandwich & Fries",
           "options": [],
-          "date": "2026-10-29",
-          "date_label": "Oct 29"
+          "date": "2026-11-05",
+          "date_label": "Nov 5"
+        },
+        {
+          "key": "fri",
+          "day": "Friday",
+          "meal": "Hotdogs & Chips",
+          "options": [],
+          "date": "2026-11-06",
+          "date_label": "Nov 6"
         }
       ],
-      "no_school": [
-        {
-          "day": "Friday",
-          "date": "2026-10-30",
-          "date_label": "Oct 30"
-        }
-      ]
+      "no_school": []
     }
   ]
 }
