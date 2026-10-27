@@ -96,6 +96,11 @@
       "section": "supply-lists"
     },
     {
+      "title": "Recommend a Family",
+      "description": "Know a family who would love IBA? Tell us about them.",
+      "section": "refer"
+    },
+    {
       "title": "Feedback for Administration",
       "description": "Share a question, concern, suggestion, or word of thanks.",
       "section": "feedback"
@@ -331,6 +336,126 @@
         "closed": false
       },
       "anchor": "traffic"
+    },
+    {
+      "title": "Recommend a Family",
+      "text": "Do you know a family who would love Independent Baptist Academy? We would be glad to hear about them. Tell us a little about the student and the family, and leave your own contact information so we can follow up with you if we have questions. Thank you for helping our school family grow!",
+      "show_lunch": false,
+      "show_absence": false,
+      "show_feedback": false,
+      "form": {
+        "name": "Student Referral",
+        "button": "Send my recommendation",
+        "closed": false,
+        "questions": [
+          {
+            "label": "Your phone number",
+            "type": "Phone",
+            "required": true
+          },
+          {
+            "label": "How are you connected to IBA?",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Current IBA parent",
+              "IBA alumni",
+              "Church member",
+              "IBA staff member",
+              "Friend of the school",
+              "Other"
+            ]
+          },
+          {
+            "label": "Student's name",
+            "type": "Short answer",
+            "required": true
+          },
+          {
+            "label": "Grade the student would enter",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "K3 (Preschool)",
+              "K4 (Preschool)",
+              "K5",
+              "1st grade",
+              "2nd grade",
+              "3rd grade",
+              "4th grade",
+              "5th grade",
+              "6th grade",
+              "7th grade",
+              "8th grade",
+              "9th grade",
+              "10th grade",
+              "11th grade",
+              "12th grade",
+              "Not sure"
+            ]
+          },
+          {
+            "label": "School the student attends now",
+            "type": "Short answer",
+            "required": false,
+            "help": "Or homeschool, or not in school yet."
+          },
+          {
+            "label": "Parent or guardian's name",
+            "type": "Short answer",
+            "required": true
+          },
+          {
+            "label": "Parent or guardian's phone",
+            "type": "Phone",
+            "required": false
+          },
+          {
+            "label": "Parent or guardian's email",
+            "type": "Email",
+            "required": false
+          },
+          {
+            "label": "How do you know this family?",
+            "type": "Short answer",
+            "required": true,
+            "help": "For example: neighbor, church, co-worker, sports team."
+          },
+          {
+            "label": "Does the family know you are recommending them?",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Yes, they asked me to",
+              "Yes, they know",
+              "No, please contact them kindly"
+            ]
+          },
+          {
+            "label": "Best way for us to reach the family",
+            "type": "Dropdown (pick one)",
+            "required": false,
+            "choices": [
+              "Phone call",
+              "Text message",
+              "Email",
+              "Please go through me first"
+            ]
+          },
+          {
+            "label": "Why do you think IBA would be a good fit for this student?",
+            "type": "Long answer",
+            "required": true
+          },
+          {
+            "label": "Anything else we should know?",
+            "type": "Long answer",
+            "required": false,
+            "help": "Interests, sports, siblings, special needs, timing, etc."
+          }
+        ]
+      },
+      "anchor": "refer"
     },
     {
       "title": "Feedback for Administration",
