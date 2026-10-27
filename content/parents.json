@@ -339,7 +339,7 @@
     },
     {
       "title": "Recommend a Family",
-      "text": "Do you know a family who would love Independent Baptist Academy? We would be glad to hear about them. Tell us a little about the student and the family, and leave your own contact information so we can follow up with you if we have questions. Thank you for helping our school family grow!",
+      "text": "Do you know a family who would love Independent Baptist Academy? We would be glad to hear about them. Tell us a little about the student, and leave your own contact information so we can follow up with you if we have questions. Thank you for helping our school family grow!",
       "show_lunch": false,
       "show_absence": false,
       "show_feedback": false,
@@ -395,24 +395,8 @@
             ]
           },
           {
-            "label": "School the student attends now",
-            "type": "Short answer",
-            "required": false,
-            "help": "Or homeschool, or not in school yet."
-          },
-          {
-            "label": "Parent or guardian's name",
-            "type": "Short answer",
-            "required": true
-          },
-          {
-            "label": "Parent or guardian's phone",
-            "type": "Phone",
-            "required": false
-          },
-          {
-            "label": "Parent or guardian's email",
-            "type": "Email",
+            "label": "Student's age",
+            "type": "Number",
             "required": false
           },
           {
@@ -422,13 +406,37 @@
             "help": "For example: neighbor, church, co-worker, sports team."
           },
           {
-            "label": "Does the family know you are recommending them?",
-            "type": "Dropdown (pick one)",
+            "label": "How would you describe the student's character?",
+            "type": "Long answer",
             "required": true,
+            "help": "For example: kind, respectful, a hard worker, a leader."
+          },
+          {
+            "label": "What are the student's interests or strengths?",
+            "type": "Long answer",
+            "required": false,
+            "help": "Sports, music, art, reading, math, etc."
+          },
+          {
+            "label": "How is the student doing in school?",
+            "type": "Dropdown (pick one)",
+            "required": false,
             "choices": [
-              "Yes, they asked me to",
-              "Yes, they know",
-              "No, please contact them kindly"
+              "Doing very well",
+              "Doing well",
+              "Struggling in some areas",
+              "Not sure"
+            ]
+          },
+          {
+            "label": "Does the student attend church?",
+            "type": "Dropdown (pick one)",
+            "required": false,
+            "choices": [
+              "Yes, regularly",
+              "Sometimes",
+              "No",
+              "Not sure"
             ]
           },
           {
