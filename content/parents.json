@@ -199,23 +199,6 @@
       "anchor": "athletics"
     },
     {
-      "title": "Intramural Sports",
-      "text": "Every year for the elementary grades we have intramural sports. They always enjoy getting to face off against their fellow classmates on the basketball court as well as on the soccer field. We create our own league within the school. All parents are welcome to come in and watch their student play just like any other sports game. This ensures that our elementary students benefit from playing sports without the added expense and time it takes to participate in a league.\n\nGame schedules and team lists are sent home to families. Please contact the school office if you need a copy.",
-      "links": [
-        {
-          "title": "Intramural Soccer Schedule",
-          "file": "/files/intramural-soccer-2026-2.pdf"
-        }
-      ],
-      "show_lunch": false,
-      "show_absence": false,
-      "show_feedback": false,
-      "form": {
-        "closed": false
-      },
-      "anchor": "intramurals"
-    },
-    {
       "title": "Hot Lunch",
       "show_lunch": true,
       "show_absence": false,
