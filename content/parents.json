@@ -184,6 +184,10 @@
       "links": [
         {
           "title": "Boys Basketball 2026-2027"
+        },
+        {
+          "title": "2nd-6th Grade Soccer Intramurals",
+          "file": "/files/intramural-soccer-2026-3.pdf"
         }
       ],
       "show_lunch": false,
@@ -367,86 +371,86 @@
           {
             "label": "The student is respectful to adults.",
             "type": "Dropdown (pick one)",
-            "required": true,
             "choices": [
               "Strongly disagree",
               "Disagree",
               "N/A",
               "Agree",
               "Strongly agree"
-            ]
+            ],
+            "required": true
           },
           {
             "label": "The student gets along well with other children.",
             "type": "Dropdown (pick one)",
-            "required": true,
             "choices": [
               "Strongly disagree",
               "Disagree",
               "N/A",
               "Agree",
               "Strongly agree"
-            ]
+            ],
+            "required": true
           },
           {
             "label": "The student works hard in school.",
             "type": "Dropdown (pick one)",
-            "required": true,
             "choices": [
               "Strongly disagree",
               "Disagree",
               "N/A",
               "Agree",
               "Strongly agree"
-            ]
+            ],
+            "required": true
           },
           {
             "label": "The student follows rules and instructions.",
             "type": "Dropdown (pick one)",
-            "required": true,
             "choices": [
               "Strongly disagree",
               "Disagree",
               "N/A",
               "Agree",
               "Strongly agree"
-            ]
+            ],
+            "required": true
           },
           {
             "label": "The student would be a good influence on classmates.",
             "type": "Dropdown (pick one)",
-            "required": true,
             "choices": [
               "Strongly disagree",
               "Disagree",
               "N/A",
               "Agree",
               "Strongly agree"
-            ]
+            ],
+            "required": true
           },
           {
             "label": "The student attends church regularly.",
             "type": "Dropdown (pick one)",
-            "required": true,
             "choices": [
               "Strongly disagree",
               "Disagree",
               "N/A",
               "Agree",
               "Strongly agree"
-            ]
+            ],
+            "required": true
           },
           {
             "label": "The student's family values a Christian education.",
             "type": "Dropdown (pick one)",
-            "required": true,
             "choices": [
               "Strongly disagree",
               "Disagree",
               "N/A",
               "Agree",
               "Strongly agree"
-            ]
+            ],
+            "required": true
           },
           {
             "label": "Tell us about the student's family.",
