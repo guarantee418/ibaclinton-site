@@ -58,6 +58,12 @@
       "title": "Dream Job Day",
       "graphic": "/files/62.png",
       "hidden": false
+    },
+    {
+      "script": "Thursday",
+      "title": "Wacky Hat Day",
+      "graphic": "/files/63.png",
+      "hidden": false
     }
   ],
   "tiles_script": "Inside the Corner",
