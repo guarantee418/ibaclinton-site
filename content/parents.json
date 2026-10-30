@@ -40,6 +40,12 @@
       "when": "Friday, October 30",
       "graphic": "/files/no-school.png",
       "hidden": false
+    },
+    {
+      "script": "Monday",
+      "title": "Crazy Hair Day",
+      "graphic": "/files/60.png",
+      "hidden": false
     }
   ],
   "tiles_script": "Inside the Corner",
