@@ -64,6 +64,12 @@
       "title": "Wacky Hat Day",
       "graphic": "/files/63.png",
       "hidden": false
+    },
+    {
+      "script": "Friday",
+      "title": "Purple and Gold Day",
+      "graphic": "/files/64-2.png",
+      "hidden": false
     }
   ],
   "tiles_script": "Inside the Corner",
