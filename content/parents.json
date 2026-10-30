@@ -33,6 +33,13 @@
       "show_from": "2026-10-26",
       "show_until": "2026-11-07",
       "hidden": false
+    },
+    {
+      "script": "Reminder",
+      "title": "No School",
+      "when": "Friday, October 30",
+      "graphic": "/files/no-school.png",
+      "hidden": false
     }
   ],
   "tiles_script": "Inside the Corner",
