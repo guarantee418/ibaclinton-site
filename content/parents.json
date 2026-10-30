@@ -15,6 +15,14 @@
       "hidden": false
     },
     {
+      "title": "Spirit Week",
+      "when": "November 2-6",
+      "graphic": "/files/school-screens-4.png",
+      "show_from": "2026-10-26",
+      "show_until": "2026-11-07",
+      "hidden": false
+    },
+    {
       "script": "Monday",
       "title": "Crazy Hair Day",
       "graphic": "/files/60.png",
@@ -42,14 +50,6 @@
       "script": "Friday",
       "title": "Purple and Gold Day",
       "graphic": "/files/64-2.png",
-      "hidden": false
-    },
-    {
-      "title": "Spirit Week",
-      "when": "November 2-6",
-      "graphic": "/files/school-screens-4.png",
-      "show_from": "2026-10-26",
-      "show_until": "2026-11-07",
       "hidden": false
     },
     {
