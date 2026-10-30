@@ -46,6 +46,12 @@
       "title": "Crazy Hair Day",
       "graphic": "/files/60.png",
       "hidden": false
+    },
+    {
+      "script": "Tuesday",
+      "title": "Favorite Team Day",
+      "graphic": "/files/61.png",
+      "hidden": false
     }
   ],
   "tiles_script": "Inside the Corner",
