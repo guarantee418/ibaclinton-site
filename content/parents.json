@@ -8,33 +8,6 @@
   },
   "announcements": [
     {
-      "script": "Coming up",
-      "title": "Parent-Teacher Conferences",
-      "when": "Monday, November 16 · 9:00 AM – 1:00 PM",
-      "text": "Sign up for a 15-minute conference with your child's teacher. Sign-up closes Friday, November 13 at 3:00 PM.",
-      "button_text": "Sign up",
-      "button_url": "https://ibaclinton.com/conferences/",
-      "show_until": "2026-11-16",
-      "hidden": false
-    },
-    {
-      "script": "Every week",
-      "title": "Hot Lunch",
-      "when": "Orders close Friday at 9:00 AM",
-      "text": "See this week's menu and order hot lunch for next week right here on The Kings Corner.",
-      "button_text": "Order lunch",
-      "button_url": "hot-lunch",
-      "hidden": false
-    },
-    {
-      "title": "Spirit Week",
-      "when": "November 2-6",
-      "graphic": "/files/school-screens-4.png",
-      "show_from": "2026-10-26",
-      "show_until": "2026-11-07",
-      "hidden": false
-    },
-    {
       "script": "Reminder",
       "title": "No School",
       "when": "Friday, October 30",
@@ -69,6 +42,35 @@
       "script": "Friday",
       "title": "Purple and Gold Day",
       "graphic": "/files/64-2.png",
+      "hidden": false
+    },
+    {
+      "title": "Spirit Week",
+      "when": "November 2-6",
+      "graphic": "/files/school-screens-4.png",
+      "show_from": "2026-10-26",
+      "show_until": "2026-11-07",
+      "hidden": false
+    },
+    {
+      "script": "Coming up",
+      "title": "Parent-Teacher Conferences",
+      "when": "Monday, November 16 · 9:00 AM – 1:00 PM",
+      "text": "Sign up for a 15-minute conference with your child's teacher. Sign-up closes Friday, November 13 at 3:00 PM.",
+      "graphic": "/files/school-screens-4.png",
+      "button_text": "Sign up",
+      "button_url": "https://ibaclinton.com/conferences/",
+      "show_until": "2026-11-16",
+      "hidden": false
+    },
+    {
+      "script": "Every week",
+      "title": "Hot Lunch",
+      "when": "Orders close Friday at 9:00 AM",
+      "text": "See this week's menu and order hot lunch for next week right here on The Kings Corner.",
+      "graphic": "/files/school-screens-4.png",
+      "button_text": "Order lunch",
+      "button_url": "hot-lunch",
       "hidden": false
     }
   ],
