@@ -52,6 +52,12 @@
       "title": "Favorite Team Day",
       "graphic": "/files/61.png",
       "hidden": false
+    },
+    {
+      "script": "Wednesday",
+      "title": "Dream Job Day",
+      "graphic": "/files/62.png",
+      "hidden": false
     }
   ],
   "tiles_script": "Inside the Corner",
