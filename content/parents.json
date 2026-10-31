@@ -8,13 +8,6 @@
   },
   "announcements": [
     {
-      "script": "Reminder",
-      "title": "No School",
-      "when": "Friday, October 30",
-      "graphic": "/files/no-school.png",
-      "hidden": false
-    },
-    {
       "title": "Spirit Week",
       "when": "November 2-6",
       "graphic": "/files/school-screens-4.png",
@@ -57,6 +50,7 @@
       "title": "Parent-Teacher Conferences",
       "when": "Monday, November 16 · 9:00 AM – 1:00 PM",
       "text": "Sign up for a 15-minute conference with your child's teacher. Sign-up closes Friday, November 13 at 3:00 PM.",
+      "graphic": "/files/64-2.png",
       "button_text": "Sign up",
       "button_url": "https://ibaclinton.com/conferences/",
       "show_until": "2026-11-16",
