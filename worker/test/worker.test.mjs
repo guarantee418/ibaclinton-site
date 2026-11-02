@@ -234,8 +234,9 @@ test("the Gradelink tab is added once, with the billing list read from the Order
   assert.ok(b.calls.length < 30);
   const a7 = b.calls.find((c) => c.path.endsWith("range(address='A7')"));
   assert.equal(a7.body.formulas[0][0], BILLING_FORMULA);
-  // An existing tab gets the new list only while A7 still holds the first version's formula.
-  for (const [old, writes] of [['=LET(f,(Orders[Week of]=$B$3)*(Orders[Student]<>""),m,"x")', 1], ["=SUM(1)", 0]]) {
+  // An existing tab gets the new list only while A7 still holds one of the service's older formulas.
+  const second = '=LET(d,Orders[Week of],w,IF(ISNUMBER(d),d,IFERROR(DATEVALUE(d),0)),b,IF(ISNUMBER($B$3),$B$3,IFERROR(DATEVALUE($B$3),-1)),f,(INT(w)=INT(b))*(Orders[Student]<>""),m,"No lunch orders for this week yet.",IF(SUM(f)=0,m,LET(k,UNIQUE(FILTER(HSTACK(Orders[Student],Orders[Grade]),f)),s,CHOOSECOLS(k,1),g,CHOOSECOLS(k,2),n,SUMIFS(Orders[Lunches],Orders[Week of],$B$3,Orders[Student],s,Orders[Grade],g),a,SUMIFS(Orders[Total],Orders[Week of],$B$3,Orders[Student],s,Orders[Grade],g),p,MAP(s,g,x)))';
+  for (const [old, writes] of [['=LET(f,(Orders[Week of]=$B$3)*(Orders[Student]<>""),m,"x")', 1], [second, 1], [BILLING_FORMULA, 0], ["=SUM(1)", 0]]) {
     const calls = [];
     const call = async (method, path, body) => {
       calls.push({ method, path, body });
@@ -245,8 +246,11 @@ test("the Gradelink tab is added once, with the billing list read from the Order
     };
     assert.equal(await ensureGradelinkTab(call), false);
     const w = calls.filter((c) => c.method === "PATCH");
-    assert.equal(w.length, writes);
-    if (writes) assert.equal(w[0].body.formulas[0][0], BILLING_FORMULA);
+    assert.equal(w.length > 0, writes === 1);
+    if (writes) {
+      assert.deepEqual(w.find((c) => c.path.endsWith("A6:I6')")).body.values[0].slice(0, 4), ["First Name", "Last Name", "Grade", "Charge"]);
+      assert.equal(w.find((c) => c.path.endsWith("A7')")).body.formulas[0][0], BILLING_FORMULA);
+    }
   }
   // Balanced brackets, every Orders column it reads exists, and the empty week has a plain message.
   const f = BILLING_FORMULA;
@@ -274,12 +278,12 @@ test("the Gradelink check shows a week for a moment, then puts the week box back
   const call = async (method, path, body) => {
     calls.push({ method, path, body });
     if (path.endsWith("B3')?$select=formulas")) return new Response(JSON.stringify({ formulas: [["=TODAY()+3-WEEKDAY(TODAY()+3,3)"]] }));
-    if (path.includes("A7:I400")) return new Response(JSON.stringify({ values: [["Kim", "Ana Kim", "3rd Grade", "Jo Kim", 2, 8, 16, "m", ""], ["Lee", "Bo Lee", "K4", "Al Lee", 1, 5, 5, "m", ""], ["", "", "", "", "", "", "", "", ""]] }));
+    if (path.includes("A7:D400")) return new Response(JSON.stringify({ values: [["Bo", "Lee", "Preschool (K4)", 5], ["Ana", "Kim", "3rd Grade", 16], ["", "", "", ""]] }));
     if (path.includes("B3:B4")) return new Response(JSON.stringify({ text: [["10/26/2026"], ["$21.00"]] }));
     return new Response("{}");
   };
   const r = await tryGradelink(call, "2026-10-26", () => 3);
-  assert.deepEqual(r, { week: "10/26/2026", total_to_bill: "$21.00", order_rows_that_week: 3, shows: "list (2 students, 3 lunches, charges $21.00)" });
+  assert.deepEqual(r, { week: "10/26/2026", total_to_bill: "$21.00", order_rows_that_week: 3, shows: "list (2 students, charges $21.00)" });
   const writes = calls.filter((c) => c.method === "PATCH");
   assert.deepEqual(writes.map((c) => c.body), [{ values: [["10/26/2026"]] }, { formulas: [["=TODAY()+3-WEEKDAY(TODAY()+3,3)"]] }]);
 });
