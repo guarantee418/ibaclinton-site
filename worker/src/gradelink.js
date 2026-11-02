@@ -1,14 +1,17 @@
 // Gradelink billing: a "Gradelink" tab in the office workbook that lists, for one lunch week, what to charge
 // each student in Gradelink (Garrett, 2026-10-20). Formulas only, read from the Orders table: one row per
-// student (two orders for the same student that week are added together), siblings together by family name,
-// with the number of lunches, the price, the charge and a memo to paste into Gradelink. No IFERROR around it:
-// a broken formula shows as an error (checkGradelink reports it) instead of looking like an empty week.
-// "Week of" holds text like 10/26/2026 (as the service writes it) or a date the office typed: both count.
+// student (two orders for the same student that week are added together). Since 2026-11-02 it follows Garrett's
+// own billing sheet: First Name, Last Name, Grade, Charge, youngest grade first (staff last), then by last name.
+// No IFERROR around it: a broken formula shows as an error (checkGradelink reports it) instead of looking like an
+// empty week. "Week of" holds text like 10/26/2026 (as the service writes it) or a date the office typed: both count.
 // The tab is made only when missing (admin "setup", run by every lunch deploy); the office's edits are kept.
 
 export const GRADELINK_SHEET = "Gradelink";
 const NAVY = "#1B2A4A";
-const HEAD = ["Family", "Student", "Grade", "Parent", "Lunches", "Price per lunch", "Charge", "Gradelink memo", "Notes"];
+const HEAD = ["First Name", "Last Name", "Grade", "Charge"];
+// Grade labels as the order form writes them, youngest first; "Staff" (a staff member's own lunch) goes last.
+const GRADE_ORDER = ["Preschool (K3)", "Preschool (K4)", "Kindergarten (K5)", "1st Grade", "2nd Grade", "3rd Grade",
+  "4th Grade", "5th Grade", "6th Grade", "7th Grade", "8th Grade", "9th Grade", "10th Grade", "11th Grade", "12th Grade", "Staff"];
 
 // The yellow "Week of" boxes on the Kitchen, Homerooms and Gradelink tabs show the earliest week with orders,
 // starting from a given Monday (Garrett, 2026-10-20: all three showed 10/26 while the week of 10/19 had none),
@@ -33,22 +36,38 @@ export const BILLING_FORMULA =
   "f,(INT(w)=INT(b))*(Orders[Student]<>\"\"),m,\"No lunch orders for this week yet.\",IF(SUM(f)=0,m,LET(" +
   "k,UNIQUE(FILTER(HSTACK(Orders[Student],Orders[Grade]),f)),s,CHOOSECOLS(k,1),g,CHOOSECOLS(k,2)," +
   `n,SUMIFS(Orders[Lunches],${W}),a,SUMIFS(Orders[Total],${W}),` +
-  "p,MAP(s,g,LAMBDA(x,y,XLOOKUP(1,f*(Orders[Student]=x)*(Orders[Grade]=y),Orders[Parent],\"\")))," +
-  "nt,MAP(s,g,LAMBDA(x,y,TEXTJOIN(\"; \",TRUE,UNIQUE(FILTER(Orders[Notes],f*(Orders[Student]=x)*(Orders[Grade]=y)*(Orders[Notes]<>\"\"),\"\")))))," +
-  "fam,IFERROR(TEXTAFTER(TRIM(p),\" \",-1),p)," +
-  "t,HSTACK(fam,s,g,p,n,IF(n>0,a/n,0),a,\"Hot Lunch week of \"&TEXT($B$3,\"m/d/yyyy\")&\" (\"&n&IF(n=1,\" lunch)\",\" lunches)\"),nt)," +
-  "r,FILTER(t,n>0,m),IF(ROWS(r)*COLUMNS(r)=1,r,SORTBY(r,CHOOSECOLS(r,1),1,CHOOSECOLS(r,2),1)))))";
+  "nm,TRIM(s),fst,IFERROR(TEXTBEFORE(nm,\" \",-1),nm),lst,IFERROR(TEXTAFTER(nm,\" \",-1),\"\")," +
+  `o,IFERROR(XMATCH(g,{${GRADE_ORDER.map((x) => `"${x}"`).join(",")}}),99),` +
+  "r,FILTER(HSTACK(fst,lst,g,a,o),n>0,m),IF(ROWS(r)*COLUMNS(r)=1,r," +
+  "CHOOSECOLS(SORTBY(r,CHOOSECOLS(r,5),1,CHOOSECOLS(r,2),1,CHOOSECOLS(r,1),1),1,2,3,4)))))";
 
-const OLD_START = "=LET(f,(Orders[Week of]=$B$3)*(Orders[Student]<>\"\"),";
+// The first two lists (2026-10-20: Family, Student, Grade, Parent, Lunches, Price, Charge, memo, Notes) are replaced.
+const OLD_STARTS = ["=LET(f,(Orders[Week of]=$B$3)*(Orders[Student]<>\"\"),",
+  "=LET(d,Orders[Week of],w,IF(ISNUMBER(d),d,IFERROR(DATEVALUE(d),0)),b,IF(ISNUMBER($B$3),$B$3,IFERROR(DATEVALUE($B$3),-1)),f,(INT(w)=INT(b))*(Orders[Student]<>\"\"),m,\"No lunch orders for this week yet.\",IF(SUM(f)=0,m,LET(k,UNIQUE(FILTER(HSTACK(Orders[Student],Orders[Grade]),f)),s,CHOOSECOLS(k,1),g,CHOOSECOLS(k,2),n,SUMIFS(Orders[Lunches],Orders[Week of],$B$3,Orders[Student],s,Orders[Grade],g),a,SUMIFS(Orders[Total],Orders[Week of],$B$3,Orders[Student],s,Orders[Grade],g),p,"];
+
+// Headings, the list and its formats (also turns an older list into this one).
+async function writeList(call) {
+  const s = `/worksheets/${GRADELINK_SHEET}`;
+  await must(call("PATCH", `${s}/range(address='A6:I6')`, { values: [[...HEAD, "", "", "", "", ""]] }));
+  await must(call("PATCH", `${s}/range(address='A7')`, { formulas: [[BILLING_FORMULA]] }));
+  await call("PATCH", `${s}/range(address='D7:D400')`, { numberFormat: Array(394).fill(['"$"#,##0.00']) });
+  await call("PATCH", `${s}/range(address='E7:I400')`, { numberFormat: Array(394).fill(Array(5).fill("General")) });
+  await call("POST", `${s}/range(address='E6:I6')/format/fill/clear`, {});
+  await call("PATCH", `${s}/range(address='A6:D6')/format/font`, { bold: true, color: "#FFFFFF" });
+  await call("PATCH", `${s}/range(address='A6:D6')/format/fill`, { color: NAVY });
+  for (const [c, wd] of [["A", 120], ["B", 120], ["C", 130], ["D", 80]]) {
+    await call("PATCH", `${s}/range(address='${c}:${c}')/format`, { columnWidth: wd });
+  }
+}
 
 export async function ensureGradelinkTab(call) {
   const r = await call("GET", "/worksheets?$select=name");
   if (!r.ok) throw new Error(`worksheets ${r.status}`);
   if (((await r.json()).value || []).some((w) => w.name === GRADELINK_SHEET)) {
-    // The first list (2026-10-20) compared "Week of" exactly and missed the service's text dates: replace it.
+    // An older list (the service's own formula, not something the office typed) becomes this one.
     const a7 = await call("GET", `/worksheets/${GRADELINK_SHEET}/range(address='A7')?$select=formulas`);
     const f = a7.ok ? String(((await a7.json()).formulas || [[""]])[0][0]) : "";
-    if (f.startsWith(OLD_START)) await must(call("PATCH", `/worksheets/${GRADELINK_SHEET}/range(address='A7')`, { formulas: [[BILLING_FORMULA]] }));
+    if (OLD_STARTS.some((o) => f.startsWith(o))) await writeList(call);
     return false;
   }
   await must(call("POST", "/worksheets/add", { name: GRADELINK_SHEET }));
@@ -60,19 +79,12 @@ export async function ensureGradelinkTab(call) {
   }));
   await must(call("PATCH", `${s}/range(address='B3')`, { numberFormat: [["m/d/yyyy"]] }));
   await must(call("PATCH", `${s}/range(address='B4')`, { numberFormat: [['"$"#,##0.00']] }));
-  await must(call("PATCH", `${s}/range(address='A6:I6')`, { values: [HEAD] }));
-  await must(call("PATCH", `${s}/range(address='A7')`, { formulas: [[BILLING_FORMULA]] }));
-  await call("PATCH", `${s}/range(address='F7:G400')`, { numberFormat: Array(394).fill(['"$"#,##0.00', '"$"#,##0.00']) });
+  await writeList(call);
   await call("PATCH", `${s}/range(address='A1')/format/font`, { bold: true, size: 14, color: NAVY });
   await call("PATCH", `${s}/range(address='A3:A4')/format/font`, { bold: true });
   await call("PATCH", `${s}/range(address='B4')/format/font`, { bold: true });
   await call("PATCH", `${s}/range(address='B3')/format/fill`, { color: "#FFF7E0" });
   await call("PATCH", `${s}/range(address='C3')/format/font`, { italic: true, color: "#666666" });
-  await call("PATCH", `${s}/range(address='A6:I6')/format/font`, { bold: true, color: "#FFFFFF" });
-  await call("PATCH", `${s}/range(address='A6:I6')/format/fill`, { color: NAVY });
-  for (const [c, w] of [["A", 110], ["B", 160], ["C", 110], ["D", 150], ["E", 60], ["F", 90], ["G", 70], ["H", 250], ["I", 200]]) {
-    await call("PATCH", `${s}/range(address='${c}:${c}')/format`, { columnWidth: w });
-  }
   return true;
 }
 
@@ -97,14 +109,14 @@ export async function tryGradelink(call, week, orderRows) {
   const [y, m, d] = String(week || "").split("-").map(Number); // typed like the office does: 10/26/2026
   if (week) await must(call("PATCH", `${s}/range(address='B3')`, { values: [[`${m}/${d}/${y}`]] }));
   try {
-    const r = await call("GET", `${s}/range(address='A7:I400')?$select=values`);
+    const r = await call("GET", `${s}/range(address='A7:D400')?$select=values`);
     const rows = r.ok ? ((await r.json()).values || []).filter((x) => x[0] !== "" && x[0] != null) : [];
     const first = rows.length ? String(rows[0][0]) : "";
     const t = await call("GET", `${s}/range(address='B3:B4')?$select=text`);
     const [[wk], [total]] = t.ok ? (await t.json()).text : [[""], [""]];
     return { week: wk, total_to_bill: total, order_rows_that_week: orderRows(wk),
       shows: !rows.length ? "empty" : first.startsWith("#") ? `error ${first}` : first.startsWith("No lunch orders") ? "no orders this week"
-        : `list (${rows.length} students, ${rows.reduce((n, x) => n + (Number(x[4]) || 0), 0)} lunches, charges $${rows.reduce((n, x) => n + (Number(x[6]) || 0), 0).toFixed(2)})` };
+        : `list (${rows.length} students, charges $${rows.reduce((n, x) => n + (Number(x[3]) || 0), 0).toFixed(2)})` };
   } finally {
     if (week) await must(call("PATCH", `${s}/range(address='B3')`, { formulas: [[before]] }));
   }
