@@ -1,51 +1,51 @@
 {
-  "week_start": "2026-11-02",
-  "week_end": "2026-11-06",
-  "week_label": "November 2 \u2013 6",
-  "deadline": "2026-10-30T13:00:00+00:00",
-  "deadline_label": "Friday, October 30 at 9:00 AM",
+  "week_start": "2026-11-09",
+  "week_end": "2026-11-13",
+  "week_label": "November 9 \u2013 13",
+  "deadline": "2026-11-06T14:00:00+00:00",
+  "deadline_label": "Friday, November 6 at 9:00 AM",
   "note": "",
   "graphic": "",
   "days": [
     {
       "key": "mon",
       "day": "Monday",
-      "meal": "Pizza & Chips",
+      "meal": "Chili & Cornbread",
       "options": [],
-      "date": "2026-11-02",
-      "date_label": "Nov 2"
+      "date": "2026-11-09",
+      "date_label": "Nov 9"
     },
     {
       "key": "tue",
       "day": "Tuesday",
-      "meal": "Orange Chicken & Rice",
+      "meal": "Teriyaki Chicken & Rice",
       "options": [],
-      "date": "2026-11-03",
-      "date_label": "Nov 3"
+      "date": "2026-11-10",
+      "date_label": "Nov 10"
     },
     {
       "key": "wed",
       "day": "Wednesday",
-      "meal": "Nachos",
+      "meal": "NO SCHOOL",
       "options": [],
-      "date": "2026-11-04",
-      "date_label": "Nov 4"
+      "date": "2026-11-11",
+      "date_label": "Nov 11"
     },
     {
       "key": "thu",
       "day": "Thursday",
-      "meal": "Chicken Sandwich & Fries",
+      "meal": "Chicken Alfredo",
       "options": [],
-      "date": "2026-11-05",
-      "date_label": "Nov 5"
+      "date": "2026-11-12",
+      "date_label": "Nov 12"
     },
     {
       "key": "fri",
       "day": "Friday",
-      "meal": "Hotdogs & Chips",
+      "meal": "Corndogs & Fries",
       "options": [],
-      "date": "2026-11-06",
-      "date_label": "Nov 6"
+      "date": "2026-11-13",
+      "date_label": "Nov 13"
     }
   ],
   "no_school": [],
@@ -139,53 +139,53 @@
   ],
   "weeks": [
     {
-      "week_start": "2026-11-02",
-      "week_end": "2026-11-06",
-      "week_label": "November 2 \u2013 6",
-      "deadline": "2026-10-30T13:00:00+00:00",
-      "deadline_label": "Friday, October 30 at 9:00 AM",
+      "week_start": "2026-11-09",
+      "week_end": "2026-11-13",
+      "week_label": "November 9 \u2013 13",
+      "deadline": "2026-11-06T14:00:00+00:00",
+      "deadline_label": "Friday, November 6 at 9:00 AM",
       "note": "",
       "graphic": "",
       "days": [
         {
           "key": "mon",
           "day": "Monday",
-          "meal": "Pizza & Chips",
+          "meal": "Chili & Cornbread",
           "options": [],
-          "date": "2026-11-02",
-          "date_label": "Nov 2"
+          "date": "2026-11-09",
+          "date_label": "Nov 9"
         },
         {
           "key": "tue",
           "day": "Tuesday",
-          "meal": "Orange Chicken & Rice",
+          "meal": "Teriyaki Chicken & Rice",
           "options": [],
-          "date": "2026-11-03",
-          "date_label": "Nov 3"
+          "date": "2026-11-10",
+          "date_label": "Nov 10"
         },
         {
           "key": "wed",
           "day": "Wednesday",
-          "meal": "Nachos",
+          "meal": "NO SCHOOL",
           "options": [],
-          "date": "2026-11-04",
-          "date_label": "Nov 4"
+          "date": "2026-11-11",
+          "date_label": "Nov 11"
         },
         {
           "key": "thu",
           "day": "Thursday",
-          "meal": "Chicken Sandwich & Fries",
+          "meal": "Chicken Alfredo",
           "options": [],
-          "date": "2026-11-05",
-          "date_label": "Nov 5"
+          "date": "2026-11-12",
+          "date_label": "Nov 12"
         },
         {
           "key": "fri",
           "day": "Friday",
-          "meal": "Hotdogs & Chips",
+          "meal": "Corndogs & Fries",
           "options": [],
-          "date": "2026-11-06",
-          "date_label": "Nov 6"
+          "date": "2026-11-13",
+          "date_label": "Nov 13"
         }
       ],
       "no_school": []
