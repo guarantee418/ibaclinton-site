@@ -69,6 +69,22 @@
   ],
   "teachers": [
     {
+      "id": "miss-dove",
+      "name": "Miss Dove",
+      "subject": "K3 - Bears",
+      "members": [
+        "Miss Dove"
+      ]
+    },
+    {
+      "id": "mrs-febo",
+      "name": "Mrs. Febo",
+      "subject": "K4 - Otters",
+      "members": [
+        "Mrs. Febo"
+      ]
+    },
+    {
       "id": "ms-schmidley",
       "name": "Ms. Schmidley",
       "subject": "Kindergarten (K5)",
