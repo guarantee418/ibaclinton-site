@@ -55,6 +55,10 @@
       "hidden": false
     },
     {
+      "script": "Parent-Teacher Conferences",
+      "title": "No School",
+      "when": "Monday, November 16",
+      "graphic": "/files/pt-conferences.png",
       "hidden": false
     }
   ],
