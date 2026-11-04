@@ -210,6 +210,13 @@ form.info textarea{resize:vertical}
 .tour-list li span{color:var(--muted);font-size:.92rem}
 .tour-list li.open{border-color:var(--gold);background:var(--cream)}
 .tour-list .tour-status{font-weight:600;color:var(--navy)}
+.tour-h{margin:1.6rem 0 .6rem}
+.tour-expect{list-style:none;padding:0;margin:0 0 1.6rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(19rem,100%),1fr));gap:.4rem 2rem;max-width:44em}
+.tour-expect li{padding:.7rem 0;border-top:1px solid var(--line)}
+.tour-expect b{display:block;color:var(--navy)}
+form.info [aria-invalid="true"]{border-color:#b3261e;box-shadow:0 0 0 1px #b3261e}
+form.info .field-err{color:#b3261e;font-weight:600;font-size:.88rem}
+form.info input,form.info select,form.info textarea{scroll-margin-top:120px}
 .tour-list .tour-status.full{color:#9a3b30}.tour-list .tour-status.ok{color:#2c7a3f}
 .tour-form h3{margin:0;font-size:1.3rem;color:var(--navy)}
 #tour-status:empty{display:none}
