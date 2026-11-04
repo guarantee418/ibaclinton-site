@@ -6,6 +6,14 @@
   "break_minutes": 5,
   "teachers": [
     {
+      "name": "Miss Dove",
+      "subject": "K3 - Bears"
+    },
+    {
+      "name": "Mrs. Febo",
+      "subject": "K4 - Otters"
+    },
+    {
       "name": "Ms. Schmidley",
       "subject": "Kindergarten (K5)"
     },
@@ -19,11 +27,11 @@
     },
     {
       "name": "Mrs. Lundberg",
-      "subject": "3rd Grade"
+      "subject": "3rd Grade & 4th Grade Math"
     },
     {
       "name": "Mrs. Kirby",
-      "subject": "4th Grade"
+      "subject": "4th Grade & 3rd Grade Language, Bible"
     },
     {
       "name": "Mrs. Baumgartner",

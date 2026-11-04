@@ -16,24 +16,6 @@
       "hidden": false
     },
     {
-      "script": "Monday",
-      "title": "Crazy Hair Day",
-      "graphic": "/files/60.png",
-      "hidden": false
-    },
-    {
-      "script": "Tuesday",
-      "title": "Favorite Team Day",
-      "graphic": "/files/61.png",
-      "hidden": false
-    },
-    {
-      "script": "Wednesday",
-      "title": "Dream Job Day",
-      "graphic": "/files/62.png",
-      "hidden": false
-    },
-    {
       "script": "Thursday",
       "title": "Wacky Hat Day",
       "graphic": "/files/63.png",
@@ -62,6 +44,29 @@
       "text": "See this week's menu and order hot lunch for next week right here on The Kings Corner.",
       "button_text": "Order lunch",
       "button_url": "hot-lunch",
+      "hidden": false
+    },
+    {
+      "script": "Veteran's Day",
+      "title": "No School",
+      "when": "November 11",
+      "text": "Thank you to all the Veteran's in our school community for your sacrifice and service. You are our everyday heroes. Enjoy the day off with your families!",
+      "graphic": "/files/veterans-day.png",
+      "hidden": false
+    },
+    {
+      "script": "Parent-Teacher Conferences",
+      "title": "No School",
+      "when": "Monday, November 16",
+      "graphic": "/files/pt-conferences.png",
+      "hidden": false
+    },
+    {
+      "script": "Thanksgiving Break",
+      "title": "No School",
+      "when": "November 25-27",
+      "text": "Psalm 100:4 Enter into his gates with thanksgiving, and into his courts with praise: be thankful unto him, and bless his name.",
+      "graphic": "/files/thanksgiving-break.png",
       "hidden": false
     }
   ],
