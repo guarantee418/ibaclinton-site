@@ -254,10 +254,19 @@ form.info .tr-who{grid-template-columns:1fr}
 .kc-nav{position:absolute;top:50%;transform:translateY(-50%);width:52px;height:52px;display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.5);border-radius:50%;background:rgba(59,20,86,.55);color:#fff;cursor:pointer}
 .kc-nav:hover{background:var(--gold);border-color:var(--gold);color:var(--navy-d)}
 .kc-prev{left:24px}.kc-next{right:24px}
-.kc-dots{position:absolute;left:0;right:0;bottom:26px;display:flex;justify-content:center;gap:12px;pointer-events:none}
-.kc-dot{pointer-events:auto;width:16px;height:16px;padding:0;border:2px solid #fff;border-radius:50%;background:transparent;cursor:pointer}
-.kc-dot[aria-current="true"]{background:var(--gold);border-color:var(--gold)}
-.kc-nav:focus-visible,.kc-dot:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.kc-dots{position:absolute;left:0;right:0;bottom:18px;display:flex;justify-content:center;align-items:center;gap:14px;pointer-events:none}
+.kc-dot-list{display:flex;gap:4px}
+.kc-dot{pointer-events:auto;position:relative;width:28px;height:28px;padding:0;border:0;background:none;cursor:pointer}
+.kc-dot::after{content:"";position:absolute;inset:5px;border:2px solid #fff;border-radius:50%}
+.kc-dot[aria-current="true"]::after{background:var(--gold);border-color:var(--gold)}
+.kc-pause{pointer-events:auto;width:40px;height:40px;display:flex;align-items:center;justify-content:center;padding:0;border:2px solid rgba(255,255,255,.5);border-radius:50%;background:rgba(59,20,86,.55);color:#fff;cursor:pointer}
+.kc-pause svg{width:20px;height:20px}
+.kc-pause:hover{background:var(--gold);border-color:var(--gold);color:var(--navy-d)}
+.kc-count{display:none;font-weight:700;font-size:16px;color:#fff;font-variant-numeric:tabular-nums}
+.kc-nav:focus-visible,.kc-dot:focus-visible,.kc-pause:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.kc-quick{display:none}
+.kc-group{font:800 15px/1.2 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--navy);margin:0 0 14px}
+.kc-tiles+.kc-group{margin-top:40px}
 .kc-find{padding-top:64px}
 .kc-eyebrow{font-size:28px;color:#8a5aa8}
 .kc-h2{font:italic 800 48px/1 var(--kc-cond);text-transform:uppercase;color:var(--navy);margin:0 0 32px}
@@ -277,7 +286,7 @@ form.info .tr-who{grid-template-columns:1fr}
 .kc .docs a{border-radius:10px;border-color:var(--line)}
 .kc .docs a:hover{border-color:var(--navy);background:var(--cream)}
 .kc .btn{border-radius:12px}
-.kc .btn:hover{background:#fff1a0;border-color:#fff1a0}
+.kc .btn:hover{background:#fff1a0;border-color:#fff1a0;color:var(--navy-d)}
 .kc form.info legend{font:800 1.1rem var(--sans)}
 .kc .notice{border-radius:10px}
 /* Kings Corner pop-ups (site/kings.js): each section opens over the page with back buttons. */
@@ -300,9 +309,21 @@ html.kc-lock{overflow:hidden}
   .kc-slider-js .kc-hero-in{padding-left:20px;padding-right:20px;padding-bottom:72px}
   .kc-nav{top:auto;bottom:12px;transform:none;width:44px;height:44px}
   .kc-prev{left:16px}.kc-next{right:16px}
-  .kc-dots{bottom:26px}
-  .kc-ann-img{width:100%;max-height:320px}
-  .kc-flyer img{max-height:70vh}
+  .kc-dots{bottom:12px;height:44px}
+  .kc-dot-list{display:none}.kc-count{display:block}
+  .kc-pause{width:44px;height:44px}
+  .kc-hero-in{padding-top:32px;padding-bottom:32px}
+  .kc-lead{font-size:17px;margin-top:14px}
+  .kc-btn{margin-top:20px}
+  .kc-hero .kc-crest{display:none}
+  .kc-ann-img{width:100%;max-height:200px}
+  .kc-flyer img{max-height:52vh}
+  .kc-quick{display:block;padding-top:20px}
+  .kc-quick ul{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0;padding:0;list-style:none}
+  .kc-quick-link{display:flex;align-items:center;justify-content:center;text-align:center;min-height:56px;height:100%;box-sizing:border-box;padding:10px 12px;background:#fff;border:2px solid var(--navy);border-radius:12px;color:var(--navy);font-weight:800;font-size:16px;line-height:1.2;text-decoration:none}
+  .kc-quick-link:active{background:var(--cream)}
+  .kc-group{font-size:14px}
+  .kc-tiles+.kc-group{margin-top:28px}
   .kc-find{padding-top:44px}.kc-sections{padding-top:40px}
   .kc-h2{font-size:40px}
   .kc-tile{min-height:0}.kc-tiles{gap:14px}
