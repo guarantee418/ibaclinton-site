@@ -56,7 +56,7 @@ def table_name(form_id):
     """The table on that tab: letters and digits only (Excel's rule), e.g. Form_FieldTripPermission."""
     return "Form_" + ("".join(p.capitalize() for p in form_id.split("-"))[:40] or "Responses")
 
-def spec(section, used=None, prefix="", where="The Kings Corner"):
+def spec(section, used=None, prefix="", where="The Kings' Corner"):
     """One section's form as plain data, or None (no form, no name or no questions). The Teacher Portal's forms
     (teachers.py) have ids starting "teacher-", so their tables and remembered tabs never mix with the parents'."""
     f = section.get("form") if isinstance(section, dict) else None
@@ -100,7 +100,7 @@ def spec(section, used=None, prefix="", where="The Kings Corner"):
             "intro": _clean(f.get("intro"), 600), "button": _clean(f.get("button"), 40) or "Send",
             "where": where, "questions": questions}
 
-def specs(data, prefix="", where="The Kings Corner"):
+def specs(data, prefix="", where="The Kings' Corner"):
     used = set()
     return [s for s in (spec(sec, used, prefix, where) for sec in data.get("sections") or [] if str(sec.get("title") or "").strip()) if s]
 
