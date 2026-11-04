@@ -38,12 +38,11 @@ nav a:hover,nav a[aria-current]{color:var(--navy);text-decoration:underline;text
 .menu-btn{display:none;background:none;border:1px solid var(--line);padding:.5rem .8rem;font:inherit;color:var(--navy)}
 
 /* hero */
-.hero{color:#fff;background:var(--navy);border-bottom:10px solid var(--gold);padding:clamp(2.5rem,6vw,4.5rem) 0}
-.hero-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:clamp(2rem,5vw,4rem);align-items:center}
+.hero{color:#fff;background:linear-gradient(90deg,rgba(59,20,86,.93) 0%,rgba(59,20,86,.84) 48%,rgba(59,20,86,.5) 100%),url(img/classroom.jpg) center 30%/cover,var(--navy);border-bottom:10px solid var(--gold);padding:clamp(3rem,7vw,5.5rem) 0}
+.hero-copy{max-width:640px}
 .hero h1{color:#fff;font-size:clamp(2.2rem,4.6vw,3.5rem);text-wrap:balance}
 .hero p{max-width:34em;font-size:1.15rem;color:#f1e8f8}
 .hero .actions{display:flex;gap:.9rem;flex-wrap:wrap;margin-top:1.8rem}
-.hero-photo{border-radius:4px;aspect-ratio:4/3;object-fit:cover;width:100%}
 .facts{display:flex;flex-wrap:wrap;gap:1rem 2.4rem;margin:2.2rem 0 0;padding-top:1.4rem;border-top:1px solid rgba(255,255,255,.28)}
 .facts div{display:flex;flex-direction:column-reverse}
 .facts dt{font-size:.9rem;color:#f1e8f8}
@@ -163,9 +162,10 @@ form.info button{justify-self:start;cursor:pointer;font:inherit;font-weight:600}
 @media(max-width:820px){
   .split,.blocks,form.info fieldset{grid-template-columns:1fr}
   .split img{max-width:520px}
-  .intro,.two,.cards,.quotes,.hero-grid,.lead-in,.voice-rest,footer.site .wrap{grid-template-columns:1fr}
+  .intro,.two,.cards,.quotes,.lead-in,.voice-rest,footer.site .wrap{grid-template-columns:1fr}
   .top a{display:inline-flex;align-items:center;min-height:44px}.top .wrap{padding-top:0;padding-bottom:0}
   header.site img.logo{height:36px}
+  .hero{background:linear-gradient(rgba(59,20,86,.84),rgba(59,20,86,.9)),url(img/classroom.jpg) center/cover,var(--navy)}
   .menu-btn{display:block}
   nav{display:none;position:absolute;left:0;right:0;top:100%;background:#fff;border-bottom:1px solid var(--line);padding:1rem 20px}
   nav.open{display:block}nav ul{flex-direction:column;gap:.9rem}
