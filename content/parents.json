@@ -60,6 +60,14 @@
       "when": "Monday, November 16",
       "graphic": "/files/pt-conferences.png",
       "hidden": false
+    },
+    {
+      "script": "Thanksgiving Break",
+      "title": "No School",
+      "when": "November 25-27",
+      "text": "Psalm 100:4 Enter into his gates with thanksgiving, and into his courts with praise: be thankful unto him, and bless his name.",
+      "graphic": "/files/thanksgiving-break.png",
+      "hidden": false
     }
   ],
   "tiles_script": "Inside the Corner",
