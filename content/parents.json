@@ -16,24 +16,6 @@
       "hidden": false
     },
     {
-      "script": "Monday",
-      "title": "Crazy Hair Day",
-      "graphic": "/files/60.png",
-      "hidden": false
-    },
-    {
-      "script": "Tuesday",
-      "title": "Favorite Team Day",
-      "graphic": "/files/61.png",
-      "hidden": false
-    },
-    {
-      "script": "Wednesday",
-      "title": "Dream Job Day",
-      "graphic": "/files/62.png",
-      "hidden": false
-    },
-    {
       "script": "Thursday",
       "title": "Wacky Hat Day",
       "graphic": "/files/63.png",
@@ -50,6 +32,7 @@
       "title": "Parent-Teacher Conferences",
       "when": "Monday, November 16 · 9:00 AM – 1:00 PM",
       "text": "Sign up for a 15-minute conference with your child's teacher. Sign-up closes Friday, November 13 at 3:00 PM.",
+      "graphic": "/files/64-2.png",
       "button_text": "Sign up",
       "button_url": "https://ibaclinton.com/conferences/",
       "show_until": "2026-11-16",
@@ -60,6 +43,7 @@
       "title": "Hot Lunch",
       "when": "Orders close Friday at 9:00 AM",
       "text": "See this week's menu and order hot lunch for next week right here on The Kings Corner.",
+      "graphic": "/files/64-2.png",
       "button_text": "Order lunch",
       "button_url": "hot-lunch",
       "hidden": false
