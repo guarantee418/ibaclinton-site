@@ -247,7 +247,7 @@ def parents_block(data, root):
 
 # Phone-only shortcuts under the Kings' Corner banner: these sections, when a tile opens them, by the tile's own name.
 PARENTS_QUICK = ("hot-lunch", "absence", "conferences", "gradelink")
-# A section that links to one of these pages is a sign-up, so its tile goes under "Do it online".
+# A section that links to one of these pages is a sign-up, so its tile goes under "Online forms".
 SIGNUP_PAGES = ("conferences/", "tour/", "transcripts/", "request-info/")
 
 def portal_block(data, root, name, extras, file_url=None, form_endpoint="", grouped=False, quick=()):
@@ -335,13 +335,13 @@ def portal_block(data, root, name, extras, file_url=None, form_endpoint="", grou
             f'\n<script src="{root}kings.js" defer></script>')
 
 def tile_groups(cards, grouped):
-    """The tile grid; on The Kings' Corner split into "Do it online" (forms and sign-ups) and "Look it up",
+    """The tile grid; on The Kings' Corner split into "Online forms" (forms and sign-ups) and "Look it up",
     each keeping the office's order. One list when grouping is off or every tile falls in one group."""
     tasks, reads = [c for t, c in cards if t], [c for t, c in cards if not t]
     if not grouped or not tasks or not reads:
         return f'<ul class="kc-tiles">{"".join(c for _, c in cards)}</ul>'
     return "".join(f'<h3 class="kc-group">{head}</h3><ul class="kc-tiles">{"".join(group)}</ul>'
-                   for head, group in (("Do it online", tasks), ("Look it up", reads)))
+                   for head, group in (("Online forms", tasks), ("Look it up", reads)))
 
 def render(path, text, layout):
     head, body = text.split("\n---\n", 1)
