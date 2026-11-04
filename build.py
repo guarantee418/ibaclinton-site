@@ -243,9 +243,14 @@ def parents_extras(s, root):
 def parents_block(data, root):
     """The Kings Corner (parents page): hero and tile grid; each tile opens its section in a pop-up (site/kings.js).
     All text comes from content/parents.json. Without JavaScript the sections show below the tiles instead."""
-    return portal_block(data, root, "The Kings Corner", parents_extras)
+    return portal_block(data, root, "The Kings Corner", parents_extras, grouped=True, quick=PARENTS_QUICK)
 
-def portal_block(data, root, name, extras, file_url=None, form_endpoint=""):
+# Phone-only shortcuts under the Kings' Corner banner: these sections, when a tile opens them, by the tile's own name.
+PARENTS_QUICK = ("hot-lunch", "absence", "conferences", "gradelink")
+# A section that links to one of these pages is a sign-up, so its tile goes under "Online forms".
+SIGNUP_PAGES = ("conferences/", "tour/", "transcripts/", "request-info/")
+
+def portal_block(data, root, name, extras, file_url=None, form_endpoint="", grouped=False, quick=()):
     """A Kings Corner-style page: The Kings Corner, and the Teacher Portal (teachers.py) with the same look.
     extras(section, root) adds that page's own pieces to a section; file_url(name) links an uploaded file."""
     file_url = file_url or public_file(root)
@@ -278,10 +283,20 @@ def portal_block(data, root, name, extras, file_url=None, form_endpoint=""):
                      f'aria-label="Welcome and announcements"><ul class="kc-track">{items}</ul></div>'
                      f'<script src="{root}kings-slides.js" defer></script>')
 
+    blocks, form_ids = [], set()
+    for s in sections:
+        extra = extras(s, root)
+        extra += forms.form_html(s, root, LUNCH_API, form_ids, form_endpoint)  # a form the office added (forms.py)
+        # Tiles are sorted by what their section is for: a form or a sign-up page, or something to read.
+        s["_task"] = bool(extra.strip()) or any(p in json.dumps([s.get("text"), s.get("links")]) for p in SIGNUP_PAGES)
+        blocks.append(f'<div class="block" id="{s["_id"]}"><h2>{esc(s["title"])}</h2>'
+                      f'{clean_html(s.get("text"))}{docs_list(s.get("links"), root, file_url)}{extra}</div>')
+
     # A tile opens a section (its page link name) or goes to a full https:// address.
     # A tile whose section no longer exists is left out, so no tile is a dead link; a section that no tile opens
     # gets a plain tile at the end, so every section can be reached.
-    cards, used = [], set()
+    cards, used, quick_links = [], set(), {}
+    by_id = {s["_id"]: s for s in sections}
     for t in data.get("tiles") or []:
         title, target = esc(t.get("title")), str(t.get("section") or "").strip()
         href = esc(safe_url(target)) or (f"#{slug(target)}" if slug(target) in ids else "")
@@ -290,32 +305,43 @@ def portal_block(data, root, name, extras, file_url=None, form_endpoint=""):
                 print(f"  tile {title!r} left out: no section {target!r}")
             continue
         used.add(slug(target))
+        task = bool(by_id.get(slug(target), {}).get("_task")) and href.startswith("#")
+        if href.startswith("#") and slug(target) in quick and slug(target) not in quick_links:
+            quick_links[slug(target)] = f'<li><a class="kc-quick-link" href="{href}">{title}</a></li>'
+
         tag = f'<span class="kc-tag">{esc(t.get("tag"))}</span>' if esc(t.get("tag")) else ""
         desc = f'<span class="kc-desc">{esc(t.get("description"))}</span>' if esc(t.get("description")) else ""
-        cards.append(f'<li><a class="kc-tile" href="{href}"><span class="kc-tile-top"><span class="kc-tile-title">{title}</span>'
-                     f'{tag}</span>{desc}{ARROW}</a></li>')
+        cards.append((task, f'<li><a class="kc-tile" href="{href}"><span class="kc-tile-top"><span class="kc-tile-title">{title}</span>'
+                     f'{tag}</span>{desc}{ARROW}</a></li>'))
     for s in sections:
         if s["_id"] not in used:
-            cards.append(f'<li><a class="kc-tile" href="#{s["_id"]}"><span class="kc-tile-top"><span class="kc-tile-title">'
-                         f'{esc(s["title"])}</span></span>{ARROW}</a></li>')
+            cards.append((s["_task"], f'<li><a class="kc-tile" href="#{s["_id"]}"><span class="kc-tile-top"><span class="kc-tile-title">'
+                         f'{esc(s["title"])}</span></span>{ARROW}</a></li>'))
     tiles_html = ""
     if cards:
         tiles_html = (
             '<div class="kc-in kc-find">'
             + (f'<p class="kc-script kc-eyebrow">{esc(data.get("tiles_script"))}</p>' if esc(data.get("tiles_script")) else "")
             + (f'<h2 class="kc-h2">{esc(data.get("tiles_heading"))}</h2>' if esc(data.get("tiles_heading")) else "")
-            + f'<ul class="kc-tiles">{"".join(cards)}</ul></div>')
+            + tile_groups(cards, grouped) + '</div>')
+    quick_html = ""
+    if quick_links:
+        quick_html = ('<div class="kc-in kc-quick" role="navigation" aria-label="Quick links"><ul>'
+                      + "".join(quick_links[k] for k in quick if k in quick_links) + '</ul></div>')
 
-    blocks, form_ids = [], set()
-    for s in sections:
-        extra = extras(s, root)
-        extra += forms.form_html(s, root, LUNCH_API, form_ids, form_endpoint)  # a form the office added (forms.py)
-        blocks.append(f'<div class="block" id="{s["_id"]}"><h2>{esc(s["title"])}</h2>'
-                      f'{clean_html(s.get("text"))}{docs_list(s.get("links"), root, file_url)}{extra}</div>')
     back = f'Back to {esc(hero.get("title")) or name}'
-    return (f'<div class="kc" data-back="{back}">{hero_html}{tiles_html}'
+    return (f'<div class="kc" data-back="{back}">{hero_html}{quick_html}{tiles_html}'
             f'\n<div class="kc-in kc-sections"><div class="blocks">\n{"\n".join(blocks)}\n</div></div>\n</div>'
             f'\n<script src="{root}kings.js" defer></script>')
+
+def tile_groups(cards, grouped):
+    """The tile grid; on The Kings' Corner split into "Online forms" (forms and sign-ups) and "Look it up",
+    each keeping the office's order. One list when grouping is off or every tile falls in one group."""
+    tasks, reads = [c for t, c in cards if t], [c for t, c in cards if not t]
+    if not grouped or not tasks or not reads:
+        return f'<ul class="kc-tiles">{"".join(c for _, c in cards)}</ul>'
+    return "".join(f'<h3 class="kc-group">{head}</h3><ul class="kc-tiles">{"".join(group)}</ul>'
+                   for head, group in (("Online forms", tasks), ("Look it up", reads)))
 
 def render(path, text, layout):
     head, body = text.split("\n---\n", 1)
