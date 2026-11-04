@@ -141,22 +141,6 @@
         "Mr. Damm",
         "Mr. Greene"
       ]
-    },
-    {
-      "id": "miss-dove",
-      "name": "Miss Dove",
-      "subject": "K3 - Bears",
-      "members": [
-        "Miss Dove"
-      ]
-    },
-    {
-      "id": "mrs-febo",
-      "name": "Mrs. Febo",
-      "subject": "K4 - Otters",
-      "members": [
-        "Mrs. Febo"
-      ]
     }
   ]
 }
