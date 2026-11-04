@@ -51,7 +51,7 @@ SRC, OUT, CONTENT = ROOT / "src", ROOT / "site", ROOT / "content"
 # load the new styles as soon as they change instead of drawing new pages with old styles.
 CSS_VERSION = __import__("hashlib").sha256((OUT / "styles.css").read_bytes()).hexdigest()[:10]
 NAV = [("parents", "parents/", "Parents"), ("about", "about/", "About"),
-       ("staff", "about-copy/", "Staff"), ("academics", "academics/", "Academics"),
+       ("staff", "staff/", "Staff"), ("academics", "academics/", "Academics"),
        ("admissions", "admissions/", "Admissions"), ("student-life", "student-life/", "Student Life"),
        ("give", "https://secure.anedot.com/ibc/academy-donations", "Give")]
 
@@ -243,7 +243,7 @@ def parents_extras(s, root):
 def parents_block(data, root):
     """The Kings Corner (parents page): hero and tile grid; each tile opens its section in a pop-up (site/kings.js).
     All text comes from content/parents.json. Without JavaScript the sections show below the tiles instead."""
-    return portal_block(data, root, "The Kings Corner", parents_extras, grouped=True, quick=PARENTS_QUICK)
+    return portal_block(data, root, "The Kings' Corner", parents_extras, grouped=True, quick=PARENTS_QUICK)
 
 # Phone-only shortcuts under the Kings' Corner banner: these sections, when a tile opens them, by the tile's own name.
 PARENTS_QUICK = ("hot-lunch", "absence", "conferences", "gradelink")
@@ -357,7 +357,10 @@ def render(path, text, layout):
         f'<li><a href="{href if href.startswith("http") else root + href}"'
         f'{" aria-current=\"page\"" if key == meta.get("nav") else ""}>{label}</a></li>'
         for key, href, label in NAV)
-    cta = "" if meta.get("cta") == "no" else (SRC / "cta.html").read_text()
+    # cta: no = none; parents = "Questions? Call the office" (family pages); otherwise the Book a Tour box.
+    cta = {"no": "", "parents": (SRC / "cta-parents.html").read_text()}.get(meta.get("cta"))
+    if cta is None:
+        cta = (SRC / "cta.html").read_text()
     hero = meta.get("hero")
     banner = "" if meta.get("banner") == "no" else (
         f'<div class="page-hero"{f" style=\"--bg:url({root}img/{hero})\"" if hero else ""}>'
@@ -397,6 +400,16 @@ def render(path, text, layout):
     print("wrote", out.relative_to(ROOT))
     return None if rel.name == "404" or meta.get("hidden") == "yes" else out.relative_to(OUT).parent.as_posix()
 
+# Old addresses that moved; each gets a small page that sends visitors (and search engines) to the new one.
+REDIRECTS = {"about-copy": "staff/"}
+
+def redirect_page(new):
+    url = SITE_URL + new
+    return ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
+            f'<title>Moved</title><link rel="canonical" href="{url}"><meta name="robots" content="noindex">'
+            f'<meta http-equiv="refresh" content="0; url=../{new}"></head>'
+            f'<body><p>This page moved to <a href="../{new}">{url}</a>.</p></body></html>\n')
+
 def write(name, text):
     (OUT / name).write_text(text)
     print("wrote", (OUT / name).relative_to(ROOT))
@@ -416,6 +429,9 @@ if __name__ == "__main__":
     write("forms/forms.json", forms.forms_file(json.loads((CONTENT / "parents.json").read_text())))
     (OUT / "tours").mkdir(exist_ok=True)
     write("tours/schedule.json", tours.schedule_file(json.loads((CONTENT / "tours.json").read_text())))
+    for old, new in REDIRECTS.items():
+        (OUT / old).mkdir(exist_ok=True)
+        write(f"{old}/index.html", redirect_page(new))
     write("robots.txt", f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}sitemap.xml\n")
     cname = OUT / "CNAME"
     if DOMAIN:

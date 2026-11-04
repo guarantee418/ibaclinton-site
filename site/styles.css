@@ -95,7 +95,7 @@ blockquote footer span{display:block;font-weight:400;color:var(--muted);font-siz
 footer.site{background:var(--navy-d);color:#e6dcef;padding:3rem 0;font-size:.93rem}
 footer.site .wrap{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:2rem}
 .flogo{width:120px;height:auto;margin-bottom:1rem}
-footer.site h4{color:#fff;font-family:var(--serif);margin:0 0 .6rem}
+footer.site h4{color:#fff;font-family:var(--serif);font-size:1.15rem;margin:0 0 .6rem}
 footer.site a{text-decoration:none}footer.site a:hover{color:#fff}
 footer.site ul{list-style:none;padding:0;margin:0}
 .fine{grid-column:1/-1;border-top:1px solid #26365a;padding-top:1.2rem;font-size:.8rem}
@@ -131,7 +131,7 @@ section.tight{padding-top:clamp(2rem,4vw,3rem)}
 .person{text-align:center}
 .person img,.person .ph{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:4px;background:var(--cream)}
 .person .ph{display:flex;align-items:center;justify-content:center;font:700 2.6rem var(--serif);color:var(--navy);border:1px solid var(--line)}
-.person h3{font-size:1.15rem;margin:.8rem 0 .1rem}.person p{margin:0;color:var(--muted);font-size:.92rem}
+.person h3{font-size:1.3rem;margin:.8rem 0 .1rem}.person p{margin:0;color:var(--muted);font-size:.92rem}
 .gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.8rem;margin-top:2rem}
 .gallery img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:4px}
 .camps{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.6rem;margin-top:2rem}
