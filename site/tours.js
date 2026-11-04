@@ -72,9 +72,9 @@
       '<label class="full">Anything you’d like us to know? <span class="opt">(optional)</span><textarea name="notes" maxlength="500" rows="2"></textarea></label>' +
       "</fieldset>" +
       '<label class="hp" aria-hidden="true">Leave this field blank<input name="website" tabindex="-1" autocomplete="off"></label>' +
+      '<p class="lunch-fine">You’ll get a confirmation email right away. Each tour takes ' + t.spots + " families.</p>" +
       '<div id="tour-status" role="status" aria-live="polite"></div>' +
       '<p><button class="btn" type="submit">Sign up</button></p>' +
-      '<p class="lunch-fine">You’ll get a confirmation email. Each tour takes ' + t.spots + " families.</p>" +
       "</form>";
   }
 
@@ -82,7 +82,23 @@
     var f = document.getElementById("tour-form");
     var status = document.getElementById("tour-status");
     function show(cls, html) { status.className = "notice " + cls; status.innerHTML = html; }
-    f.addEventListener("input", function () { if (status.classList.contains("err")) { status.className = ""; status.innerHTML = ""; } });
+    // A field that is missing or wrong is marked (red border and a line under it) until it is fixed.
+    function mark(name, message) {
+      var input = f.elements[name], label = input.closest("label"), note = label.querySelector(".field-err");
+      input.setAttribute("aria-invalid", message ? "true" : "false");
+      if (message && !note) {
+        note = document.createElement("span");
+        note.className = "field-err";
+        note.id = "err-" + name;
+        label.appendChild(note);
+        input.setAttribute("aria-describedby", note.id);
+      }
+      if (note) { note.textContent = message || ""; note.hidden = !message; }
+    }
+    f.addEventListener("input", function (e) {
+      if (e.target.getAttribute("aria-invalid") === "true") mark(e.target.name, "");
+      if (status.classList.contains("err") && !f.querySelector("[aria-invalid=true]")) { status.className = ""; status.innerHTML = ""; }
+    });
     f.addEventListener("submit", function (e) {
       e.preventDefault();
       var el = f.elements;
@@ -91,12 +107,23 @@
         email: el.email.value.trim(), phone: el.phone.value.trim(), children: el.children.value.trim(),
         notes: el.notes.value.trim(), website: el.website.value
       };
-      var problems = [];
-      if (!b.parent_first || !b.parent_last) problems.push("your first and last name");
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(b.email)) problems.push("a valid email address");
-      if (!b.phone) problems.push("a phone number");
-      if (!b.children) problems.push("your children’s names and grades");
-      if (problems.length) { show("err", "Please enter " + problems.join(", ") + "."); return; }
+      var checks = [
+        ["parent_first", !b.parent_first, "Please enter your first name."],
+        ["parent_last", !b.parent_last, "Please enter your last name."],
+        ["email", !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(b.email), "Please enter an email address like name@example.com."],
+        ["phone", !b.phone, "Please enter a phone number."],
+        ["children", !b.children, "Please enter your children’s names and grades."]
+      ];
+      var first = null, count = 0;
+      checks.forEach(function (c) {
+        mark(c[0], c[1] ? c[2] : "");
+        if (c[1]) { count++; first = first || f.elements[c[0]]; }
+      });
+      if (first) {
+        show("err", count === 1 ? "Please fix the field marked in red." : "Please fix the " + count + " fields marked in red.");
+        first.focus();
+        return;
+      }
       var btn = f.querySelector("button[type=submit]");
       btn.disabled = true; btn.textContent = "Signing up…";
       fetch(api + "/tour", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) })
