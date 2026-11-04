@@ -9,6 +9,7 @@ import datetime as dt
 import html
 import json
 import pathlib
+import re
 from zoneinfo import ZoneInfo
 
 EASTERN = ZoneInfo("America/New_York")
@@ -69,11 +70,18 @@ def _options(value):
             out.append(v)
     return out[:MAX_OPTIONS] if len(out) > 1 else []
 
+NO_SCHOOL_MEAL = re.compile(r"\W*(no\s+school|school\s+(is\s+)?closed|closed)\b", re.I)
+
 def _no_school(w):
     """The weekdays the office marked "No school" for a week (a list from the editor, or one day as text)."""
     value = w.get("no_school")
     value = value if isinstance(value, list) else [value]
-    return [d for d in DAYS if d in {str(v or "").strip() for v in value}]
+    marked = {str(v or "").strip() for v in value}
+    # The office sometimes types "NO SCHOOL" as the day's meal instead; that day is off too, so nobody can order it.
+    for item in w.get("menu") or []:
+        if isinstance(item, dict) and NO_SCHOOL_MEAL.match(str(item.get("meal") or "")):
+            marked.add(str(item.get("day") or "").strip())
+    return [d for d in DAYS if d in marked]
 
 def _days_off(listed):
     """Every no-school date across the listed weeks, so a week's usual deadline can skip a Friday off."""
@@ -124,11 +132,17 @@ def _week(w, days_off=frozenset()):
         "deadline": deadline.astimezone(dt.timezone.utc).isoformat() if deadline else "",
         "deadline_label": (f"{deadline:%A, %B} {deadline.day} at {deadline:%I:%M %p}".replace(" 0", " ")
                            if deadline else ""),
+        "deadline_short": _short_deadline(deadline) if deadline else "",
         "note": str(w.get("note") or "").strip(),
         "graphic": f"files/{graphic}" if graphic.lower().endswith(IMAGE_TYPES) else "",
         "days": days,
         "no_school": [_day_off(d, start) for d in off] if start else [],
     }
+
+def _short_deadline(deadline):
+    """"Fri 11/6, 9 AM": short enough for the Week picker on a phone."""
+    clock = f"{deadline:%I:%M %p}".lstrip("0").replace(":00 ", " ")
+    return f"{deadline:%a} {deadline.month}/{deadline.day}, {clock}"
 
 def _weeks(data, today=None):
     """The weeks the office listed (content/lunch.json "weeks"; an older file with one week at the top level
@@ -147,7 +161,7 @@ def menu_data(data, today=None):
     now = dt.datetime.now(dt.timezone.utc).isoformat()
     first = next((w for w in weeks if w["days"] and w["deadline"] > now), None) or next(
         (w for w in weeks if w["days"]), None) or {"week_start": "", "week_end": "", "week_label": "", "deadline": "",
-                                                  "deadline_label": "", "note": "", "graphic": "", "days": [],
+                                                  "deadline_label": "", "deadline_short": "", "note": "", "graphic": "", "days": [],
                                                   "no_school": []}
     return {
         **first,
@@ -255,7 +269,7 @@ def order_form(menu, weeks, root, api):
         for i, w in enumerate(weeks))
     week_options = "".join(
         f'<option value="{w["week_start"]}" data-deadline="{w["deadline"]}">Week of {esc(w["week_label"])} '
-        f'(order by {esc(w["deadline_label"])})</option>' for w in weeks)
+        f'(order by {esc(w["deadline_short"])})</option>' for w in weeks)
     child = (f'<fieldset class="lunch-child"><legend>Student</legend>'
              f'<label>Student’s full name<input name="student" autocomplete="off" maxlength="80" required></label>'
              f'<label>Grade<select name="grade" required>{grade_options}</select></label>'

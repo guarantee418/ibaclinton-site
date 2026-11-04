@@ -4,6 +4,7 @@
   "week_label": "November 9 \u2013 13",
   "deadline": "2026-11-06T14:00:00+00:00",
   "deadline_label": "Friday, November 6 at 9:00 AM",
+  "deadline_short": "Fri 11/6, 9 AM",
   "note": "",
   "graphic": "",
   "days": [
@@ -24,14 +25,6 @@
       "date_label": "Nov 10"
     },
     {
-      "key": "wed",
-      "day": "Wednesday",
-      "meal": "NO SCHOOL",
-      "options": [],
-      "date": "2026-11-11",
-      "date_label": "Nov 11"
-    },
-    {
       "key": "thu",
       "day": "Thursday",
       "meal": "Chicken Alfredo",
@@ -48,7 +41,13 @@
       "date_label": "Nov 13"
     }
   ],
-  "no_school": [],
+  "no_school": [
+    {
+      "day": "Wednesday",
+      "date": "2026-11-11",
+      "date_label": "Nov 11"
+    }
+  ],
   "prices": {
     "regular": 8.0,
     "preschool": 5.0,
@@ -144,6 +143,7 @@
       "week_label": "November 9 \u2013 13",
       "deadline": "2026-11-06T14:00:00+00:00",
       "deadline_label": "Friday, November 6 at 9:00 AM",
+      "deadline_short": "Fri 11/6, 9 AM",
       "note": "",
       "graphic": "",
       "days": [
@@ -164,14 +164,6 @@
           "date_label": "Nov 10"
         },
         {
-          "key": "wed",
-          "day": "Wednesday",
-          "meal": "NO SCHOOL",
-          "options": [],
-          "date": "2026-11-11",
-          "date_label": "Nov 11"
-        },
-        {
           "key": "thu",
           "day": "Thursday",
           "meal": "Chicken Alfredo",
@@ -188,7 +180,13 @@
           "date_label": "Nov 13"
         }
       ],
-      "no_school": []
+      "no_school": [
+        {
+          "day": "Wednesday",
+          "date": "2026-11-11",
+          "date_label": "Nov 11"
+        }
+      ]
     }
   ]
 }
