@@ -268,7 +268,7 @@ def order_form(menu, weeks, root, api):
         f'{_no_school_line(w)}</div>'
         for i, w in enumerate(weeks))
     week_options = "".join(
-        f'<option value="{w["week_start"]}" data-deadline="{w["deadline"]}">Week of {esc(w["week_label"])} '
+        f'<option value="{w["week_start"]}" data-deadline="{w["deadline"]}" data-by="{esc(w["deadline_label"])}">Week of {esc(w["week_label"])} '
         f'(order by {esc(w["deadline_short"])})</option>' for w in weeks)
     child = (f'<fieldset class="lunch-child"><legend>Student</legend>'
              f'<label>Student’s full name<input name="student" autocomplete="off" maxlength="80" required></label>'
@@ -281,7 +281,8 @@ def order_form(menu, weeks, root, api):
         '<h3>Order hot lunch online</h3>'
         '<div id="lunch-closed" class="notice" hidden>Online ordering is closed for now. '
         'To change or add an order, please call the office at <a href="tel:3018561616">(301) 856-1616</a>.</div>'
-        f'<label class="lunch-week-pick">Week<select name="week">{week_options}</select></label>'
+        f'<label class="lunch-week-pick">Week<select name="week" aria-describedby="lunch-by">{week_options}</select></label>'
+        '<p class="lunch-by-line" id="lunch-by" aria-live="polite"></p>'
         '<fieldset><legend>Parent/Guardian</legend>'
         '<label>First name<input name="parent_first" autocomplete="given-name" maxlength="60" required></label>'
         '<label>Last name<input name="parent_last" autocomplete="family-name" maxlength="60" required></label>'

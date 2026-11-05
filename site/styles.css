@@ -15,6 +15,8 @@ img{max-width:100%;height:auto;display:block}
 a{color:inherit}
 .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
 h1,h2,h3{font-family:var(--serif);line-height:1.15;margin:0 0 .5em;color:var(--navy)}
+h3{font-size:1.35rem}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 h2{font-size:clamp(1.7rem,3.2vw,2.4rem)}
 .eyebrow{font:600 .78rem/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--navy);margin-bottom:.8rem}
 .page-hero .eyebrow{color:var(--gold)}
@@ -62,7 +64,8 @@ section{padding:clamp(3rem,7vw,5.5rem) 0}
 .card{position:relative;display:block;overflow:hidden;border-radius:4px;color:#fff;text-decoration:none;min-height:340px}
 .card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .4s}
 .card:hover img{transform:scale(1.04)}
-.card .label{position:absolute;inset:auto 0 0 0;padding:1.6rem;background:linear-gradient(transparent,rgba(59,20,86,.92))}
+.card .label{position:absolute;inset:auto 0 0 0;padding:2.4rem 1.6rem 1.6rem;background:linear-gradient(rgba(59,20,86,0),rgba(59,20,86,.82) 38%,rgba(59,20,86,.95))}
+.card .label h3,.card .label p{text-shadow:0 1px 3px rgba(0,0,0,.35)}
 .card h3{color:#fff;margin:0;font-size:1.6rem}.card p{margin:.2rem 0 0;color:var(--gold)}
 
 .lead-in{display:grid;grid-template-columns:1fr 1.5fr;gap:clamp(1.5rem,5vw,4rem);align-items:start}
@@ -183,7 +186,13 @@ form.info label.lunch-day{flex-direction:row;align-items:flex-start;gap:.5rem;fo
 .lunch-day input{margin-top:.25rem}.lunch-pick{border:1px solid var(--line);border-radius:4px;padding:.6rem .7rem;display:flex;flex-direction:column;gap:.5rem}.lunch-pick:has(input:checked){border-color:var(--gold);background:#fff7e0}form.info .lunch-pick label.lunch-day,form.info .lunch-pick label.lunch-day:has(input:checked){border:0;padding:0;background:none}form.info label.lunch-choice{font-size:.85rem;font-weight:600;gap:.2rem}form.info label.lunch-choice select{padding:.4rem .5rem}.lunch-choices{display:block;color:var(--muted);font-size:.9rem}.lunch-day:has(input:checked){border-color:var(--gold);background:#fff7e0}
 .lunch-remove{grid-column:1/-1;justify-self:start;background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font:inherit;padding:0}
 .lunch-days .lunch-off{grid-column:1/-1;margin:.1rem 0 0;color:var(--muted)}
-.lunch-total{font-size:1.15rem;margin:0}.lunch-fine{color:var(--muted);font-size:.9rem}
+.lunch-total{font-size:1.15rem;margin:0}
+.lunch-by-line{margin:-.6rem 0 0;font-weight:600;color:var(--navy)}.lunch-by-line:empty{display:none}
+form.info label.lunch-day{min-height:3.5rem}.lunch-day input[type=checkbox]{width:1.35rem;height:1.35rem;flex:none;margin-top:.05rem;accent-color:var(--navy)}
+.enroll{padding:.4rem 0 2rem}.steps{list-style:none;counter-reset:step;padding:0;margin:1rem 0 1.4rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(14rem,100%),1fr));gap:1rem 1.6rem}
+.steps li{counter-increment:step;display:flex;flex-direction:column;gap:.3rem;padding-top:.8rem;border-top:3px solid var(--gold)}
+.steps li::before{content:counter(step);font:700 1.6rem/1 var(--serif);color:var(--navy)}
+.steps b{color:var(--navy);font-size:1.1rem}.lunch-fine{color:var(--muted);font-size:.9rem}
 /* Parent-teacher conferences (conferences.py, conferences.js) */
 .conf-when{font:700 1.35rem var(--serif);color:var(--navy);margin-bottom:.3rem}
 .conf-teachers{list-style:none;padding:0;margin:.6rem 0 1.6rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.7rem}
@@ -324,8 +333,12 @@ html.kc-lock{overflow:hidden}
   .kc-lead{font-size:17px;margin-top:14px}
   .kc-btn{margin-top:20px}
   .kc-hero .kc-crest{display:none}
-  .kc-ann-img{width:100%;max-height:200px}
-  .kc-flyer img{max-height:52vh}
+  .kc-ann-img{width:auto;max-width:100%;max-height:120px}
+  .kc-ann-title{font-size:2.2rem}
+  .kc-slide .kc-hero-in{gap:18px}
+  .kc-when{margin-top:10px;font-size:15px}
+  .kc-flyer img{max-height:240px}
+  .kc-slide{align-items:flex-start}
   .kc-quick{display:block;padding-top:20px}
   .kc-quick ul{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0;padding:0;list-style:none}
   .kc-quick-link{display:flex;align-items:center;justify-content:center;text-align:center;min-height:56px;height:100%;box-sizing:border-box;padding:10px 12px;background:#fff;border:2px solid var(--navy);border-radius:12px;color:var(--navy);font-weight:800;font-size:16px;line-height:1.2;text-decoration:none}

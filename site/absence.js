@@ -5,15 +5,39 @@
   if (!f || !window.fetch) return;
   f.hidden = false;
   function show(cls, html) { status.className = "notice " + cls; status.innerHTML = html; status.scrollIntoView({block: "center"}); }
+  // A missing or wrong field gets a red border and its own line under it until it is fixed.
+  function mark(el, msg) {
+    var label = el.closest("label"), note = label && label.querySelector(".field-err");
+    el.setAttribute("aria-invalid", msg ? "true" : "false");
+    if (msg && !note && label) {
+      note = document.createElement("span");
+      note.className = "field-err";
+      note.id = "ab-err-" + el.name;
+      label.appendChild(note);
+      el.setAttribute("aria-describedby", note.id);
+    }
+    if (note) { note.textContent = msg; note.hidden = !msg; }
+  }
+  f.addEventListener("input", function (e) { if (e.target.getAttribute("aria-invalid") === "true") mark(e.target, ""); });
+  f.addEventListener("change", function (e) { if (e.target.getAttribute("aria-invalid") === "true") mark(e.target, ""); });
   f.addEventListener("submit", function (e) {
     e.preventDefault();
     var b = {};
     Array.prototype.forEach.call(f.elements, function (el) { if (el.name) b[el.name] = el.value.trim(); });
-    var missing = Array.prototype.filter.call(f.querySelectorAll("[required]"), function (el) { return !el.value.trim(); });
-    if (b.reason === "Other" && !b.details) missing.push(f.elements.details);
-    if (missing.length || !f.checkValidity()) {
-      show("err", "Please fill in every field (the last day and details are only needed when they apply).");
-      (missing[0] || f.querySelector(":invalid")).focus();
+    var bad = [];
+    Array.prototype.forEach.call(f.querySelectorAll("input[name], select[name], textarea[name]"), function (el) {
+      if (el.name === "website") return;
+      var msg = "";
+      if (el.required && !el.value.trim()) msg = "Please fill this in.";
+      else if (el.name === "details" && b.reason === "Other" && !b.details) msg = "Please tell us the reason.";
+      else if (el.type === "email" && el.value && !el.checkValidity()) msg = "Please enter an email address like name@example.com.";
+      else if (!el.checkValidity()) msg = el.validationMessage || "Please check this.";
+      mark(el, msg);
+      if (msg) bad.push(el);
+    });
+    if (bad.length) {
+      show("err", bad.length === 1 ? "Please fix the field marked in red." : "Please fix the " + bad.length + " fields marked in red.");
+      bad[0].focus();
       return;
     }
     var btn = f.querySelector("button[type=submit]");
