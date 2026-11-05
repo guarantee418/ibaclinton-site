@@ -131,7 +131,8 @@ section.tight{padding-top:clamp(2rem,4vw,3rem)}
 .person{text-align:center}
 .person img,.person .ph{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:4px;background:var(--cream)}
 .person .ph{display:flex;align-items:center;justify-content:center;font:700 2.6rem var(--serif);color:var(--navy);border:1px solid var(--line)}
-.person h3{font-size:1.3rem;margin:.8rem 0 .1rem}.person p{margin:0;color:var(--muted);font-size:.92rem}
+.person h3{font-size:1.3rem;margin:.8rem 0 .1rem}
+.person h3 a{color:inherit;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px}.person h3 a:hover{text-decoration-thickness:2px}.person p{margin:0;color:var(--muted);font-size:.92rem}
 .gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.8rem;margin-top:2rem}
 .gallery img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:4px}
 .camps{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.6rem;margin-top:2rem}
