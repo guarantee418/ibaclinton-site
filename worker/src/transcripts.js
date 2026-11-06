@@ -6,7 +6,8 @@
 // by the service: the office sends the transcript once the fee is paid.
 //
 // Fees and the payment link are vars in wrangler.toml: TRANSCRIPT_FEE_ALUMNI, TRANSCRIPT_FEE_STUDENT and
-// TRANSCRIPT_PAY_URL (a PaySimple payment page; empty = the office collects the fee). A current student's
+// TRANSCRIPT_PAY_URL (a Payments Hub payment link; empty = the office collects the fee) and TRANSCRIPT_PAY_TOTAL
+// (what the family pays there with the card processing fee). A current student's
 // fee goes on the family's Gradelink account; an alumnus pays at the link, or the office calls.
 
 export const SHEET = "Transcripts";
@@ -49,7 +50,7 @@ export async function ensureTranscriptTab(call) {
 // What the page needs to show: the fees and whether alumni can pay online.
 export function settings(env) {
   return { fee_alumni: fee(env.TRANSCRIPT_FEE_ALUMNI), fee_student: fee(env.TRANSCRIPT_FEE_STUDENT),
-    pay_url: payUrl(env) };
+    pay_url: payUrl(env), pay_total: fee(env.TRANSCRIPT_PAY_TOTAL) };
 }
 
 export function validateRequest(body, now) {
@@ -127,8 +128,9 @@ export function payment(q, env) {
       "We'll send the transcript once it is paid."];
   }
   return payUrl(env)
-    ? [`Please pay the ${money(amount)} transcript fee online. Enter your request number in the payment notes. ` +
-      "We'll send the transcript once the payment comes through."]
+    ? [`Please pay the ${money(amount)} transcript fee online${payTotal(amount, env)}. In the "Request number and ` +
+      `student name" box, enter your request number and the student's name. We'll send the transcript once the ` +
+      "payment comes through."]
     : [`There is a ${money(amount)} transcript fee. The school office will contact you to collect it, ` +
       "and we'll send the transcript once it is paid."];
 }
@@ -137,7 +139,7 @@ export function requesterMail(q, id, env) {
   const e = escapeHtml;
   const name = q.relation === "parent" ? q.requester : `${q.first} ${q.last}`;
   const link = q.who === "alumni" && feeFor(q, env) && payUrl(env)
-    ? `<p><a href="${e(payUrl(env))}">Pay the transcript fee</a> (request number ${e(id)})</p>` : "";
+    ? `<p><a href="${e(payUrl(env))}">Pay the transcript fee online</a> (request number ${e(id)})</p>` : "";
   const content =
     `<p>Dear ${e(name)},</p>` +
     `<p>We received your transcript request for <b>${e(q.first)} ${e(q.last)}</b>. Your request number is <b>${e(id)}</b>.</p>` +
@@ -174,7 +176,7 @@ export function officeMail(q, id, env) {
   lines.push(`Signed: ${q.signature}`);
   const todo = !amount ? "No fee is set for this request."
     : q.who === "student" ? `Post the ${money(amount)} transcript fee on the family's Gradelink account.`
-    : payUrl(env) ? `The ${money(amount)} fee is paid online (PaySimple); check for request number ${id} before releasing.`
+    : payUrl(env) ? `The ${money(amount)} fee is paid online (Payments Hub); check for request number ${id} before releasing.`
     : `Please contact them to collect the ${money(amount)} fee.`;
   const content =
     `<p>A transcript request came in on the website:</p>` +
@@ -210,6 +212,12 @@ export async function deleteTestRequest(call, id) {
 function fee(v) {
   const n = Number(v);
   return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+// ", $10.30 with the card processing fee" when the payment page charges more than the fee itself.
+function payTotal(amount, env) {
+  const t = fee(env.TRANSCRIPT_PAY_TOTAL);
+  return t > amount ? ` (${money(t)} with the card processing fee)` : "";
 }
 
 function payUrl(env) {

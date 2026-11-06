@@ -27,7 +27,7 @@
     if (!fees || !line) return;
     var parts = [];
     if (fees.fee_student) parts.push("Current students: " + money(fees.fee_student) + ", added to your Gradelink account.");
-    if (fees.fee_alumni) parts.push("Alumni: " + money(fees.fee_alumni) + (fees.pay_url ? ", paid online after you submit." : ", collected by the school office."));
+    if (fees.fee_alumni) parts.push("Alumni: " + money(fees.fee_alumni) + (fees.pay_url ? ", paid online after you submit" + (fees.pay_total > fees.fee_alumni ? " (" + money(fees.pay_total) + " with the card processing fee)." : ".") : ", collected by the school office."));
     line.textContent = parts.length ? parts.join(" ") + " We send the transcript once the fee is paid." : "There is no fee for transcripts.";
   }
 
@@ -87,8 +87,12 @@
         }
         var fee = w === "alumni" ? r.fee_alumni : r.fee_student, pay = "";
         if (fee && w === "student") pay = "<p>The " + money(fee) + " transcript fee will be added to your Gradelink account. We’ll send the transcript once it is paid.</p>";
-        else if (fee && r.pay_url) pay = "<p>Please pay the " + money(fee) + " transcript fee now. Enter your request number, <b>" + esc(r.request_id) +
-          "</b>, in the payment notes.</p><p><a class=\"btn\" href=\"" + esc(r.pay_url) + "\" target=\"_blank\" rel=\"noopener\">Pay " + money(fee) + "</a></p>";
+        else if (fee && r.pay_url) {
+          var total = r.pay_total > fee ? r.pay_total : fee;
+          pay = "<p>Please pay the " + money(fee) + " transcript fee now" + (total > fee ? " (" + money(total) + " with the card processing fee)" : "") +
+            ". In the “Request number and student name” box, enter <b>" + esc(r.request_id) + "</b> and the student’s name.</p>" +
+            "<p><a class=\"btn\" href=\"" + esc(r.pay_url) + "\" target=\"_blank\" rel=\"noopener\">Pay " + money(total) + "</a></p>";
+        }
         else if (fee) pay = "<p>There is a " + money(fee) + " transcript fee. The school office will contact you to collect it.</p>";
         f.hidden = true;
         done.innerHTML = '<div class="notice ok" role="status"><p><b>Thank you! We received your request.</b> Your request number is <b>' +
