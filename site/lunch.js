@@ -27,8 +27,12 @@
   if (!weekSel.options.length) close();
   function week() { return weekSel.value; }
   function daysOf(c) { return c.querySelector('.lunch-days[data-week="' + week() + '"]'); }
+  var byLine = document.getElementById("lunch-by");
   function showWeek() {
     Array.prototype.forEach.call(list.querySelectorAll(".lunch-days"), function (g) { g.hidden = g.getAttribute("data-week") !== week(); });
+    // The whole deadline under the picker, since a phone cuts the picker's own text short.
+    var o = weekSel.options[weekSel.selectedIndex], by = o && o.getAttribute("data-by");
+    if (byLine) byLine.textContent = by ? "Order by " + by + "." : "";
   }
   weekSel.addEventListener("change", function () { showWeek(); refresh(); });
   showWeek();
