@@ -29,6 +29,12 @@
     if (fees.fee_student) parts.push("Current students: " + money(fees.fee_student) + ", added to your Gradelink account.");
     if (fees.fee_alumni) parts.push("Alumni: " + money(fees.fee_alumni) + (fees.pay_url ? ", paid online after you submit" + (fees.pay_total > fees.fee_alumni ? " (" + money(fees.pay_total) + " with the card processing fee)." : ".") : ", collected by the school office."));
     line.textContent = parts.length ? parts.join(" ") + " We send the transcript once the fee is paid." : "There is no fee for transcripts.";
+    var later = document.getElementById("tr-pay-later"), link = document.getElementById("tr-pay-later-link");
+    if (later && link && fees.fee_alumni && fees.pay_url) {
+      link.href = fees.pay_url;
+      link.textContent = "Pay the " + money(fees.pay_total > fees.fee_alumni ? fees.pay_total : fees.fee_alumni) + " fee";
+      later.hidden = false;
+    }
   }
 
   function update() {
