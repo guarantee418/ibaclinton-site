@@ -392,6 +392,7 @@ def render(path, text, layout):
             .replace("{{nav}}", nav).replace("{{banner}}", banner)
             .replace("{{content}}", body.strip()).replace("{{cta}}", cta))
     html = html.replace("{{root}}", root).replace("{{css_version}}", CSS_VERSION)
+    html = version_scripts(html)
     leftover = re.findall(r"\{\{\w+\}\}", html)
     if leftover:
         raise SystemExit(f"{path}: unfilled {leftover}")
@@ -399,6 +400,17 @@ def render(path, text, layout):
     out.write_text(html)
     print("wrote", out.relative_to(ROOT))
     return None if rel.name == "404" or meta.get("hidden") == "yes" else out.relative_to(OUT).parent.as_posix()
+
+# The site's own scripts get ?v=<hash of the file> too (same reason as styles.css): a change shows up at once
+# instead of after the 4 hours browsers may keep the old copy.
+def version_scripts(html):
+    def add(m):
+        f = OUT / f"{m.group(2)}.js"
+        if not f.exists():
+            return m.group(0)
+        v = __import__("hashlib").sha256(f.read_bytes()).hexdigest()[:10]
+        return f'src="{m.group(1)}{m.group(2)}.js?v={v}"'
+    return re.sub(r'src="((?:\.\./)*)([a-z0-9-]+)\.js"', add, html)
 
 # Old addresses that moved; each gets a small page that sends visitors (and search engines) to the new one.
 REDIRECTS = {"about-copy": "staff/"}
