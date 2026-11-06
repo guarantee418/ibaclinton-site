@@ -36,11 +36,13 @@ TOUR_URL = "https://raw.githubusercontent.com/guarantee418/ibaclinton-site/main/
 TOUR_NOTIFY = "iba@ibcministries.org"
 HOMEROOM_CC = "ibs@ibcministries.org"  # Cc on the Monday homeroom lunch lists
 # Transcript requests (src/transcripts.js): who hears about each one, the fees in dollars (0 = no fee) and
-# the PaySimple payment page alumni pay at (empty until the school has one: the office collects the fee).
+# the online payment page alumni pay at (a Payments Hub payment link, "Transcript Request", ID 82448; empty = the
+# office collects the fee) and the total the family pays there with the card processing fee (empty = just the fee).
 TRANSCRIPT_NOTIFY = "iba@ibcministries.org"
 TRANSCRIPT_FEE_ALUMNI = "10"
 TRANSCRIPT_FEE_STUDENT = "10"
-TRANSCRIPT_PAY_URL = ""
+TRANSCRIPT_PAY_URL = "https://pymntlink.com/payment-link?token=OGFmZDE1NzA3ZmZiYWI1NTAyZjNkOTczMjQ3NDk0OTI6OThmNjQ0MDhiYjlkN2Q2Y2Q3NmQ2ZjY4MWQ2ODY2NDk3MDc4NzRmYzAwOThmOTYyZWJkZjYyN2E4OTJkOWJkMWYwZmRiNWIwNTc0ODk1MWNjNWM4YTFlMDNmOTc4MDgxYjljODhlYzg5NzRmZWJlZDU3MGUxYWFiMDczMDY0MzUwNzZmNWRhY2MzOGU3OGZmYjRlYmIyODAxOGY0YjBlODFhZGU3NmM1YTJmZjkzZTdmY2ExZDE0YTJhZjM1MjhiYTI3ZDc0NzIzODYyM2IyY2JhMzkzOGIxZDI2MDY1ODE0NzkwNjEyMWRhMjE1ZmI5NTA2MTJmZDNlYWU0NjMxODhhZDZmMzNlYzJlMjZlNDllZTMyNzg4YjU3YTA0OTEwODI1MWMyODEyNTFmNGQ0NjVlYTFkMTVkM2UxYWZiN2UwNTYxZTM3ZjljY2I5MWI2YWI3MjMwNDE3MDA0ZjZiOQ=="
+TRANSCRIPT_PAY_TOTAL = "10.30"
 # Who hears about each Request Info inquiry (src/inquiries.js); comma-separated.
 INQUIRY_NOTIFY = "iba@ibcministries.org,ggreene@ibcministries.org"
 # Who hears about each absence report (src/absences.js); the homeroom teacher is Cc'd from the Teachers tab.

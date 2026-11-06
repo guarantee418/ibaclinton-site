@@ -766,7 +766,7 @@ test("POST /transcript end to end: saves the row (adding the tab), emails the re
   const bad = await worker.fetch(trpost({ ...TR, signature: "" }), { ...TRENV, LUNCH_KV: kv({ ms_refresh: "rt1" }) });
   assert.equal(bad.status, 400);
   const get = await worker.fetch(new Request("https://lunch.test/transcripts", { headers: { Origin: "https://guarantee418.github.io" } }), TRENV);
-  assert.deepEqual(await get.json(), { ok: true, fee_alumni: 10, fee_student: 10, pay_url: "" });
+  assert.deepEqual(await get.json(), { ok: true, fee_alumni: 10, fee_student: 10, pay_url: "", pay_total: 0 });
   const stranger = await worker.fetch(new Request("https://lunch.test/transcripts", { headers: { Origin: "https://evil.test" } }), TRENV);
   assert.equal(stranger.status, 403);
 });
