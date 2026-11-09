@@ -61,7 +61,19 @@
       dots.children[j].setAttribute("aria-current", j === i ? "true" : "false");
     });
     count.textContent = (i + 1) + " of " + slides.length;
+    fit();
   }
+  // On phones the banner is as tall as the slide showing, not the tallest slide, so a short slide
+  // (like the welcome) leaves no empty purple. On computers every slide keeps the same height.
+  var phone = window.matchMedia && window.matchMedia("(max-width: 820px)");
+  function fit() {
+    if (!phone || !phone.matches) { track.style.height = ""; return; }
+    var inner = slides[current] && slides[current].firstElementChild;
+    if (inner) track.style.height = inner.offsetHeight + "px";
+  }
+  Array.prototype.forEach.call(track.querySelectorAll("img"), function (img) {
+    if (!img.complete) img.addEventListener("load", fit);
+  });
   function go(i) {
     i = (i + slides.length) % slides.length;
     track.scrollTo({ left: slides[i].offsetLeft - track.offsetLeft, behavior: "smooth" });
@@ -81,12 +93,17 @@
       if (i !== current && slides[i]) mark(i);
     }, 120);
   }, { passive: true });
-  window.addEventListener("resize", function () { track.scrollLeft = slides[current].offsetLeft - track.offsetLeft; });
+  window.addEventListener("resize", function () { track.scrollLeft = slides[current].offsetLeft - track.offsetLeft; fit(); });
 
   var timer = null, paused = false, stopped = false; // paused: mouse/keyboard/touch on it; stopped: Pause pressed
   function restart() {
     clearInterval(timer);
-    if (!still && !paused && !stopped) timer = setInterval(function () { go(current + 1); }, 7000);
+    if (!still && !paused && !stopped) timer = setInterval(function () {
+      // On phones the banner's height changes with the slide, so it only turns while the page is at the top,
+      // where nothing a parent is reading moves.
+      if (phone && phone.matches && window.scrollY > 40) return;
+      go(current + 1);
+    }, 7000);
   }
   function pause(on) { paused = on; restart(); }
   slider.addEventListener("mouseenter", function () { pause(true); });

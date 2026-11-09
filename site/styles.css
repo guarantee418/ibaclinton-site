@@ -8,7 +8,7 @@
 ::selection{background:var(--gold);color:var(--navy-d)}
 :focus-visible{outline:3px solid var(--navy);outline-offset:3px}
 .hero :focus-visible,.summer :focus-visible,.top :focus-visible,footer.site :focus-visible{outline-color:var(--gold)}
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.card img{transition:none}.card:hover img{transform:none}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.card img{transition:none}.card:hover img{transform:none}.kc-track{transition:none!important}}
 html{scroll-behavior:smooth}
 body{margin:0;font:17px/1.65 var(--sans);color:var(--ink);background:#fff}
 img{max-width:100%;height:auto;display:block}
@@ -339,6 +339,7 @@ html.kc-lock{overflow:hidden}
   .kc-when{margin-top:10px;font-size:15px}
   .kc-flyer img{max-height:240px}
   .kc-slide{align-items:flex-start}
+  .kc-slider-js .kc-track{align-items:flex-start;overflow-y:hidden;transition:height .35s ease-out}
   .kc-quick{display:block;padding-top:20px}
   .kc-quick ul{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0;padding:0;list-style:none}
   .kc-quick-link{display:flex;align-items:center;justify-content:center;text-align:center;min-height:56px;height:100%;box-sizing:border-box;padding:10px 12px;background:#fff;border:2px solid var(--navy);border-radius:12px;color:var(--navy);font-weight:800;font-size:16px;line-height:1.2;text-decoration:none}
