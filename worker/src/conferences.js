@@ -157,6 +157,73 @@ export function teacherMail(b, schedule, id, to, name, env) {
   return { message, saveToSentItems: true };
 }
 
+// Every booking row with its details (admin: each teacher's day), or null when the table isn't there yet.
+export async function readBookingDetails(call) {
+  const r = await call("GET", `/tables/${TABLE}/range?$select=text`);
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error(`conferences ${r.status}`);
+  const [head, ...rows] = (await r.json()).text || [];
+  const col = Object.fromEntries((head || []).map((h, i) => [String(h).trim(), i]));
+  for (const need of ["Date", "Time", "Teacher"]) {
+    if (!(need in col)) throw new Error(`Conferences table has no "${need}" column`);
+  }
+  const get = (row, name) => (name in col ? String(row[col[name]] || "").trim() : "");
+  return rows.map((row) => ({
+    date: normDate(get(row, "Date")), time: normTime(get(row, "Time")), teacher: normName(get(row, "Teacher")),
+    student: get(row, "Student"), parent: get(row, "Parent"), email: get(row, "Email"), phone: get(row, "Phone"),
+    notes: get(row, "Notes"),
+  })).filter((b) => b.teacher && b.time);
+}
+
+// One email per teacher with their whole conference day: every time, booked or open. Each member of a
+// shared panel (High School) gets the panel's list. A teacher with no email on the Teachers tab is left
+// out (counted in "missing"), except in a test, where every email goes to testTo only.
+export function scheduleMails(schedule, bookings, teachers, env, { testTo = "", final = false } = {}) {
+  const e = escapeHtml, mails = [], missing = [];
+  const day = (bookings || []).filter((b) => !b.date || b.date === schedule.date);
+  for (const panel of schedule.teachers || []) {
+    const mine = day.filter((b) => b.teacher === normName(panel.name));
+    const shared = (panel.members || []).length > 1;
+    const rows = schedule.slots.map((s) => {
+      const b = mine.find((x) => x.time === normTime(s.label));
+      const time = `${e(s.label)}&ndash;${e(s.end)}`;
+      const td = 'style="padding:4px 8px;border-bottom:1px solid #ddd;vertical-align:top"';
+      if (!b) return `<tr><td ${td}>${time}</td><td colspan="4" style="padding:4px 8px;border-bottom:1px solid #ddd;color:#888">Open</td></tr>`;
+      return `<tr><td ${td}><b>${time}</b></td><td ${td}>${e(b.student)}</td><td ${td}>${e(b.parent)}</td>` +
+        `<td ${td}>${e(b.phone)}${b.email ? `<br>${e(b.email)}` : ""}</td><td ${td}>${e(b.notes)}</td></tr>`;
+    }).join("");
+    const booked = schedule.slots.filter((s) => mine.some((x) => x.time === normTime(s.label))).length;
+    const closed = final || Date.now() > Date.parse(schedule.deadline || 0);
+    for (const name of shared ? panel.members : [panel.name]) {
+      const real = teacherEmail(teachers, name);
+      if (!real && !testTo) { missing.push(name); continue; }
+      const th = 'style="text-align:left;padding:4px 8px;border-bottom:2px solid #541f78"';
+      const content =
+        (testTo ? `<p style="color:#b00"><b>TEST: this would go to ${e(name)} (${e(real || "no email on the Teachers tab")}).</b></p>` : "") +
+        `<p>${e(name)},</p>` +
+        `<p>Here ${booked === 1 ? "is your parent-teacher conference" : "are your parent-teacher conferences"} for ` +
+        `<b>${e(schedule.date_label)}</b>` + (shared ? ` (${e(panel.name)}, together with ${e(panel.members.filter((m) => m !== name).join(" and "))})` : "") +
+        `: <b>${booked}</b> of ${schedule.slots.length} times booked.</p>` +
+        `<table style="border-collapse:collapse;font-size:14px"><tr><th ${th}>Time</th><th ${th}>Student</th>` +
+        `<th ${th}>Parent</th><th ${th}>Phone / email</th><th ${th}>Wants to talk about</th></tr>${rows}</table>` +
+        `<p>` + (closed ? "Online sign-up is closed, so this is the final list. "
+          : `Parents can still sign up online until ${e(schedule.deadline_label || "the day before")}, so open times may fill. `) +
+        `If a family calls to change or cancel, the office will let you know. Every booking is on the Conferences tab of the office workbook.</p>` +
+        `<p>Gratefully,<br>${e(env.SIGNATURE || "Independent Baptist Academy").replace(/\n/g, "<br>")}</p>`;
+      const message = {
+        subject: `${testTo ? "TEST: " : ""}${closed ? "Final list: y" : "Y"}our conferences on ${schedule.date_label.replace(/, \d{4}$/, "")}`,
+        body: { contentType: "HTML", content },
+        toRecipients: [{ emailAddress: { address: testTo || real, name: testTo ? "" : name } }],
+      };
+      const cc = testTo ? [] : String(env.CONF_CC || "").split(",").map((x) => x.trim()).filter(Boolean);
+      if (cc.length) message.ccRecipients = cc.map((address) => ({ emailAddress: { address } }));
+      if (env.REPLY_TO) message.replyTo = [{ emailAddress: { address: env.REPLY_TO } }];
+      mails.push({ name, booked, shared, mail: { message, saveToSentItems: true } });
+    }
+  }
+  return { mails, missing };
+}
+
 // The teacher's email from the Teachers tab (grade, teacher, email), matched by name.
 export function teacherEmail(teachers, name) {
   const n = normName(name);

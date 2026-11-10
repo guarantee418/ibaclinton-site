@@ -1,0 +1,39 @@
+name: Send conference schedules to teachers
+
+# Manual only. Emails each conference teacher their own day from the Bookings table on the Conferences tab
+# (every time, booked or open: student, parent, phone/email, notes), from ibs@ibaclinton.com, Cc ibs@.
+# Each member of a shared panel (High School) gets the panel's list. Teachers are matched by name on the
+# Teachers tab; one with no email there gets nothing (counted in "without_email").
+#   test  = two sample emails (the first teacher and one High School member) to test_to only
+#   now   = the real emails, once
+#   final = the real emails again marked "Final list", once, only after online sign-up closes
+# The log shows counts only, never names.
+on:
+  workflow_dispatch:
+    inputs:
+      send:
+        description: "test, now or final"
+        required: true
+        type: choice
+        options: [test, now, final]
+      test_to:
+        description: "For a test: the one address that gets the samples"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    env:
+      LUNCH_SETUP_KEY: ${{ secrets.LUNCH_SETUP_KEY }}
+      SEND: ${{ inputs.send }}
+      TEST_TO: ${{ inputs.test_to }}
+    steps:
+      - name: Send
+        run: |
+          body=$(jq -nc --arg s "$SEND" --arg t "$TEST_TO" '{action:"conference_schedules",send:$s,test_to:$t}')
+          curl -fsS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" \
+            -H "X-Setup-Key: $LUNCH_SETUP_KEY" -H "Content-Type: application/json" -d "$body"
+          echo
