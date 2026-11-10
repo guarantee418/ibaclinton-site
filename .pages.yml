@@ -61,6 +61,20 @@ content:
                 list:
                   max: 5
                 description: Only for a day with more than one option, for example Cheese pizza and Pepperoni pizza. Parents then pick one per student, and the Kitchen tab counts each choice. Leave empty for one meal.
+              - name: special_prices
+                label: Special prices for this day (optional)
+                type: object
+                description: Only for a special meal that costs more (or less) than usual, for example the Thanksgiving meal. Leave blank for the usual prices. A blank box uses that group's usual price. Staff-family children pay the staff price.
+                fields:
+                  - name: regular
+                    label: Students (K5-12th)
+                    type: number
+                  - name: preschool
+                    label: Preschool (K3, K4)
+                    type: number
+                  - name: staff
+                    label: Staff
+                    type: number
           - name: no_school
             label: No school on
             type: select

@@ -1760,3 +1760,28 @@ test("scheduleMails: one list per teacher, every time, shared panel to each memb
   assert.match(t.mails[0].mail.message.subject, /^TEST: Final list: your conferences/);
   assert.match(t.mails[0].mail.message.body.content, /final list/);
 });
+
+test("a day with special prices (Thanksgiving meal) costs that instead of the usual price", async () => {
+  const { validateOrder, orderRows, totalFormula } = await import("../src/index.js");
+  const day = (key, d, extra = {}) => ({ key, day: d, meal: "Meal", options: [], date_label: "Nov 20", ...extra });
+  const menu = { week_start: "2026-11-16", week_label: "November 17 – 20", deadline: "2026-11-13T14:00:00Z",
+    prices: { regular: 8, preschool: 5, staff: 4 },
+    grades: [{ value: "3", label: "3rd Grade", preschool: false }, { value: "K4", label: "Preschool (K4)", preschool: true },
+      { value: "STAFF", label: "Staff", preschool: false, staff: true }],
+    days: [day("tue", "Tuesday"), day("fri", "Friday", { prices: { regular: 12, preschool: 7, staff: 6 } })] };
+  const body = { week_start: "2026-11-16", parent_first: "TEST", parent_last: "Kim", email: "a@b.co", phone: "1",
+    children: [{ name: "Ana", grade: "3", days: ["tue", "fri"] }, { name: "Bo", grade: "K4", days: ["fri"] },
+      { name: "Mr K", grade: "STAFF", days: ["tue", "fri"] }] };
+  const now = Date.parse("2026-11-11T12:00:00Z");
+  const { order } = validateOrder(body, menu, now);
+  assert.equal(order.total, 8 + 12 + 7 + 4 + 6);
+  const rows = orderRows(order, menu, "ABCDE", new Date(now));
+  assert.deepEqual(rows.map((r) => r[9]), [8, 5, 4]); // Price per lunch stays the usual price
+  assert.deepEqual(rows.map((r) => r[16]), ['=[@Lunches]*[@[Price per lunch]]+IF([@Fri]<>"",4,0)',
+    '=[@Lunches]*[@[Price per lunch]]+IF([@Fri]<>"",2,0)', '=[@Lunches]*[@[Price per lunch]]+IF([@Fri]<>"",2,0)']);
+  assert.match(rows[0][17], /Friday \$12\.00 \(special price\)/);
+  // A staff family's child pays the staff price on the special day too.
+  assert.equal(validateOrder({ ...body, children: [body.children[0]] }, menu, now, true).order.total, 4 + 6);
+  // No special day ordered: the usual formula.
+  assert.equal(totalFormula({ price: 8, days: ["tue"], dayPrices: { tue: 8 } }), "=[@Lunches]*[@[Price per lunch]]");
+});

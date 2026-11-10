@@ -112,9 +112,13 @@ def _week(w, days_off=frozenset()):
         if not meal or day not in DAYS:
             continue
         date = start + dt.timedelta(days=DAYS.index(day)) if start else None
-        days.append({"key": day[:3].lower(), "day": day, "meal": meal, "options": options,
-                     "date": date.isoformat() if date else "",
-                     "date_label": f"{date:%b} {date.day}" if date else ""})
+        entry = {"key": day[:3].lower(), "day": day, "meal": meal, "options": options,
+                 "date": date.isoformat() if date else "",
+                 "date_label": f"{date:%b} {date.day}" if date else ""}
+        special = _special_prices(item.get("special_prices"))
+        if special:
+            entry["special"] = special  # menu_data fills in the usual price for any it leaves blank
+        days.append(entry)
     deadline = _deadline(w.get("order_deadline"), start) if days else None
     if deadline and not str(w.get("order_deadline") or "").strip():
         # The usual Friday deadline moves to the school day before when that Friday is a day off.
@@ -138,6 +142,20 @@ def _week(w, days_off=frozenset()):
         "days": days,
         "no_school": [_day_off(d, start) for d in off] if start else [],
     }
+
+def _special_prices(value):
+    """A day's own prices (a special meal, e.g. Thanksgiving: Garrett, 2026-11-10), only those the office typed."""
+    if not isinstance(value, dict):
+        return {}
+    out = {}
+    for k in ("regular", "preschool", "staff"):
+        try:
+            v = float(str(value.get(k) or "").replace("$", "").strip() or 0)
+        except ValueError:
+            v = 0
+        if v > 0:
+            out[k] = v
+    return out
 
 def _short_deadline(deadline):
     """"Fri 11/6, 9 AM": short enough for the Week picker on a phone."""
@@ -163,10 +181,16 @@ def menu_data(data, today=None):
         (w for w in weeks if w["days"]), None) or {"week_start": "", "week_end": "", "week_label": "", "deadline": "",
                                                   "deadline_label": "", "deadline_short": "", "note": "", "graphic": "", "days": [],
                                                   "no_school": []}
+    prices = {"regular": float(data.get("price_regular") or 8), "preschool": float(data.get("price_preschool") or 5),
+              "staff": float(data.get("price_staff") or 4)}
+    for w in weeks:  # a day with special prices gets all three ("prices"); every other day uses the usual ones
+        for d in w["days"]:
+            special = d.pop("special", None)
+            if special:
+                d["prices"] = {**prices, **special}
     return {
         **first,
-        "prices": {"regular": float(data.get("price_regular") or 8), "preschool": float(data.get("price_preschool") or 5),
-                   "staff": float(data.get("price_staff") or 4)},
+        "prices": prices,
         "grades": [{"value": v, "label": l, "preschool": p} for v, l, p in GRADES] + [STAFF],
         "weeks": weeks,
     }
@@ -192,7 +216,15 @@ def _menu_table(week):
         + f'</th><td>{esc(d["meal"])}'
         + (f'<span class="lunch-choices">Choice of: {esc(", ".join(d["options"]))}</span>'
            if d["options"] and d["meal"] != " or ".join(d["options"]) else "")
+        + _special_line(d)
         + '</td></tr>' for d in week["days"]) + "</tbody></table>"
+
+def _special_line(d):
+    """"Special price: $12.00 ($7.00 preschool)" under a day with its own prices (staff prices aren't shown)."""
+    p = d.get("prices")
+    if not p:
+        return ""
+    return f'<span class="lunch-choices">Special price: {money(p["regular"])} ({money(p["preschool"])} for preschool)</span>'
 
 def _week_card(week, i, root):
     """One week, with a banner that says which week it is (lunch.js marks This week / Next week)."""
@@ -251,7 +283,7 @@ def _forms_link(form):
 def _day_box(d):
     """One day on the order form: a checkbox, plus a list of the day's choices when it has any."""
     box = (f'<label class="lunch-day"><input type="checkbox" name="days" value="{d["key"]}">'
-           f'<span><b>{esc(d["day"])}</b> {esc(d["date_label"])}<br>{esc(d["meal"])}</span></label>')
+           f'<span><b>{esc(d["day"])}</b> {esc(d["date_label"])}<br>{esc(d["meal"])}{_special_line(d)}</span></label>')
     if not d["options"]:
         return box
     opts = '<option value="">Choose…</option>' + "".join(f"<option>{esc(o)}</option>" for o in d["options"])
