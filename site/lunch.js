@@ -42,11 +42,15 @@
   function money(n) { return "$" + n.toFixed(2); }
   function show(cls, html) { status.className = "notice " + cls; status.innerHTML = html; status.scrollIntoView({block: "center"}); }
   function children() { return Array.prototype.slice.call(list.querySelectorAll(".lunch-child")); }
-  function price(grade) {
+  // A day can have its own prices (a special meal); every other day uses the usual ones.
+  function price(grade, day) {
     if (!menu || !grade) return 0;
+    var p = menu.prices, w = (menu.weeks || []).filter(function (x) { return x.week_start === week(); })[0];
+    var d = w && w.days.filter(function (x) { return x.key === day; })[0];
+    if (d && d.prices) p = d.prices;
     for (var i = 0; i < menu.grades.length; i++)
       if (menu.grades[i].value === grade)
-        return menu.grades[i].staff ? menu.prices.staff : menu.grades[i].preschool ? menu.prices.preschool : menu.prices.regular;
+        return menu.grades[i].staff ? p.staff : menu.grades[i].preschool ? p.preschool : p.regular;
     return 0;
   }
   function refresh() {
@@ -56,7 +60,9 @@
       c.querySelector(".lunch-remove").hidden = kids.length < 2;
       var g = daysOf(c);
       if (c.querySelector("[name=grade]").value === "STAFF") staff = true;
-      total += g ? price(c.querySelector("[name=grade]").value) * g.querySelectorAll("[name=days]:checked").length : 0;
+      if (g) Array.prototype.forEach.call(g.querySelectorAll("[name=days]:checked"), function (box) {
+        total += price(c.querySelector("[name=grade]").value, box.value);
+      });
     });
     totalEl.textContent = money(total);
     totalEl.parentNode.hidden = staff; // staff prices aren't shown on the site

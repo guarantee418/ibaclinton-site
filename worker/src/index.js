@@ -498,11 +498,14 @@ export function validateOrder(body, menu, now, staffFamily = false) {
       if (!hit) return { error: `Please choose ${open.get(d).day}'s lunch for ${name}` };
       choices[d] = hit;
     }
-    const price = grade.staff || staffFamily ? menu.prices.staff : grade.preschool ? menu.prices.preschool : menu.prices.regular;
+    const kind = grade.staff || staffFamily ? "staff" : grade.preschool ? "preschool" : "regular";
+    const price = menu.prices[kind];
     if (!(price > 0)) return { error: `Please choose a grade for ${name}` };
     const ordered = DAY_KEYS.filter((d) => days.includes(d));
-    total += price * ordered.length;
-    children.push({ name, grade, price, days: ordered, choices });
+    // A day with its own prices (a special meal, e.g. Thanksgiving) costs that instead of the usual price.
+    const dayPrices = Object.fromEntries(ordered.map((d) => [d, (open.get(d).prices && open.get(d).prices[kind]) || price]));
+    total += ordered.reduce((n, d) => n + dayPrices[d], 0);
+    children.push({ name, grade, price, days: ordered, choices, dayPrices });
   }
   // Staff prices aren't shown on the website (Garrett): staff and staff-family orders get no total there,
   // but their confirmation email has it.
@@ -516,9 +519,26 @@ export function orderRows(order, menu, orderId, now) {
     eastern(now, true), usDate(menu.week_start), orderId, parent, order.parent.email, order.parent.phone,
     c.name, c.grade.label, c.grade.preschool ? "Yes" : "No", c.price,
     ...DAY_KEYS.map((d) => (c.days.includes(d) ? (c.choices && c.choices[d]) || "X" : "")),
-    '=COUNTIF(Orders[@[Mon]:[Fri]],"?*")', "=[@Lunches]*[@[Price per lunch]]",
-    order.staffFamily && !c.grade.staff ? "Staff family price" : "",
+    '=COUNTIF(Orders[@[Mon]:[Fri]],"?*")', totalFormula(c),
+    [order.staffFamily && !c.grade.staff ? "Staff family price" : "", ...specialNotes(c, menu)].filter(Boolean).join("; "),
   ]);
+}
+
+// Days at a special price add the difference only while that day is still filled in, so the office can untick
+// it on the Orders tab (a phone change) and the Total follows.
+const DAY_COLS = { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri" };
+function specialDays(c) {
+  return (c.days || []).filter((d) => c.dayPrices && Math.abs(c.dayPrices[d] - c.price) > 0.001);
+}
+export function totalFormula(c) {
+  return "=[@Lunches]*[@[Price per lunch]]" + specialDays(c).map((d) => {
+    const diff = Math.round((c.dayPrices[d] - c.price) * 100) / 100;
+    return `+IF([@${DAY_COLS[d]}]<>"",${diff},0)`;
+  }).join("");
+}
+function specialNotes(c, menu) {
+  const byKey = new Map((menu.days || []).map((x) => [x.key, x]));
+  return specialDays(c).map((d) => `${(byKey.get(d) || {}).day || DAY_COLS[d]} ${money(c.dayPrices[d])} (special price)`);
 }
 
 export function confirmationMail(order, menu, orderId, env) {
@@ -527,11 +547,15 @@ export function confirmationMail(order, menu, orderId, env) {
   const kids = order.children.map((c) => {
     const lines = c.days.map((d) => {
       const day = byKey.get(d);
-      return `<li>${e(day.day)} ${e(day.date_label)}: ${e((c.choices && c.choices[d]) || day.meal)}</li>`;
+      const each = c.dayPrices ? c.dayPrices[d] : c.price;
+      const special = Math.abs(each - c.price) > 0.001 ? ` (${money(each)})` : "";
+      return `<li>${e(day.day)} ${e(day.date_label)}: ${e((c.choices && c.choices[d]) || day.meal)}${special}</li>`;
     }).join("");
     const count = `${c.days.length} lunch${c.days.length === 1 ? "" : "es"}`;
+    const sub = c.days.reduce((n, d) => n + (c.dayPrices ? c.dayPrices[d] : c.price), 0);
+    const at = c.days.every((d) => !c.dayPrices || Math.abs(c.dayPrices[d] - c.price) < 0.001) ? ` at ${money(c.price)}` : "";
     return `<p style="margin:12px 0 4px"><b>${e(c.name)}</b> (${e(c.grade.label)}), ${count}` +
-      ` at ${money(c.price)}: ${money(c.price * c.days.length)}</p><ul style="margin:0">${lines}</ul>`;
+      `${at}: ${money(sub)}</p><ul style="margin:0">${lines}</ul>`;
   }).join("");
   const content =
     `<p>Dear ${e(order.parent.first)} ${e(order.parent.last)},</p>` +
