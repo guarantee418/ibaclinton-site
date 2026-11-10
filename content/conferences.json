@@ -4,6 +4,7 @@
   "end": "1:00 PM",
   "minutes": 15,
   "break_minutes": 5,
+  "booking_deadline": "2026-11-13T12:00",
   "teachers": [
     {
       "name": "Miss Dove",
