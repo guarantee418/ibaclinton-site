@@ -1,28 +1,31 @@
 {
   "weeks": [
     {
-      "week_start": "2026-11-09",
+      "week_start": "2026-11-16",
       "menu": [
         {
           "day": "Monday",
-          "meal": "Chili & Cornbread"
+          "meal": "NO SCHOOL"
         },
         {
           "day": "Tuesday",
-          "meal": "Teriyaki Chicken & Rice"
+          "meal": "Breakfast for lunch"
         },
         {
           "day": "Wednesday",
-          "meal": "NO SCHOOL "
+          "meal": "Chicken Sandwiches & Mac N Cheese"
         },
         {
           "day": "Thursday",
-          "meal": "Chicken Alfredo"
+          "meal": "Hotdogs & Chips"
         },
         {
           "day": "Friday",
-          "meal": "Corndogs & Fries"
+          "meal": "Quesadillas & Rice"
         }
+      ],
+      "no_school": [
+        "Monday"
       ]
     }
   ],
