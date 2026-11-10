@@ -23,7 +23,6 @@
       "title": "Hot Lunch",
       "when": "Orders close Friday at 9:00 AM",
       "text": "See this week's menu and order hot lunch for next week right here on The Kings Corner.",
-      "graphic": "/files/64-2.png",
       "button_text": "Order lunch",
       "button_url": "hot-lunch",
       "hidden": false
