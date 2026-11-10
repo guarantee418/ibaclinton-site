@@ -72,7 +72,7 @@ def schedule_data(data):
         while t + length <= end:
             slots.append({"id": f"{t // 60:02d}{t % 60:02d}", "label": time_label(t), "end": time_label(t + length)})
             t += length + max(gap, 0)
-    teachers, seen = [], set()
+    teachers, seen, extra = [], set(), {}
     for item in data.get("teachers") or []:
         name = str(item.get("name") or "").strip()
         if not name:
@@ -84,8 +84,18 @@ def schedule_data(data):
         # A shared panel (High School: three teachers meet each family together) lists its teachers;
         # each of them gets the booking email. A one-teacher panel is just its own name.
         members = [m.strip() for m in re.split(r"[,;\n]", str(item.get("members") or "")) if m.strip()]
+        # Extra times for this teacher only (e.g. "8:40 AM" before the usual start), same length.
+        own = [x["id"] for x in slots]
+        for raw in re.split(r"[,;\n]", str(item.get("extra_times") or "")):
+            t = _time(raw)
+            if t is None or length <= 0:
+                continue
+            sid = f"{t // 60:02d}{t % 60:02d}"
+            if sid not in own:
+                own.append(sid)
+                extra.setdefault(sid, {"id": sid, "label": time_label(t), "end": time_label(t + length)})
         teachers.append({"id": tid, "name": name, "subject": str(item.get("subject") or "").strip(),
-                         "members": members or [name]})
+                         "members": members or [name], "slots": sorted(own)})
     deadline = _deadline(data.get("booking_deadline"), day)
     return {
         "date": day.isoformat() if day else "",
@@ -94,7 +104,10 @@ def schedule_data(data):
         "deadline": deadline.astimezone(dt.timezone.utc).isoformat() if deadline else "",
         "deadline_label": _when(deadline) if deadline else "",
         "note": str(data.get("note") or "").strip(),
-        "slots": slots,
+        # Every time anyone can book (each teacher's own list is under "slots" on the teacher);
+        # the usual day for the page heading.
+        "slots": sorted(slots + [x for k, x in extra.items() if k not in {y["id"] for y in slots}], key=lambda x: x["id"]),
+        "usual": {"start": slots[0]["label"], "end": slots[-1]["end"]} if slots else {},
         "teachers": teachers,
     }
 
@@ -113,8 +126,8 @@ def page_block(data, root, api):
                '<a href="mailto:iba@ibcministries.org">iba@ibcministries.org</a>.</p>')
     if not s["slots"] or not s["teachers"]:
         return '<p class="lead">Conference sign-ups aren’t open right now.</p>' + contact
-    first, last = s["slots"][0], s["slots"][-1]
-    out = [f'<p class="conf-when">{esc(s["date_label"])}, {esc(first["label"])} to {esc(last["end"])}</p>',
+    usual = s["usual"] or {"start": s["slots"][0]["label"], "end": s["slots"][-1]["end"]}
+    out = [f'<p class="conf-when">{esc(s["date_label"])}, {esc(usual["start"])} to {esc(usual["end"])}</p>',
            f'<p class="lead">Each conference is {s["minutes"]} minutes. Choose your child’s teacher, then pick an open time.'
            + (" If you have children in more than one class, book a time with each teacher." if len(s["teachers"]) > 1 else "")
            + "</p>"]

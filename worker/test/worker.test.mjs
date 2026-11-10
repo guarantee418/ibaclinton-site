@@ -1785,3 +1785,18 @@ test("a day with special prices (Thanksgiving meal) costs that instead of the us
   // No special day ordered: the usual formula.
   assert.equal(totalFormula({ price: 8, days: ["tue"], dayPrices: { tue: 8 } }), "=[@Lunches]*[@[Price per lunch]]");
 });
+
+test("extra times: only the teacher who has them can book them, and their list shows them", async () => {
+  const { validateBooking, scheduleMails } = await import("../src/conferences.js");
+  const schedule = {
+    date: "2026-11-16", date_label: "Monday, November 16, 2026", deadline: "2099-01-01T00:00:00Z",
+    slots: [{ id: "0840", label: "8:40 AM", end: "8:55 AM" }, { id: "0900", label: "9:00 AM", end: "9:15 AM" }],
+    teachers: [{ id: "miss-ryans", name: "Miss Ryans", slots: ["0840", "0900"] }, { id: "mrs-kirby", name: "Mrs. Kirby", slots: ["0900"] }],
+  };
+  const body = { slot: "0840", parent_first: "A", parent_last: "B", email: "a@b.org", phone: "1", student: "C" };
+  assert.ok(validateBooking({ ...body, teacher: "miss-ryans" }, schedule, 0).booking);
+  assert.match(validateBooking({ ...body, teacher: "mrs-kirby" }, schedule, 0).error, /choose a time/);
+  const { mails } = scheduleMails(schedule, [], [{ teacher: "Miss Ryans", email: "r@x.org" }, { teacher: "Mrs. Kirby", email: "k@x.org" }], {});
+  assert.match(mails[0].mail.message.body.content, /8:40 AM/);
+  assert.doesNotMatch(mails[1].mail.message.body.content, /8:40 AM/);
+});
