@@ -21,12 +21,7 @@
         },
         {
           "day": "Friday",
-          "meal": "Thanksgiving Feast",
-          "special_prices": {
-            "regular": 12,
-            "preschool": 7,
-            "staff": 6
-          }
+          "meal": "Thanksgiving Feast"
         }
       ],
       "no_school": [
