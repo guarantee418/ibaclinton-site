@@ -50,7 +50,7 @@
 // (send mail as that user, edit that user's OneDrive files). It never sees a password;
 // it keeps Microsoft's refresh token in KV. See worker/README.md for setup.
 
-import { TABLE as CONF_TABLE, bookingRow, conflict, deleteTestBooking, ensureConferenceTab, parentMail, readBookings, takenSlots, teacherEmail,
+import { TABLE as CONF_TABLE, bookingRow, conflict, deleteTestBooking, ensureConferenceTab, parentMail, readBookingDetails, readBookings, scheduleMails, takenSlots, teacherEmail,
   teacherMail, validateBooking } from "./conferences.js";
 import { TABLE as TOUR_TABLE, deleteTestSignup, ensureTourTab, familyMail, officeMail, readSignups, signupRow, takenCounts,
   tourConflict, validateSignup } from "./tours.js";
@@ -339,6 +339,34 @@ async function admin(request, env) {
     if (!token) return json({ ok: false, error: "not connected" }, 503, {});
     const r = await fillBlankWeek(workbook(token, env), env.TABLE || "Orders", week, price);
     return json({ ok: r.filled > 0, week, ...r }, r.filled > 0 ? 200 : 400, {});
+  }
+  if (body.action === "conference_schedules") { // each teacher's conference day by email ("send": test, now or final)
+    const send = String(body.send || ""), to = String(body.test_to || "").trim();
+    if (!["test", "now", "final"].includes(send)) return json({ ok: false, error: "send must be test, now or final" }, 400, {});
+    if (send === "test" && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return json({ ok: false, error: "test_to is required for a test" }, 400, {});
+    const schedule = await loadJson(env.CONF_URL);
+    if (!schedule || !schedule.date || !(schedule.slots || []).length) return json({ ok: false, error: "no conference schedule" }, 400, {});
+    if (send === "final" && Date.now() <= Date.parse(schedule.deadline || 0)) {
+      return json({ ok: false, error: `sign-up is still open until ${schedule.deadline_label}; send "final" after that` }, 400, {});
+    }
+    const sentKey = `confsched:${schedule.date}:${send}`;
+    if (send !== "test" && await env.LUNCH_KV.get(sentKey)) return json({ ok: true, date: schedule.date, already_sent: true }, 200, {});
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    const call = workbook(token, env);
+    const bookings = (await readBookingDetails(call)) || [];
+    const { mails, missing } = scheduleMails(schedule, bookings, await readTeachers(call), env,
+      { testTo: send === "test" ? to : "", final: send === "final" });
+    let sent = 0;
+    // A test sends two samples only: the first teacher and one member of a shared panel.
+    const pick = send === "test" ? [mails[0], mails.find((m) => m.shared)].filter((m, i, a) => m && a.indexOf(m) === i) : mails;
+    for (const m of pick) {
+      const r = await graph(token, "POST", "/me/sendMail", m.mail);
+      if (r.ok) sent++; else console.error("conference schedule mail", r.status, await r.text());
+    }
+    if (send !== "test") await env.LUNCH_KV.put(sentKey, String(sent), { expirationTtl: 60 * 86400 });
+    return json({ ok: sent === pick.length, date: schedule.date, send,
+      teachers: mails.length, sent, booked: mails.map((m) => m.booked), without_email: missing.length }, 200, {});
   }
   if (body.action === "homerooms_late") { // this week's lists to the teachers, when the Monday 7 AM run didn't send them
     const week = String(body.week || ""), now = new Date();

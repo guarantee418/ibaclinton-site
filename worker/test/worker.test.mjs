@@ -1725,3 +1725,38 @@ test("delete_empty_tab: only a tab whose table has no rows with data, never the 
   assert.match((await deleteEmptyTab(f.call, "orders")).error, /own tabs/);
   assert.ok(!f.calls.length);
 });
+
+// ------------------------------------------------------------------ each teacher's conference day
+test("scheduleMails: one list per teacher, every time, shared panel to each member, Cc and test mode", async () => {
+  const { scheduleMails } = await import("../src/conferences.js");
+  const schedule = {
+    date: "2026-11-16", date_label: "Monday, November 16, 2026", deadline: "2099-01-01T00:00:00Z", deadline_label: "Friday at 3:00 PM",
+    slots: [{ id: "0900", label: "9:00 AM", end: "9:15 AM" }, { id: "0920", label: "9:20 AM", end: "9:35 AM" }],
+    teachers: [{ id: "mrs-kirby", name: "Mrs. Kirby" }, { id: "miss-dove", name: "Miss Dove" },
+      { id: "hs", name: "High School Teachers", members: ["Mr. Damm", "Mr. Greene"] }],
+  };
+  const bookings = [
+    { date: "2026-11-16", time: "9:20 AM", teacher: "mrs kirby", student: "Ann <Lee>", parent: "Bo Lee", email: "bo@x.org", phone: "555", notes: "" },
+    { date: "2026-11-16", time: "9:00 AM", teacher: "high school teachers", student: "Cy Ray", parent: "Di Ray", email: "", phone: "1", notes: "math" },
+    { date: "2026-11-09", time: "9:00 AM", teacher: "mrs kirby", student: "Old", parent: "Old", email: "", phone: "", notes: "" },
+  ];
+  const teachers = [{ teacher: "Mrs. Kirby", email: "k@x.org" }, { teacher: "Mr. Damm", email: "d@x.org" }, { teacher: "Mr. Greene", email: "g@x.org" }];
+  const env = { CONF_CC: "ibs@x.org", REPLY_TO: "ibs@x.org", SIGNATURE: "\nOffice" };
+  const { mails, missing } = scheduleMails(schedule, bookings, teachers, env);
+  assert.deepEqual(mails.map((m) => [m.name, m.booked]), [["Mrs. Kirby", 1], ["Mr. Damm", 1], ["Mr. Greene", 1]]);
+  assert.deepEqual(missing, ["Miss Dove"]);
+  const k = mails[0].mail.message;
+  assert.equal(k.toRecipients[0].emailAddress.address, "k@x.org");
+  assert.equal(k.ccRecipients[0].emailAddress.address, "ibs@x.org");
+  assert.match(k.subject, /^Your conferences on Monday, November 16$/);
+  assert.match(k.body.content, /Ann &lt;Lee&gt;/);
+  assert.match(k.body.content, /Open/);
+  assert.doesNotMatch(k.body.content, /Old/);
+  assert.match(k.body.content, /can still sign up online until Friday at 3:00 PM/);
+  assert.match(mails[1].mail.message.body.content, /together with Mr\. Greene/);
+  const t = scheduleMails(schedule, bookings, teachers, env, { testTo: "me@x.org", final: true });
+  assert.equal(t.mails.length, 4); // Miss Dove too, in a test
+  assert.ok(t.mails.every((m) => m.mail.message.toRecipients[0].emailAddress.address === "me@x.org" && !m.mail.message.ccRecipients));
+  assert.match(t.mails[0].mail.message.subject, /^TEST: Final list: your conferences/);
+  assert.match(t.mails[0].mail.message.body.content, /final list/);
+});

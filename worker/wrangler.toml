@@ -35,6 +35,7 @@ CONF_URL = "https://raw.githubusercontent.com/guarantee418/ibaclinton-site/main/
 TOUR_URL = "https://raw.githubusercontent.com/guarantee418/ibaclinton-site/main/site/tours/schedule.json"
 TOUR_NOTIFY = "iba@ibcministries.org"
 HOMEROOM_CC = "ibs@ibcministries.org"  # Cc on the Monday homeroom lunch lists
+CONF_CC = "ibs@ibcministries.org"  # Cc on each teacher's conference-day list (Actions -> "Send conference schedules")
 # Transcript requests (src/transcripts.js): who hears about each one, the fees in dollars (0 = no fee) and
 # the online payment page alumni pay at (a Payments Hub payment link, "Transcript Request", ID 82448; empty = the
 # office collects the fee) and the total the family pays there with the card processing fee (empty = just the fee).
