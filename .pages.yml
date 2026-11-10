@@ -236,6 +236,10 @@ content:
             label: Teachers in this panel (only for a shared panel)
             type: string
             description: For a panel where several teachers meet each family together, list them with commas, for example Mr. Napierala, Mr. Damm, Mr. Greene. Each gets the booking email. Leave blank for one teacher.
+          - name: extra_times
+            label: Extra times for this teacher (optional)
+            type: string
+            description: Start times only this teacher offers besides the usual ones, with commas, for example 8:40 AM. Each is as long as the others. Leave blank for the usual times.
 
   - name: parents
     label: The Kings Corner (parents page)

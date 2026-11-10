@@ -68,6 +68,12 @@ export function takenSlots(schedule, bookings) {
   return out;
 }
 
+// One teacher's times: their own list when the schedule has one (extra times), else every time.
+export function teacherSlots(schedule, teacher) {
+  if (!teacher || !Array.isArray(teacher.slots)) return schedule.slots || [];
+  return (schedule.slots || []).filter((s) => teacher.slots.includes(s.id));
+}
+
 // ------------------------------------------------------------------ a booking
 export function validateBooking(body, schedule, now) {
   if (!schedule || !schedule.date || !schedule.slots || !schedule.slots.length || !schedule.teachers || !schedule.teachers.length) {
@@ -80,7 +86,7 @@ export function validateBooking(body, schedule, now) {
   const str = (v, max) => String(v == null ? "" : v).replace(/[\u0000-\u001f]/g, " ").trim().slice(0, max);
   const teacher = schedule.teachers.find((t) => t.id === str(body.teacher, 80));
   if (!teacher) return { error: "Please choose a teacher; if the page is old, reload it" };
-  const slot = schedule.slots.find((s) => s.id === str(body.slot, 8));
+  const slot = teacherSlots(schedule, teacher).find((s) => s.id === str(body.slot, 8));
   if (!slot) return { error: "Please choose a time" };
   const b = {
     teacher, slot,
@@ -184,7 +190,8 @@ export function scheduleMails(schedule, bookings, teachers, env, { testTo = "", 
   for (const panel of schedule.teachers || []) {
     const mine = day.filter((b) => b.teacher === normName(panel.name));
     const shared = (panel.members || []).length > 1;
-    const rows = schedule.slots.map((s) => {
+    const times = teacherSlots(schedule, panel);
+    const rows = times.map((s) => {
       const b = mine.find((x) => x.time === normTime(s.label));
       const time = `${e(s.label)}&ndash;${e(s.end)}`;
       const td = 'style="padding:4px 8px;border-bottom:1px solid #ddd;vertical-align:top"';
@@ -192,7 +199,7 @@ export function scheduleMails(schedule, bookings, teachers, env, { testTo = "", 
       return `<tr><td ${td}><b>${time}</b></td><td ${td}>${e(b.student)}</td><td ${td}>${e(b.parent)}</td>` +
         `<td ${td}>${e(b.phone)}${b.email ? `<br>${e(b.email)}` : ""}</td><td ${td}>${e(b.notes)}</td></tr>`;
     }).join("");
-    const booked = schedule.slots.filter((s) => mine.some((x) => x.time === normTime(s.label))).length;
+    const booked = times.filter((s) => mine.some((x) => x.time === normTime(s.label))).length;
     const closed = final || Date.now() > Date.parse(schedule.deadline || 0);
     for (const name of shared ? panel.members : [panel.name]) {
       const real = teacherEmail(teachers, name);
@@ -203,7 +210,7 @@ export function scheduleMails(schedule, bookings, teachers, env, { testTo = "", 
         `<p>${e(name)},</p>` +
         `<p>Here ${booked === 1 ? "is your parent-teacher conference" : "are your parent-teacher conferences"} for ` +
         `<b>${e(schedule.date_label)}</b>` + (shared ? ` (${e(panel.name)}, together with ${e(panel.members.filter((m) => m !== name).join(" and "))})` : "") +
-        `: <b>${booked}</b> of ${schedule.slots.length} times booked.</p>` +
+        `: <b>${booked}</b> of ${times.length} times booked.</p>` +
         `<table style="border-collapse:collapse;font-size:14px"><tr><th ${th}>Time</th><th ${th}>Student</th>` +
         `<th ${th}>Parent</th><th ${th}>Phone / email</th><th ${th}>Wants to talk about</th></tr>${rows}</table>` +
         `<p>` + (closed ? "Online sign-up is closed, so this is the final list. "

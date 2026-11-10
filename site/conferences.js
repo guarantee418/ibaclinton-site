@@ -29,6 +29,12 @@
     }).catch(function () { loadError = true; });
   }
 
+  // This teacher's times (a teacher can have extra ones); an older schedule has one list for all.
+  function teacherSlots(t) {
+    if (!t.slots) return schedule.slots;
+    return schedule.slots.filter(function (s) { return t.slots.indexOf(s.id) >= 0; });
+  }
+
   function route() {
     var id = decodeURIComponent(location.hash.replace(/^#/, ""));
     var t = schedule && teacher(id);
@@ -38,7 +44,8 @@
   }
 
   function render(t, message) {
-    var free = 0, slots = schedule.slots.map(function (s) {
+    var mineSlots = teacherSlots(t);
+    var free = 0, slots = mineSlots.map(function (s) {
       var gone = isTaken(t.id, s.id);
       if (!gone) free++;
       return '<button type="button" class="conf-slot" data-slot="' + esc(s.id) + '"' +
@@ -61,7 +68,7 @@
     } else if (!free) {
       html += '<div class="notice">All of ' + esc(t.name) + '’s times are booked. Please call the office at <a href="tel:3018561616">(301) 856-1616</a>.</div>';
     } else {
-      html += '<p class="conf-count">' + free + " of " + schedule.slots.length + " times open, " + schedule.minutes + " minutes each</p>";
+      html += '<p class="conf-count">' + free + " of " + mineSlots.length + " times open, " + schedule.minutes + " minutes each</p>";
     }
     html += '<div class="conf-slots" role="group" aria-label="Times">' + slots + "</div>";
     if (!mine) html +=
