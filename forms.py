@@ -15,7 +15,7 @@ import html
 import json
 import re
 
-MAX_QUESTIONS = 15
+MAX_QUESTIONS = 20
 MAX_CHOICES = 20
 # The editor's question types (.pages.yml) and what they become.
 TYPES = {

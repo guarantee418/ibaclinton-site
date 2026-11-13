@@ -33,7 +33,7 @@ Website files for Independent Baptist Academy, Clinton, MD (ibaclinton.com).
 ## Forms the office adds (The Kings Corner)
 
 - Any Kings Corner section can have a **Form** in the editor: a name, optional text above it, button text, "Stop
-  taking responses", and up to 15 questions (Short answer, Long answer, Email, Phone, Date, Number, Dropdown,
+  taking responses", and up to 20 questions (Short answer, Long answer, Email, Phone, Date, Number, Dropdown,
   Checkboxes, Yes/No box; required; help text). Every form also asks the person's name and email. Approved by
   Garrett 2026-10-20: forms go live when the office saves them.
 - `forms.py` draws the form (sent by `site/forms.js`) and writes `site/forms/forms.json`, which the Pages workflow

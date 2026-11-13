@@ -437,9 +437,9 @@ content:
               - name: questions
                 label: Questions
                 type: object
-                description: Up to 15. Drag to reorder (reordering starts a new tab, so set the order before the form goes out).
+                description: Up to 20. Drag to reorder (reordering starts a new tab, so set the order before the form goes out).
                 list:
-                  max: 15
+                  max: 20
                   collapsible:
                     collapsed: true
                     summary: "{label}"

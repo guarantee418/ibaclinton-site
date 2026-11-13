@@ -337,9 +337,35 @@
             "required": true
           },
           {
+            "label": "Your school or church",
+            "type": "Short answer",
+            "required": true
+          },
+          {
+            "label": "Your position",
+            "type": "Short answer",
+            "required": true,
+            "help": "For example: Pastor, Teacher, Principal, Youth Leader."
+          },
+          {
             "label": "Student's name",
             "type": "Short answer",
             "required": true
+          },
+          {
+            "label": "Is this student currently attending your school or church?",
+            "type": "Dropdown (pick one)",
+            "required": true,
+            "choices": [
+              "Yes",
+              "No"
+            ]
+          },
+          {
+            "label": "If not, what years did they attend?",
+            "type": "Short answer",
+            "required": false,
+            "help": "For example: 2021-2024."
           },
           {
             "label": "How do you know this family?",

@@ -10,7 +10,7 @@
 
 export const FIXED = ["Received", "Response #", "Status", "Notes", "Name", "Email"]; // forms.py FIXED
 const FIXED_WIDTHS = [130, 90, 100, 200, 160, 210];
-const MAX_QUESTIONS = 15;
+const MAX_QUESTIONS = 20;
 export const WAIT = { ms: 4000 }; // how long to wait for a tab another response is making (tests set 0)
 
 export function columns(form) { return [...FIXED, ...form.questions.map((q) => q.label)]; }
