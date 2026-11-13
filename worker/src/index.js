@@ -50,7 +50,7 @@
 // (send mail as that user, edit that user's OneDrive files). It never sees a password;
 // it keeps Microsoft's refresh token in KV. See worker/README.md for setup.
 
-import { TABLE as CONF_TABLE, bookingRow, conflict, deleteTestBooking, ensureConferenceTab, parentMail, readBookingDetails, readBookings, scheduleMails, takenSlots, teacherEmail,
+import { TABLE as CONF_TABLE, bookingRow, conflict, deleteTestBooking, ensureConferenceTab, parentMail, readBookingDetails, readBookings, scheduleMails, takenSlots, teacherEmail, teacherSlots, normName, normTime,
   teacherMail, validateBooking } from "./conferences.js";
 import { TABLE as TOUR_TABLE, deleteTestSignup, ensureTourTab, familyMail, officeMail, readSignups, signupRow, takenCounts,
   tourConflict, validateSignup } from "./tours.js";
@@ -368,6 +368,26 @@ async function admin(request, env) {
     return json({ ok: sent === pick.length, date: schedule.date, send,
       teachers: mails.length, sent, booked: mails.map((m) => m.booked), without_email: missing.length }, 200, {});
   }
+  if (body.action === "conference_allow_late") { // opens one teacher's time for one booking after sign-up closed (a call-in)
+    const schedule = await loadJson(env.CONF_URL);
+    const teacher = (schedule && schedule.teachers || []).find((t) => normName(t.name) === normName(body.teacher));
+    const slot = teacher && teacherSlots(schedule, teacher).find((x) => normTime(x.label) === normTime(body.time));
+    if (!teacher || !slot) return json({ ok: false, error: "no such teacher or time on the schedule" }, 400, {});
+    // No names here: the family's details go straight to the booking form, never through a (public) workflow log.
+    await env.LUNCH_KV.put(lateKey(schedule, teacher.id, slot.id), "1", { expirationTtl: 1800 });
+    return json({ ok: true, teacher: teacher.name, time: slot.label, open_minutes: 30 }, 200, {});
+  }
+  if (body.action === "conference_schedule_one") { // one teacher's list again (e.g. after a late booking), marked final once closed
+    const schedule = await loadJson(env.CONF_URL);
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    const call = workbook(token, env);
+    const { mails } = scheduleMails(schedule, (await readBookingDetails(call)) || [], await readTeachers(call), env);
+    const m = mails.find((x) => normName(x.name) === normName(body.teacher));
+    if (!m) return json({ ok: false, error: "no such teacher, or no email on the Teachers tab" }, 400, {});
+    const r = await graph(token, "POST", "/me/sendMail", m.mail);
+    return json({ ok: r.ok, booked: m.booked }, r.ok ? 200 : 502, {});
+  }
   if (body.action === "homerooms_late") { // this week's lists to the teachers, when the Monday 7 AM run didn't send them
     const week = String(body.week || ""), now = new Date();
     const monday = new Date(now.getTime() - ((now.getUTCDay() + 6) % 7) * 86400000).toISOString().slice(0, 10);
@@ -598,7 +618,11 @@ async function conference(request, env, cors) {
     return json({ ok: false, error: "Too many sign-ups from this connection; please call the office" }, 429, cors);
   }
   const schedule = await loadJson(env.CONF_URL);
-  const checked = validateBooking(body, schedule, Date.now());
+  let checked = validateBooking(body, schedule, Date.now());
+  // After sign-up closes, a time the office opened for one late booking (admin "conference_allow_late") still takes it.
+  const late = schedule && schedule.date ? lateKey(schedule, String(body.teacher || ""), String(body.slot || "")) : "";
+  const lateOk = checked.error && late && await env.LUNCH_KV.get(late);
+  if (lateOk) checked = validateBooking(body, schedule, Date.parse(schedule.deadline) - 1);
   if (checked.error) return json({ ok: false, error: checked.error }, 400, cors);
   const b = checked.booking;
   const token = await accessToken(env);
@@ -624,6 +648,7 @@ async function conference(request, env, cors) {
     await env.LUNCH_KV.delete(lock);
     return json({ ok: false, error: "We couldn't save your booking" }, 502, cors);
   }
+  if (lateOk) await env.LUNCH_KV.delete(late);
   const mail = await graph(token, "POST", "/me/sendMail", parentMail(b, schedule, id, env));
   if (!mail.ok) console.error("conference mail", mail.status, await mail.text());
   try {
@@ -638,6 +663,8 @@ async function conference(request, env, cors) {
   } catch (err) { console.error("teacher mail", err && err.message); }
   return json({ ok: true, booking_id: id, time: b.slot.label, email_sent: mail.ok }, 200, cors);
 }
+
+function lateKey(schedule, teacherId, slotId) { return `conf-late:${schedule.date}:${teacherId}:${slotId}`; }
 
 // The bookings, adding the Conferences tab first if the workbook doesn't have it yet.
 async function bookingsOrTab(call) {
