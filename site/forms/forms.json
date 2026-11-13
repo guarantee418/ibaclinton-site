@@ -5,7 +5,7 @@
       "name": "Student Referral",
       "sheet": "Student Referral",
       "table": "Form_StudentReferral",
-      "version": "5b3a69499d",
+      "version": "e3bdab76e1",
       "closed": false,
       "questions": [
         {
@@ -19,6 +19,24 @@
         },
         {
           "key": "q2",
+          "label": "Your school or church",
+          "text": "Your school or church",
+          "type": "short",
+          "required": true,
+          "choices": [],
+          "help": ""
+        },
+        {
+          "key": "q3",
+          "label": "Your position",
+          "text": "Your position",
+          "type": "short",
+          "required": true,
+          "choices": [],
+          "help": "For example: Pastor, Teacher, Principal, Youth Leader."
+        },
+        {
+          "key": "q4",
           "label": "Student's name",
           "text": "Student's name",
           "type": "short",
@@ -27,7 +45,28 @@
           "help": ""
         },
         {
-          "key": "q3",
+          "key": "q5",
+          "label": "Is this student currently attending your school or church?",
+          "text": "Is this student currently attending your school or church?",
+          "type": "choice",
+          "required": true,
+          "choices": [
+            "Yes",
+            "No"
+          ],
+          "help": ""
+        },
+        {
+          "key": "q6",
+          "label": "If not, what years did they attend?",
+          "text": "If not, what years did they attend?",
+          "type": "short",
+          "required": false,
+          "choices": [],
+          "help": "For example: 2021-2024."
+        },
+        {
+          "key": "q7",
           "label": "How do you know this family?",
           "text": "How do you know this family?",
           "type": "short",
@@ -36,7 +75,7 @@
           "help": "For example: neighbor, church, co-worker, sports team."
         },
         {
-          "key": "q4",
+          "key": "q8",
           "label": "The student is respectful to adults.",
           "text": "The student is respectful to adults.",
           "type": "choice",
@@ -51,7 +90,7 @@
           "help": ""
         },
         {
-          "key": "q5",
+          "key": "q9",
           "label": "The student gets along well with other children.",
           "text": "The student gets along well with other children.",
           "type": "choice",
@@ -66,7 +105,7 @@
           "help": ""
         },
         {
-          "key": "q6",
+          "key": "q10",
           "label": "The student works hard in school.",
           "text": "The student works hard in school.",
           "type": "choice",
@@ -81,7 +120,7 @@
           "help": ""
         },
         {
-          "key": "q7",
+          "key": "q11",
           "label": "The student follows rules and instructions.",
           "text": "The student follows rules and instructions.",
           "type": "choice",
@@ -96,7 +135,7 @@
           "help": ""
         },
         {
-          "key": "q8",
+          "key": "q12",
           "label": "The student would be a good influence on classmates.",
           "text": "The student would be a good influence on classmates.",
           "type": "choice",
@@ -111,7 +150,7 @@
           "help": ""
         },
         {
-          "key": "q9",
+          "key": "q13",
           "label": "The student attends church regularly.",
           "text": "The student attends church regularly.",
           "type": "choice",
@@ -126,7 +165,7 @@
           "help": ""
         },
         {
-          "key": "q10",
+          "key": "q14",
           "label": "The student's family values a Christian education.",
           "text": "The student's family values a Christian education.",
           "type": "choice",
@@ -141,7 +180,7 @@
           "help": ""
         },
         {
-          "key": "q11",
+          "key": "q15",
           "label": "Tell us about the student's family.",
           "text": "Tell us about the student's family.",
           "type": "long",
@@ -150,7 +189,7 @@
           "help": "For example: parents, brothers and sisters, church, what matters to them."
         },
         {
-          "key": "q12",
+          "key": "q16",
           "label": "How would you describe the student's character?",
           "text": "How would you describe the student's character?",
           "type": "long",
@@ -159,7 +198,7 @@
           "help": "For example: kind, respectful, a hard worker, a leader."
         },
         {
-          "key": "q13",
+          "key": "q17",
           "label": "What are the student's interests or strengths?",
           "text": "What are the student's interests or strengths?",
           "type": "long",
@@ -168,7 +207,7 @@
           "help": "Sports, music, art, reading, math, etc."
         },
         {
-          "key": "q14",
+          "key": "q18",
           "label": "Why do you think IBA would be a good fit for this student?",
           "text": "Why do you think IBA would be a good fit for this student?",
           "type": "long",
@@ -177,7 +216,7 @@
           "help": ""
         },
         {
-          "key": "q15",
+          "key": "q19",
           "label": "Anything else we should know?",
           "text": "Anything else we should know?",
           "type": "long",
