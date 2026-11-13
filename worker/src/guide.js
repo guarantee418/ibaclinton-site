@@ -284,7 +284,7 @@ export const GUIDE = [
   ["step", "3", "To see who is out on a day, sort or filter the First day column. Use Notes for anything worth remembering (called in, doctor's note received, and so on)."],
   ["gap"],
   ["head", "Forms added in the editor"],
-  ["step", "1", "In the website editor, open The Kings Corner, open a section and fill in its Form: a name (also the tab's name here), up to 15 questions with an answer type each, and Required where needed. Every form also asks the person's name and email. Save, and the form shows in that section's pop-up a minute or two later."],
+  ["step", "1", "In the website editor, open The Kings Corner, open a section and fill in its Form: a name (also the tab's name here), up to 20 questions with an answer type each, and Required where needed. Every form also asks the person's name and email. Save, and the form shows in that section's pop-up a minute or two later."],
   ["step", "2", "The first response makes the form's tab in this workbook, with one column per question. Each response adds a row with Status 'New'; the person gets a confirmation email with their answers, and iba@ and ibs@ get the details (pressing Reply answers the person)."],
   ["step", "3", "Change Status as you go (for example Read, Done) and use Notes. To stop a form, turn on 'Stop taking responses' in the editor, or delete the form from the section."],
   ["warn", "⚠", "Adding a question adds a column at the end of the form's tab. Renaming the form, or renaming, removing or reordering its questions, starts a NEW tab (for example 'Field Trip 2'), so answers never land under the wrong heading. NEVER rename, move or delete the columns on a form's tab: the next response would start a new tab."],
