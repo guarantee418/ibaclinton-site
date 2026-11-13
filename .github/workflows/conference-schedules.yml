@@ -7,17 +7,26 @@ name: Send conference schedules to teachers
 #   test  = two sample emails (the first teacher and one High School member) to test_to only
 #   now   = the real emails, once
 #   final = the real emails again marked "Final list", once, only after online sign-up closes
+#   one   = one teacher's list again (input "teacher"), e.g. after a late booking
+#   allow-late = opens one teacher's time (inputs "teacher" and "time") for one booking for 30 minutes after sign-up
+#           closed; the family's details then go straight to the booking form, never through this public log
 # The log shows counts only, never names.
 on:
   workflow_dispatch:
     inputs:
       send:
-        description: "test, now or final"
+        description: "test, now, final, one (one teacher's list) or allow-late"
         required: true
         type: choice
-        options: [test, now, final]
+        options: [test, now, final, one, allow-late]
       test_to:
         description: "For a test: the one address that gets the samples"
+        required: false
+      teacher:
+        description: "For one / allow-late: the teacher as on the website, e.g. Ms. Raymond"
+        required: false
+      time:
+        description: "For allow-late: the time, e.g. 8:40 AM"
         required: false
 
 permissions:
@@ -30,10 +39,16 @@ jobs:
       LUNCH_SETUP_KEY: ${{ secrets.LUNCH_SETUP_KEY }}
       SEND: ${{ inputs.send }}
       TEST_TO: ${{ inputs.test_to }}
+      TEACHER: ${{ inputs.teacher }}
+      TIME: ${{ inputs.time }}
     steps:
       - name: Send
         run: |
-          body=$(jq -nc --arg s "$SEND" --arg t "$TEST_TO" '{action:"conference_schedules",send:$s,test_to:$t}')
+          case "$SEND" in
+            one) body=$(jq -nc --arg t "$TEACHER" '{action:"conference_schedule_one",teacher:$t}') ;;
+            allow-late) body=$(jq -nc --arg t "$TEACHER" --arg h "$TIME" '{action:"conference_allow_late",teacher:$t,time:$h}') ;;
+            *) body=$(jq -nc --arg s "$SEND" --arg t "$TEST_TO" '{action:"conference_schedules",send:$s,test_to:$t}') ;;
+          esac
           curl -fsS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" \
             -H "X-Setup-Key: $LUNCH_SETUP_KEY" -H "Content-Type: application/json" -d "$body"
           echo
