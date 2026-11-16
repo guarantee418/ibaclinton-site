@@ -67,6 +67,66 @@ export function menuRows(menu, existing = []) {
     .map(([iso, meals]) => { const [y, m, d] = iso.split("-").map(Number); return [`=DATE(${y},${m},${d})`, ...meals]; });
 }
 
+// Special prices (e.g. the Thanksgiving meal, 2026-11-16): a list beside the menu list, one row per week, day and usual
+// price (8, 5 or 4) with the extra that day costs. Every Orders row uses the same Total formula (TOTAL_FORMULA), which
+// adds the extra for each filled-in day from this list. It has to be the same formula in every row: Excel copies the
+// last row's Total formula down the whole column, so a per-row "+4" ended up on every row (2026-11-16).
+export const SPECIAL_TOP = 18, SPECIAL_FIRST = 20, SPECIAL_LAST = 120; // T18 title, T19 headings, T20:W120
+const SP = (c) => `Homerooms!$${c}$${SPECIAL_FIRST}:$${c}$${SPECIAL_LAST}`;
+export const TOTAL_FORMULA =
+  "=LET(w,IF(ISNUMBER([@[Week of]]),TEXT([@[Week of]],\"m/d/yyyy\"),TRIM([@[Week of]]&\"\")),p,[@[Price per lunch]]," +
+  `x,LAMBDA(d,SUM((${SP("T")}=w)*(${SP("U")}=d)*(${SP("V")}=p)*${SP("W")})),` +
+  "[@Lunches]*p" + DAYS.map((d) => `+([@${d}]<>"")*x("${d}")`).join("") + ")";
+
+// The rows for the special-price list: the weeks already there (past weeks stay, so old rows keep their totals) plus
+// every special day in menu.json, as [week "m/d/yyyy", day "Fri", usual price, extra].
+export function specialRows(menu, existing = []) {
+  const keyed = new Map();
+  for (const r of existing) {
+    const iso = excelDate(r[0]);
+    if (!iso || !r[1]) continue;
+    keyed.set(`${iso}|${r[1]}|${Number(r[2])}`, [iso, String(r[1]), Number(r[2]), Number(r[3]) || 0]);
+  }
+  const weeks = menu && Array.isArray(menu.weeks) ? menu.weeks : [];
+  const usual = (menu && menu.prices) || {};
+  for (const w of weeks) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(w.week_start || ""))) continue;
+    for (const d of w.days || []) {
+      if (!d.prices) continue;
+      const day = DAYS.find((x) => x.toLowerCase() === String(d.key));
+      for (const k of ["regular", "preschool", "staff"]) {
+        const u = Number(usual[k]), extra = Math.round((Number(d.prices[k]) - u) * 100) / 100;
+        if (day && u > 0 && extra) keyed.set(`${w.week_start}|${day}|${u}`, [w.week_start, day, u, extra]);
+      }
+    }
+  }
+  return [...keyed.values()].sort((a, b) => a[0].localeCompare(b[0]) || DAYS.indexOf(a[1]) - DAYS.indexOf(b[1]) || b[2] - a[2])
+    .slice(-(SPECIAL_LAST - SPECIAL_FIRST + 1))
+    .map(([iso, day, u, extra]) => { const [y, m, d] = iso.split("-").map(Number); return [`="${m}/${d}/${y}"`, day, u, extra]; });
+}
+
+async function specialList(call, menu) {
+  const s = `/worksheets/${HOMEROOMS_SHEET}`;
+  const r = await call("GET", `${s}/range(address='T${SPECIAL_FIRST}:W${SPECIAL_LAST}')?$select=values`);
+  const existing = r.ok ? ((await r.json()).values || []).filter((row) => row[0] !== "" && row[0] != null) : [];
+  const rows = specialRows(menu, existing);
+  const blank = ["", "", "", ""];
+  await must(call("PATCH", `${s}/range(address='T${SPECIAL_TOP}:W${SPECIAL_LAST}')`, { formulas: [
+    ["Special prices (the service fills this in from the website; please leave it)", "", "", ""],
+    ["Week of", "Day", "Usual price", "Extra"], ...rows, ...Array(SPECIAL_LAST - SPECIAL_FIRST + 1 - rows.length).fill(blank)] }));
+  return rows.length;
+}
+
+// Every row of the Orders table gets TOTAL_FORMULA (admin "fix_totals"). Returns how many rows.
+export async function fixTotals(call) {
+  const r = await call("GET", "/tables/Orders/columns('Total')/dataBodyRange?$select=address,rowCount");
+  if (!r.ok) throw new Error(`orders total ${r.status}`);
+  const { address, rowCount } = await r.json();
+  const range = String(address).split("!").pop();
+  await must(call("PATCH", `/worksheets('Orders')/range(address='${range}')`, { formulas: Array(rowCount).fill([TOTAL_FORMULA]) }));
+  return rowCount;
+}
+
 // Writes the menu list on the Homerooms tab (M18:R70). Returns how many weeks it holds.
 export async function homeroomMenus(call, menu) {
   const s = `/worksheets/${HOMEROOMS_SHEET}`;
@@ -77,6 +137,7 @@ export async function homeroomMenus(call, menu) {
   const all = [...Array(MENU_TOP - MENU_CLEAR).fill(blank), ["Menus by week (the service fills this in from the website; please leave it)", "", "", "", "", ""],
     ["Week of", ...DAYS], ...rows, ...Array(MENU_LAST - MENU_FIRST + 1 - rows.length).fill(blank)];
   await must(call("PATCH", `${s}/range(address='M${MENU_CLEAR}:R${MENU_LAST}')`, { formulas: all }));
+  await specialList(call, menu);
   return rows.length; // its date format and bold headings are set by homeroomMenuRow (organize)
 }
 
