@@ -1762,7 +1762,8 @@ test("scheduleMails: one list per teacher, every time, shared panel to each memb
 });
 
 test("a day with special prices (Thanksgiving meal) costs that instead of the usual price", async () => {
-  const { validateOrder, orderRows, totalFormula } = await import("../src/index.js");
+  const { validateOrder, orderRows } = await import("../src/index.js");
+  const { TOTAL_FORMULA, specialRows, excelDate } = await import("../src/homerooms.js");
   const day = (key, d, extra = {}) => ({ key, day: d, meal: "Meal", options: [], date_label: "Nov 20", ...extra });
   const menu = { week_start: "2026-11-16", week_label: "November 17 – 20", deadline: "2026-11-13T14:00:00Z",
     prices: { regular: 8, preschool: 5, staff: 4 },
@@ -1777,13 +1778,16 @@ test("a day with special prices (Thanksgiving meal) costs that instead of the us
   assert.equal(order.total, 8 + 12 + 7 + 4 + 6);
   const rows = orderRows(order, menu, "ABCDE", new Date(now));
   assert.deepEqual(rows.map((r) => r[9]), [8, 5, 4]); // Price per lunch stays the usual price
-  assert.deepEqual(rows.map((r) => r[16]), ['=[@Lunches]*[@[Price per lunch]]+IF([@Fri]<>"",4,0)',
-    '=[@Lunches]*[@[Price per lunch]]+IF([@Fri]<>"",2,0)', '=[@Lunches]*[@[Price per lunch]]+IF([@Fri]<>"",2,0)']);
+  // Every row has the same Total formula (Excel copies the last row's formula down the whole column); the extra
+  // comes from the special-price list, per week, day and usual price.
+  assert.deepEqual(rows.map((r) => r[16]), [TOTAL_FORMULA, TOTAL_FORMULA, TOTAL_FORMULA]);
+  assert.match(TOTAL_FORMULA, /^=LET\(w,.*\[@Lunches\]\*p\+\(\[@Mon\]<>""\)\*x\("Mon"\).*\+\(\[@Fri\]<>""\)\*x\("Fri"\)\)$/);
+  const list = specialRows({ ...menu, weeks: [{ ...menu }] }, [["11/9/2026", "Mon", 8, 1]]);
+  assert.deepEqual(list, [['="11/9/2026"', "Mon", 8, 1], ['="11/16/2026"', "Fri", 8, 4], ['="11/16/2026"', "Fri", 5, 2],
+    ['="11/16/2026"', "Fri", 4, 2]]); // a past week already on the list stays
   assert.match(rows[0][17], /Friday \$12\.00 \(special price\)/);
   // A staff family's child pays the staff price on the special day too.
   assert.equal(validateOrder({ ...body, children: [body.children[0]] }, menu, now, true).order.total, 4 + 6);
-  // No special day ordered: the usual formula.
-  assert.equal(totalFormula({ price: 8, days: ["tue"], dayPrices: { tue: 8 } }), "=[@Lunches]*[@[Price per lunch]]");
 });
 
 test("extra times: only the teacher who has them can book them, and their list shows them", async () => {

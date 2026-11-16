@@ -69,7 +69,7 @@ import { TABLE as TRANSCRIPT_TABLE, deleteTestRequest, ensureTranscriptTab, offi
   requesterMail, settings as transcriptSettings, validateRequest } from "./transcripts.js";
 import { BOARDS as MONDAY_BOARDS, addFormToMonday, addToMonday, deleteFormItem, deleteFromMonday, setupMonday } from "./monday.js";
 import { STEPS as ORGANIZE_STEPS, deleteEmptyTab, inspect as inspectWorkbook, organize as organizeWorkbook } from "./guide.js";
-import { checkHomerooms, ensureTabs, fillTeacherEmails, weekCounts, homeroomMails, homeroomMenus, mondayToSend, readTeachers,
+import { TOTAL_FORMULA, fixTotals, checkHomerooms, ensureTabs, fillTeacherEmails, weekCounts, homeroomMails, homeroomMenus, mondayToSend, readTeachers,
   readWeek } from "./homerooms.js";
 import { deleteDuplicateOrder, fillBlankWeek } from "./orderfix.js";
 
@@ -368,6 +368,13 @@ async function admin(request, env) {
     return json({ ok: sent === pick.length, date: schedule.date, send,
       teachers: mails.length, sent, booked: mails.map((m) => m.booked), without_email: missing.length }, 200, {});
   }
+  if (body.action === "fix_totals") { // the special-price list, then the same Total formula in every Orders row
+    const token = await accessToken(env);
+    if (!token) return json({ ok: false, error: "not connected" }, 503, {});
+    const call = workbook(token, env);
+    const weeks = await refreshMenus(call, env);
+    return json({ ok: true, menu_weeks: weeks, rows: await fixTotals(call) }, 200, {});
+  }
   if (body.action === "conference_allow_late") { // opens one teacher's time for one booking after sign-up closed (a call-in)
     const schedule = await loadJson(env.CONF_URL);
     const teacher = (schedule && schedule.teachers || []).find((t) => normName(t.name) === normName(body.teacher));
@@ -539,22 +546,16 @@ export function orderRows(order, menu, orderId, now) {
     eastern(now, true), usDate(menu.week_start), orderId, parent, order.parent.email, order.parent.phone,
     c.name, c.grade.label, c.grade.preschool ? "Yes" : "No", c.price,
     ...DAY_KEYS.map((d) => (c.days.includes(d) ? (c.choices && c.choices[d]) || "X" : "")),
-    '=COUNTIF(Orders[@[Mon]:[Fri]],"?*")', totalFormula(c),
+    '=COUNTIF(Orders[@[Mon]:[Fri]],"?*")', TOTAL_FORMULA,
     [order.staffFamily && !c.grade.staff ? "Staff family price" : "", ...specialNotes(c, menu)].filter(Boolean).join("; "),
   ]);
 }
 
-// Days at a special price add the difference only while that day is still filled in, so the office can untick
-// it on the Orders tab (a phone change) and the Total follows.
+// Days at a special price: the Total formula (the same in every row, see TOTAL_FORMULA) adds the extra from the
+// special-price list on the Homerooms tab; Notes says so.
 const DAY_COLS = { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri" };
 function specialDays(c) {
   return (c.days || []).filter((d) => c.dayPrices && Math.abs(c.dayPrices[d] - c.price) > 0.001);
-}
-export function totalFormula(c) {
-  return "=[@Lunches]*[@[Price per lunch]]" + specialDays(c).map((d) => {
-    const diff = Math.round((c.dayPrices[d] - c.price) * 100) / 100;
-    return `+IF([@${DAY_COLS[d]}]<>"",${diff},0)`;
-  }).join("");
 }
 function specialNotes(c, menu) {
   const byKey = new Map((menu.days || []).map((x) => [x.key, x]));

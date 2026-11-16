@@ -9,13 +9,14 @@ name: Office workbook layout
 # (kept if filled) and "Week of" back to its formula (that week, or the next week with orders).
 # "delete-empty-tab" removes the tab named in "tab" (e.g. a retired form's), only if its table has no rows with
 # data and it isn't one of the workbook's own tabs; otherwise it says why and deletes nothing.
+# "fix-totals" writes the special-price list (Homerooms T18) and gives every Orders row the same Total formula.
 on:
   workflow_dispatch:
     inputs:
       action:
         description: "What to do"
         type: choice
-        options: [inspect, organize, check-gradelink, reset-week-boxes, delete-empty-tab]
+        options: [inspect, organize, check-gradelink, reset-week-boxes, delete-empty-tab, fix-totals]
         default: inspect
       week:
         description: "check-gradelink only: Monday to show for a moment (YYYY-MM-DD), or blank for the box as it is"
@@ -52,6 +53,9 @@ jobs:
             # Deletes nothing when the tab still has rows with data (it says how many) or is one of the workbook's own.
             curl -sS -X POST "https://ibaclinton-lunch.guarantee418.workers.dev/admin" -H "X-Setup-Key: $LUNCH_SETUP_KEY" \
               -H "Content-Type: application/json" -d "$(jq -nc --arg t "$TAB" --argjson r "${ROWS:-0}" '{action:"delete_empty_tab",tab:$t,expect_rows:$r}')" | jq -c .
+          elif [ "$ACTION" = fix-totals ]; then
+            # The special-price list, then the same Total formula in every Orders row (prints the row count).
+            post '{"action":"fix_totals"}'
           elif [ "$ACTION" = reset-week-boxes ]; then
             # The Kitchen, Homerooms and Gradelink week boxes get their formulas back; prints the week each shows.
             post '{"action":"week_boxes"}'
