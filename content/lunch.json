@@ -1,15 +1,19 @@
 {
   "weeks": [
     {
-      "week_start": "2026-11-16",
+      "week_start": "2026-11-23",
       "menu": [
         {
           "day": "Monday",
-          "meal": "NO SCHOOL"
+          "meal": "Burgers & Tots",
+          "options": [
+            "Hamburger",
+            "Cheeseburger"
+          ]
         },
         {
           "day": "Tuesday",
-          "meal": "Breakfast for lunch"
+          "meal": "Chipotle Bowls"
         },
         {
           "day": "Wednesday",
@@ -30,7 +34,9 @@
         }
       ],
       "no_school": [
-        "Monday"
+        "Wednesday",
+        "Thursday",
+        "Friday"
       ]
     }
   ],
