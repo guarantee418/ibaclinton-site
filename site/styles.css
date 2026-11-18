@@ -7,7 +7,7 @@
 *{box-sizing:border-box}
 ::selection{background:var(--gold);color:var(--navy-d)}
 :focus-visible{outline:3px solid var(--navy);outline-offset:3px}
-.hero :focus-visible,.summer :focus-visible,.top :focus-visible,footer.site :focus-visible{outline-color:var(--gold)}
+.summer :focus-visible,.top :focus-visible,footer.site :focus-visible{outline-color:var(--gold)}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.card img{transition:none}.card:hover img{transform:none}.kc-track{transition:none!important}}
 html{scroll-behavior:smooth}
 body{margin:0;font:17px/1.65 var(--sans);color:var(--ink);background:#fff}
@@ -40,15 +40,41 @@ nav a:hover,nav a[aria-current]{color:var(--navy);text-decoration:underline;text
 .menu-btn{display:none;background:none;border:1px solid var(--line);padding:.5rem .8rem;font:inherit;color:var(--navy)}
 
 /* hero */
-.hero{color:#fff;background:linear-gradient(90deg,rgba(59,20,86,.93) 0%,rgba(59,20,86,.84) 48%,rgba(59,20,86,.5) 100%),url(img/classroom.jpg) center 30%/cover,var(--navy);border-bottom:10px solid var(--gold);padding:clamp(3rem,7vw,5.5rem) 0}
-.hero-copy{max-width:640px}
-.hero h1{color:#fff;font-size:clamp(2.2rem,4.6vw,3.5rem);text-wrap:balance}
-.hero p{max-width:34em;font-size:1.15rem;color:#f1e8f8}
-.hero .actions{display:flex;gap:.9rem;flex-wrap:wrap;margin-top:1.8rem}
-.facts{display:flex;flex-wrap:wrap;gap:1rem 2.4rem;margin:2.2rem 0 0;padding-top:1.4rem;border-top:1px solid rgba(255,255,255,.28)}
+/* hero (home page): bright, real photos, a growth line from preschool to high school */
+.hero{background:#faf6fd;border-bottom:8px solid var(--gold);padding:clamp(2.2rem,4.5vw,3.6rem) 0 clamp(3.4rem,6vw,5rem);overflow:hidden}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:clamp(2rem,5vw,4.5rem);align-items:center}
+.hero-copy{max-width:600px}
+.hero-eyebrow{display:flex;align-items:center;gap:.6rem;font:600 .78rem/1.3 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 1.1rem}
+.hero-eyebrow::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 2px var(--navy);flex:none}
+.hero h1{font-size:clamp(2.2rem,3.9vw,3.5rem);line-height:1.06;letter-spacing:-.02em;margin:0 0 1.2rem}
+.hero h1 span,.hero h1 em{display:block;text-wrap:balance}
+.hero h1 em{font-weight:400;color:#6d3f94}
+.hero-sub{max-width:31em;text-wrap:pretty;font-size:1.12rem;color:var(--muted);margin:0}
+.hero .actions{display:flex;gap:.9rem;flex-wrap:wrap;margin-top:1.9rem}
+.btn.solid{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.solid:hover{background:var(--navy-d);border-color:var(--navy-d)}
+.btn{transition:background-color .2s,border-color .2s,color .2s,transform .16s ease-out}.btn:active{transform:scale(.97)}
+.facts{display:flex;flex-wrap:wrap;gap:1rem 2.6rem;margin:2.3rem 0 0;padding-top:1.3rem;border-top:1px solid var(--line)}
 .facts div{display:flex;flex-direction:column-reverse}
-.facts dt{font-size:.9rem;color:#f1e8f8}
-.facts dd{margin:0;font:700 2rem/1.1 var(--serif);color:var(--gold)}
+.facts dt{font-size:.88rem;color:var(--muted)}
+.facts dd{margin:0;font:700 2rem/1.1 var(--serif);color:var(--navy);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.grow{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,1.6vw,20px);margin:0 0 clamp(20px,3vw,40px)}
+.grow figure{position:relative;margin:0;border-radius:14px;overflow:hidden;aspect-ratio:1/1;background:var(--cream);box-shadow:0 12px 32px rgba(59,20,86,.14);z-index:1}
+.grow .g2,.grow .g4{transform:translateY(clamp(20px,3vw,40px))}
+.grow img{width:100%;height:100%;object-fit:cover}
+.grow .g1 img{object-position:40% 50%}.grow .g2 img{object-position:68% 50%}.grow .g3 img{object-position:78% 40%}.grow .g4 img{object-position:72% 50%}
+.grow figcaption{position:absolute;left:12px;bottom:12px;display:flex;align-items:center;gap:.45rem;padding:.42rem .75rem;border-radius:999px;background:rgba(255,255,255,.94);color:var(--navy);font:700 .74rem/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;box-shadow:0 2px 10px rgba(42,26,56,.16)}
+.grow figcaption::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 1.5px var(--navy)}
+@keyframes rise{from{opacity:0;transform:translateY(22px)}}
+@keyframes rise-off{from{opacity:0;transform:translateY(calc(clamp(20px,3vw,40px) + 22px))}}
+@media(prefers-reduced-motion:no-preference){
+  .hero-copy>*{animation:rise .7s cubic-bezier(.22,1,.36,1) both}
+  .hero-copy>:nth-child(2){animation-delay:.08s}.hero-copy>:nth-child(3){animation-delay:.16s}.hero-copy>:nth-child(4){animation-delay:.24s}.hero-copy>:nth-child(5){animation-delay:.32s}
+  .grow .g1,.grow .g3{animation:rise .8s cubic-bezier(.22,1,.36,1) both}
+  .grow .g2,.grow .g4{animation:rise-off .8s cubic-bezier(.22,1,.36,1) both}
+  .grow .g1{animation-delay:.15s}.grow .g2{animation-delay:.25s}.grow .g3{animation-delay:.35s}.grow .g4{animation-delay:.45s}
+  .grow figure img{transition:transform .5s cubic-bezier(.22,1,.36,1)}.grow figure:hover img{transform:scale(1.04)}
+}
 
 /* sections */
 section{padding:clamp(3rem,7vw,5.5rem) 0}
@@ -169,7 +195,15 @@ form.info button{justify-self:start;cursor:pointer;font:inherit;font-weight:600}
   .intro,.two,.cards,.quotes,.lead-in,.voice-rest,footer.site .wrap{grid-template-columns:1fr}
   .top a{display:inline-flex;align-items:center;min-height:44px}.top .wrap{padding-top:0;padding-bottom:0}
   header.site img.logo{height:36px}
-  .hero{background:linear-gradient(rgba(59,20,86,.84),rgba(59,20,86,.9)),url(img/classroom.jpg) center/cover,var(--navy)}
+  .hero-grid{grid-template-columns:1fr;gap:2.4rem}
+  .hero-copy{display:contents}.hero-copy>*{max-width:600px}
+  .hero .facts{order:3;margin-top:0;gap:1rem 1.6rem;justify-content:space-between}.hero .facts dd{font-size:1.65rem}.hero .facts dt{font-size:.8rem}
+  .hero-grid{gap:0}.hero-sub{margin-bottom:0}.hero .actions{margin:1.5rem 0 1.8rem}
+  .grow{order:2;display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:20px;margin:0 -20px 1.6rem;padding:0 20px 6px;scrollbar-width:none}
+  .grow::-webkit-scrollbar{display:none}
+  .grow figure{flex:0 0 58%;aspect-ratio:4/5;scroll-snap-align:start;box-shadow:0 6px 18px rgba(59,20,86,.12)}
+  .grow .g2,.grow .g4{transform:none}
+  .grow .g2,.grow .g4{animation-name:rise}
   .menu-btn{display:block}
   nav{display:none;position:absolute;left:0;right:0;top:100%;background:#fff;border-bottom:1px solid var(--line);padding:1rem 20px}
   nav.open{display:block}nav ul{flex-direction:column;gap:.9rem}
