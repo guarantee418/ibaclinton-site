@@ -83,7 +83,7 @@ export function colNumber(a) {
 // each tab's table, the Kitchen week box, and empty rows left at the bottom of the tables
 // after deletions (a table keeps at least one row). Safe to run again; it writes the same thing each time.
 
-export const ORDER = ["How to use", "Orders", "Kitchen", "Homerooms", "Gradelink", "Teachers", "Staff Families", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"];
+export const ORDER = ["How to use", "Orders", "Kitchen", "Homerooms", "Gradelink", "Teachers", "Staff Families", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences", "Days Off (HRLY)", "Days Off (9)", "Days Off (12)"];
 const NAVY = "#1B2A4A";
 const RED = "#B00020";
 const MONDAY = "TODAY()-WEEKDAY(TODAY(),3)+IF(WEEKDAY(TODAY(),2)>5,7,0)";
@@ -188,6 +188,21 @@ export const NOTES = {
     "• 'Teacher told' names the teacher who was Cc'd; 'No email on Teachers tab' means tell them yourself.",
     "• Sort by First day to see who is out on a given day. Use Notes for anything worth remembering.",
   ]],
+  "Days Off (HRLY)": ["M1", [
+    "How to use this tab (full steps: How to use tab)",
+    "• Typed by the office, not the website. One row per employee; type each day off as a Date and Reason pair in the next empty columns.",
+    "• Copy approved Leave Requests here. No totals on this tab.",
+  ]],
+  "Days Off (9)": ["Q1", [
+    "How to use this tab (full steps: How to use tab)",
+    "• Typed by the office, not the website. One row per employee; type each day off as a Date and Reason pair in the next empty columns.",
+    "• Copy approved Leave Requests here. Update Sick TOTAL and Personal TOTAL by hand.",
+  ]],
+  "Days Off (12)": ["O1", [
+    "How to use this tab (full steps: How to use tab)",
+    "• Typed by the office, not the website. One row per employee; type each day off as a Date and Reason pair in the next empty columns.",
+    "• Copy approved Leave Requests here. Update Sick TOTAL and Vacation TOTAL by hand.",
+  ]],
 };
 
 // The "How to use" tab: [kind, column A, column B]. Kinds: title, text, head (a section), tab (a row of the
@@ -210,6 +225,9 @@ export const GUIDE = [
   ["tab", "Inquiries", "Request Info forms from families interested in enrolling."],
   ["tab", "Feedback", "Feedback for Administration from The Kings Corner, one row per response."],
   ["tab", "Absences", "Absences parents report on the website, one row per report."],
+  ["tab", "Days Off (HRLY)", "Staff days off this school year: hourly staff. Typed by the office, like the Record of Employee Days Off."],
+  ["tab", "Days Off (9)", "Staff days off this school year: 9-month staff, with Sick and Personal totals. Typed by the office."],
+  ["tab", "Days Off (12)", "Staff days off this school year: 12-month staff, with Sick and Vacation totals. Typed by the office."],
   ["text", "Forms the office adds in the website editor, on The Kings Corner or on The King's Court (the teachers' page), each get their own tab too, named after the form (see 'Forms added in the editor' and 'The King's Court forms (teachers)' below)."],
   ["gap"],
   ["head", "Hot lunch: Orders tab"],
@@ -283,6 +301,11 @@ export const GUIDE = [
   ["step", "2", "The homeroom teacher comes from the Teachers tab (matched by grade). 'Teacher told' shows who was Cc'd; 'No email on Teachers tab' means the teacher wasn't told, so please pass it on."],
   ["step", "3", "To see who is out on a day, sort or filter the First day column. Use Notes for anything worth remembering (called in, doctor's note received, and so on)."],
   ["gap"],
+  ["head", "Staff days off: Days Off tabs"],
+  ["step", "1", "The three Days Off tabs are laid out like the Record of Employee Days Off: one row per employee on the tab for their pay type (HRLY = hourly, 9 = 9-month, 12 = 12-month), then a Date and Reason pair for each day or stretch off. The website never writes to these tabs; the office types them."],
+  ["step", "2", "When a Leave Request (on the Leave Request tab) is approved, find the employee's row and type the dates in the next empty Date column (for example 10/15, 10/5-10/8 or 10/9 (1/2)) and Sick, Personal, Vacation or Ministry Leave under Reason. A new employee goes in the next empty row."],
+  ["step", "3", "Update the employee's Sick TOTAL and Personal (or Vacation) TOTAL by hand; they are typed numbers, not formulas."],
+  ["gap"],
   ["head", "Forms added in the editor"],
   ["step", "1", "In the website editor, open The Kings Corner, open a section and fill in its Form: a name (also the tab's name here), up to 20 questions with an answer type each, and Required where needed. Every form also asks the person's name and email. Save, and the form shows in that section's pop-up a minute or two later."],
   ["step", "2", "The first response makes the form's tab in this workbook, with one column per question. Each response adds a row with Status 'New'; the person gets a confirmation email with their answers, and iba@ and ibs@ get the details (pressing Reply answers the person)."],
@@ -290,7 +313,7 @@ export const GUIDE = [
   ["warn", "⚠", "Adding a question adds a column at the end of the form's tab. Renaming the form, or renaming, removing or reordering its questions, starts a NEW tab (for example 'Field Trip 2'), so answers never land under the wrong heading. NEVER rename, move or delete the columns on a form's tab: the next response would start a new tab."],
   ["gap"],
   ["head", "The King's Court forms (teachers)"],
-  ["step", "1", "The King's Court (the teachers' page, ibaclinton.com/teachers/, password only) has its own forms, such as Activity Request, Reimbursement Request and Substitute Request. They are edited the same way, in The King's Court's editor, and each gets its own tab here just like the forms above."],
+  ["step", "1", "The King's Court (the teachers' page, ibaclinton.com/teachers/, password only) has its own forms, such as Activity Request, Leave Request and Purchase Order. They are edited the same way, in The King's Court's editor, and each gets its own tab here just like the forms above."],
   ["step", "2", "Each King's Court form says in the editor who gets every response ('Send each response to'). The note beside its tab here lists them too. The teacher always gets a confirmation."],
   ["step", "3", "Some forms need approvals. The Activity Request goes out as one 'Approval needed' email to Mr. Greene, Mr. Schmidley, iba@ and ibc@ (and Mr. Febo when a ministry vehicle is needed). It lists whose approval is needed: Mr. Greene for school activities, Mr. Schmidley for church activities (both for 'Both'), Mr. Febo for the vehicle and IBC every time. The teacher who sent it is Cc'd, and leaders answer with Reply All, so the teacher sees every answer. Write the approvals in Notes, or mark them on the form's monday.com board."],
   ["step", "4", "The Activity Request also goes on the monday.com board 'Teacher Portal: Activity Request', with a column for each approval ('Waiting for reply' or 'Not needed'). Change it to Approved when the reply comes in."],
