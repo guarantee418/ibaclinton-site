@@ -927,11 +927,13 @@ test("organize: the warnings about the Orders headings are bold red", async () =
 
 test("guide and reminders cover every tab", () => {
   const tabs = GUIDE.filter(([k]) => k === "tab").map(([, a]) => a);
-  assert.deepEqual(tabs, ["Orders", "Kitchen", "Homerooms", "Gradelink", "Teachers", "Staff Families", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences"]);
+  assert.deepEqual(tabs, ["Orders", "Kitchen", "Homerooms", "Gradelink", "Teachers", "Staff Families", "Conferences", "Tours", "Transcripts", "Inquiries", "Feedback", "Absences", "Days Off (HRLY)", "Days Off (9)", "Days Off (12)"]);
   assert.deepEqual(Object.keys(NOTES).sort(), [...tabs].sort());
   // Reminders start to the right of each table (Orders A:R, Conferences A:J, Tours A:I, Transcripts A:V, Inquiries A:N, Feedback A:J, Absences A:M).
   assert.deepEqual([NOTES.Orders[0], NOTES.Conferences[0], NOTES.Tours[0], NOTES.Transcripts[0], NOTES.Inquiries[0], NOTES.Feedback[0],
     NOTES.Absences[0]], ["T1", "L1", "K1", "X1", "P1", "L1", "O1"]);
+  // Days Off tabs: HRLY A:K, 9 A:O, 12 A:M.
+  assert.deepEqual([NOTES["Days Off (HRLY)"][0], NOTES["Days Off (9)"][0], NOTES["Days Off (12)"][0]], ["M1", "Q1", "O1"]);
 });
 
 // ------------------------------------------------------------------ Feedback for Administration
