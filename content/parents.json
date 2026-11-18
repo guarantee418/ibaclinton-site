@@ -179,7 +179,12 @@
       "text": "6th–12th graders and elementary students who are participating in our sports programs will find practice and game schedules for each season below:",
       "links": [
         {
-          "title": "Boys Basketball 2026-2027"
+          "title": "2026-2027 Boys Basketball Practice Schedule",
+          "file": "/files/2026-27-basketball-practice-schedule.pdf"
+        },
+        {
+          "title": "2026-2027 Boys Basketball Game Schedule",
+          "file": "/files/2026-27-basketball-game-schedule.pdf"
         },
         {
           "title": "2nd-6th Grade Soccer Intramurals",
@@ -355,11 +360,11 @@
           {
             "label": "Is this student currently attending your school or church?",
             "type": "Dropdown (pick one)",
-            "required": true,
             "choices": [
               "Yes",
               "No"
-            ]
+            ],
+            "required": true
           },
           {
             "label": "If not, what years did they attend?",
