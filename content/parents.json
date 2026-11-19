@@ -37,6 +37,13 @@
       "when": "December 7 at 6:00 p.m.",
       "graphic": "/files/christmas-play.png",
       "hidden": false
+    },
+    {
+      "script": "7th-12th Grade",
+      "title": "Semester Exams",
+      "when": "December 14-17",
+      "graphic": "/files/exams.png",
+      "hidden": false
     }
   ],
   "tiles_script": "Inside the Corner",
