@@ -30,6 +30,13 @@
       "when": "Starts at 3:30 PM",
       "graphic": "/files/basketball.png",
       "hidden": false
+    },
+    {
+      "script": "All-school Christmas Play",
+      "title": "We Knead a Little Christmas",
+      "when": "December 7 at 6:00 p.m.",
+      "graphic": "/files/christmas-play.png",
+      "hidden": false
     }
   ],
   "tiles_script": "Inside the Corner",
