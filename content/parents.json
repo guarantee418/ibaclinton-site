@@ -23,6 +23,13 @@
       "text": "Psalm 100:4 Enter into his gates with thanksgiving, and into his courts with praise: be thankful unto him, and bless his name.",
       "graphic": "/files/thanksgiving-break.png",
       "hidden": false
+    },
+    {
+      "script": "December 4",
+      "title": "Dads vs Players Basketball Game",
+      "when": "Starts at 3:30 PM",
+      "graphic": "/files/basketball.png",
+      "hidden": false
     }
   ],
   "tiles_script": "Inside the Corner",
