@@ -343,6 +343,46 @@ def tile_groups(cards, grouped):
     return "".join(f'<h3 class="kc-group">{head}</h3><ul class="kc-tiles">{"".join(group)}</ul>'
                    for head, group in (("Online forms", tasks), ("Look it up", reads)))
 
+# What search engines and social sites read about the school (schema.org). Keep in step with the
+# footer in src/layout.html if the address, phone or email changes.
+SCHOOL = {
+    "@context": "https://schema.org",
+    "@type": "PrivateSchool",
+    "@id": SITE_URL + "#school",
+    "name": "Independent Baptist Academy",
+    "alternateName": "IBA",
+    "url": SITE_URL,
+    "logo": SITE_URL + "img/logo.png",
+    "image": SITE_URL + "img/history.jpg",
+    "description": "A Christ-honoring private Christian school in Clinton, Maryland, from Stepping Stones "
+                   "Preschool (K3–K4) through 12th grade.",
+    "foundingDate": "1973",
+    "telephone": "+1-301-856-1616",
+    "email": "iba@ibcministries.org",
+    "address": {"@type": "PostalAddress", "streetAddress": "9255 Piscataway Rd", "addressLocality": "Clinton",
+                "addressRegion": "MD", "postalCode": "20735", "addressCountry": "US"},
+    "hasMap": "https://maps.app.goo.gl/dgcb4vTr49T3JmRL7",
+    "sameAs": ["https://www.facebook.com/Independent-Baptist-Academy-of-Clinton-MD-1811035429120537/"],
+    "parentOrganization": {"@type": "Church", "name": "Independent Baptist Church", "url": "https://ibcministries.org"},
+    "department": {"@type": "Preschool", "name": "Stepping Stones Preschool",
+                   "url": SITE_URL + "stepping-stones-preschool/", "telephone": "+1-301-856-1616"},
+}
+SCHOOL_JSON = json.dumps(SCHOOL, ensure_ascii=False).replace("</", "<\\/")
+SHARE_IMAGE = ("img/history.jpg", 1024, 683)  # the picture shown when a page is shared on Facebook or in a text
+
+def seo_tags(url, title, description):
+    """Canonical address, link-preview (Open Graph) tags and the school's structured data for one page."""
+    # Titles and descriptions in src/pages are already HTML (e.g. "Staff &amp; Faculty"), as in <title>.
+    t, d, img = title.replace('"', "&quot;"), description.replace('"', "&quot;"), SITE_URL + SHARE_IMAGE[0]
+    return (f'<link rel="canonical" href="{url}">\n'
+            f'<meta property="og:type" content="website">\n<meta property="og:site_name" content="Independent Baptist Academy">\n'
+            f'<meta property="og:title" content="{t}">\n<meta property="og:description" content="{d}">\n'
+            f'<meta property="og:url" content="{url}">\n<meta property="og:image" content="{img}">\n'
+            f'<meta property="og:image:width" content="{SHARE_IMAGE[1]}">\n<meta property="og:image:height" content="{SHARE_IMAGE[2]}">\n'
+            '<meta property="og:image:alt" content="A student in an IBA uniform reads from a book in a bright classroom">\n'
+            '<meta name="twitter:card" content="summary_large_image">\n'
+            f'<script type="application/ld+json">{SCHOOL_JSON}</script>')
+
 def render(path, text, layout):
     head, body = text.split("\n---\n", 1)
     meta = dict(line.split(": ", 1) for line in head.strip().splitlines())
@@ -388,7 +428,10 @@ def render(path, text, layout):
         head_extra += ('\n<link rel="preconnect" href="https://fonts.googleapis.com">'
                        '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
                        f'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family={esc(meta["fonts"])}&display=swap">')
-    html = (layout.replace("{{title}}", title).replace("{{head}}", head_extra).replace("{{description}}", meta["description"])
+    page_dir = out.relative_to(OUT).parent.as_posix()
+    seo = "" if rel.name == "404" or meta.get("hidden") == "yes" else seo_tags(
+        SITE_URL + ("" if page_dir == "." else page_dir + "/"), title, meta["description"])
+    html = (layout.replace("{{title}}", title).replace("{{head}}", head_extra).replace("{{seo}}", seo).replace("{{description}}", meta["description"])
             .replace("{{nav}}", nav).replace("{{banner}}", banner)
             .replace("{{content}}", body.strip()).replace("{{cta}}", cta))
     html = html.replace("{{root}}", root).replace("{{css_version}}", CSS_VERSION)
