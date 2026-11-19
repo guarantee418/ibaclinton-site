@@ -44,6 +44,14 @@
       "when": "December 14-17",
       "graphic": "/files/exams.png",
       "hidden": false
+    },
+    {
+      "script": "All Grades",
+      "title": "Classroom Christmas Parties",
+      "when": "Friday, December 18",
+      "text": "NOON DISMISSAL - NO LATE STAY",
+      "graphic": "/files/christmas-parties.png",
+      "hidden": false
     }
   ],
   "tiles_script": "Inside the Corner",
