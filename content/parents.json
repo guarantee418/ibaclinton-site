@@ -39,6 +39,14 @@
       "hidden": false
     },
     {
+      "script": "Fundraiser",
+      "title": "Christmas Market",
+      "when": "December 7 - before & after the play",
+      "text": "Available for Purchase:\nHOME DECOR ~ CRAFTS ~ ORNAMENTS ~ BAKED GOODS ~ HOMEMADE SOAPS",
+      "graphic": "/files/christmas-market.png",
+      "hidden": false
+    },
+    {
       "script": "7th-12th Grade",
       "title": "Semester Exams",
       "when": "December 14-17",
