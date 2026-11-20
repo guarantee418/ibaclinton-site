@@ -34,7 +34,7 @@
     {
       "script": "All-school Christmas Play",
       "title": "We Knead a Little Christmas",
-      "when": "December 7 at 6:00 p.m.",
+      "when": "December 7 at 6:00 PM",
       "graphic": "/files/christmas-play.png",
       "hidden": false
     },
