@@ -42,7 +42,7 @@
       "script": "Fundraiser",
       "title": "Christmas Market",
       "when": "December 7 - before & after the play",
-      "text": "Available for Purchase:\nHOME DECOR ~ CRAFTS ~ ORNAMENTS ~ BAKED GOODS ~ HOMEMADE SOAPS",
+      "text": "Many items available for purchase: home decor, crafts, ornaments, baked goods, homemade soaps",
       "graphic": "/files/christmas-market.png",
       "hidden": false
     },
