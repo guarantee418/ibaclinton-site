@@ -13,20 +13,15 @@
         },
         {
           "day": "Wednesday",
-          "meal": "Cheesesteaks & Fries"
+          "meal": "Cheesesteaks & Broccoli"
         },
         {
           "day": "Thursday",
-          "meal": "Chicken "
+          "meal": "Chicken Tenders & Fries"
         },
         {
           "day": "Friday",
-          "meal": "Thanksgiving Feast",
-          "special_prices": {
-            "regular": 12,
-            "preschool": 7,
-            "staff": 6
-          }
+          "meal": "Hotdogs & Chips"
         }
       ],
       "no_school": [
