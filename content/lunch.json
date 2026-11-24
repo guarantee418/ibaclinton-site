@@ -1,27 +1,23 @@
 {
   "weeks": [
     {
-      "week_start": "2026-11-23",
+      "week_start": "2026-11-30",
       "menu": [
         {
           "day": "Monday",
-          "meal": "Burgers & Tots",
-          "options": [
-            "Hamburger",
-            "Cheeseburger"
-          ]
+          "meal": "Pizza & Chips"
         },
         {
           "day": "Tuesday",
-          "meal": "Chipotle Bowls"
+          "meal": "Chicken Noodle Soup & Breadsticks"
         },
         {
           "day": "Wednesday",
-          "meal": "Chicken Sandwiches & Mac N Cheese"
+          "meal": "Cheesesteaks & Fries"
         },
         {
           "day": "Thursday",
-          "meal": "Hotdogs & Chips"
+          "meal": "Chicken "
         },
         {
           "day": "Friday",
