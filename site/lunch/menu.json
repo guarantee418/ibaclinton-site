@@ -1,48 +1,45 @@
 {
-  "week_start": "2026-11-23",
-  "week_end": "2026-11-27",
-  "week_label": "November 23 \u2013 24",
-  "deadline": "2026-11-20T14:00:00+00:00",
-  "deadline_label": "Friday, November 20 at 9:00 AM",
-  "deadline_short": "Fri 11/20, 9 AM",
+  "week_start": "2026-11-30",
+  "week_end": "2026-12-04",
+  "week_label": "November 30 \u2013 December 1",
+  "deadline": "2026-11-27T14:00:00+00:00",
+  "deadline_label": "Friday, November 27 at 9:00 AM",
+  "deadline_short": "Fri 11/27, 9 AM",
   "note": "",
   "graphic": "",
   "days": [
     {
       "key": "mon",
       "day": "Monday",
-      "meal": "Burgers & Tots",
-      "options": [
-        "Hamburger",
-        "Cheeseburger"
-      ],
-      "date": "2026-11-23",
-      "date_label": "Nov 23"
+      "meal": "Pizza & Chips",
+      "options": [],
+      "date": "2026-11-30",
+      "date_label": "Nov 30"
     },
     {
       "key": "tue",
       "day": "Tuesday",
-      "meal": "Chipotle Bowls",
+      "meal": "Chicken Noodle Soup & Breadsticks",
       "options": [],
-      "date": "2026-11-24",
-      "date_label": "Nov 24"
+      "date": "2026-12-01",
+      "date_label": "Dec 1"
     }
   ],
   "no_school": [
     {
       "day": "Wednesday",
-      "date": "2026-11-25",
-      "date_label": "Nov 25"
+      "date": "2026-12-02",
+      "date_label": "Dec 2"
     },
     {
       "day": "Thursday",
-      "date": "2026-11-26",
-      "date_label": "Nov 26"
+      "date": "2026-12-03",
+      "date_label": "Dec 3"
     },
     {
       "day": "Friday",
-      "date": "2026-11-27",
-      "date_label": "Nov 27"
+      "date": "2026-12-04",
+      "date_label": "Dec 4"
     }
   ],
   "prices": {
@@ -135,50 +132,47 @@
   ],
   "weeks": [
     {
-      "week_start": "2026-11-23",
-      "week_end": "2026-11-27",
-      "week_label": "November 23 \u2013 24",
-      "deadline": "2026-11-20T14:00:00+00:00",
-      "deadline_label": "Friday, November 20 at 9:00 AM",
-      "deadline_short": "Fri 11/20, 9 AM",
+      "week_start": "2026-11-30",
+      "week_end": "2026-12-04",
+      "week_label": "November 30 \u2013 December 1",
+      "deadline": "2026-11-27T14:00:00+00:00",
+      "deadline_label": "Friday, November 27 at 9:00 AM",
+      "deadline_short": "Fri 11/27, 9 AM",
       "note": "",
       "graphic": "",
       "days": [
         {
           "key": "mon",
           "day": "Monday",
-          "meal": "Burgers & Tots",
-          "options": [
-            "Hamburger",
-            "Cheeseburger"
-          ],
-          "date": "2026-11-23",
-          "date_label": "Nov 23"
+          "meal": "Pizza & Chips",
+          "options": [],
+          "date": "2026-11-30",
+          "date_label": "Nov 30"
         },
         {
           "key": "tue",
           "day": "Tuesday",
-          "meal": "Chipotle Bowls",
+          "meal": "Chicken Noodle Soup & Breadsticks",
           "options": [],
-          "date": "2026-11-24",
-          "date_label": "Nov 24"
+          "date": "2026-12-01",
+          "date_label": "Dec 1"
         }
       ],
       "no_school": [
         {
           "day": "Wednesday",
-          "date": "2026-11-25",
-          "date_label": "Nov 25"
+          "date": "2026-12-02",
+          "date_label": "Dec 2"
         },
         {
           "day": "Thursday",
-          "date": "2026-11-26",
-          "date_label": "Nov 26"
+          "date": "2026-12-03",
+          "date_label": "Dec 3"
         },
         {
           "day": "Friday",
-          "date": "2026-11-27",
-          "date_label": "Nov 27"
+          "date": "2026-12-04",
+          "date_label": "Dec 4"
         }
       ]
     }
